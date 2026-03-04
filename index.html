@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟教室平台</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-left">
+                <h1>虚拟教室</h1>
+                <span class="class-name">数学课 - 第一节</span>
+            </div>
+            <div class="header-right">
+                <button id="recordBtn" class="record-btn">
+                    <span class="record-icon"></span>
+                    <span class="record-text">录制</span>
+                </button>
+                <button id="shareBtn" class="share-btn">共享屏幕</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar-left">
+                <div class="participants-section">
+                    <h3>参与者</h3>
+                    <ul class="participants-list" id="participantsList">
+                        <li class="participant active">
+                            <span class="avatar">👨‍🏫</span>
+                            <span class="name">老师</span>
+                            <span class="status online">在线</span>
+                        </li>
+                        <li class="participant">
+                            <span class="avatar">👩‍🎓</span>
+                            <span class="name">学生1</span>
+                            <span class="status online">在线</span>
+                        </li>
+                        <li class="participant">
+                            <span class="avatar">👨‍🎓</span>
+                            <span class="name">学生2</span>
+                            <span class="status online">在线</span>
+                        </li>
+                        <li class="participant">
+                            <span class="avatar">👩‍🎓</span>
+                            <span class="name">学生3</span>
+                            <span class="status offline">离线</span>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <main class="whiteboard-section">
+                <div class="whiteboard-toolbar">
+                    <button class="tool-btn active" data-tool="pen" title="画笔">✏️</button>
+                    <button class="tool-btn" data-tool="eraser" title="橡皮擦">🧹</button>
+                    <input type="color" id="colorPicker" value="#000000" title="颜色">
+                    <input type="range" id="brushSize" min="1" max="20" value="3" title="画笔大小">
+                    <button class="tool-btn" id="clearBtn" title="清除">🗑️</button>
+                </div>
+                <div class="whiteboard-container" id="whiteboardContainer">
+                    <canvas id="whiteboard"></canvas>
+                    <div class="selection-box" id="selectionBox"></div>
+                </div>
+            </main>
+
+            <aside class="sidebar-right">
+                <div class="chat-section">
+                    <h3>聊天</h3>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message system">
+                            <span class="message-content">欢迎来到虚拟教室！</span>
+                        </div>
+                    </div>
+                    <div class="emoji-picker" id="emojiPicker">
+                        <button class="emoji-btn">😀</button>
+                        <button class="emoji-btn">👍</button>
+                        <button class="emoji-btn">❤️</button>
+                        <button class="emoji-btn">🎉</button>
+                        <button class="emoji-btn">🤔</button>
+                        <button class="emoji-btn">👋</button>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="输入消息...">
+                        <button id="sendBtn">发送</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
