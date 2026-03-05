@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberNexus | Where Hackers Unite</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            --matrix-green: #00ff41;
+            --matrix-dark: #003b00;
+            --cyber-cyan: #00ffff;
+            --cyber-magenta: #ff00ff;
+            --cyber-yellow: #ffff00;
+            --dark-bg: #0a0a0f;
+            --card-bg: rgba(10, 10, 15, 0.85);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Matrix Background */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.15;
+        }
+
+        /* Scanlines Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1) 0px,
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--matrix-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '>';
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a::before {
+            content: '[';
+            margin-right: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            color: var(--matrix-green);
+        }
+
+        .nav-links a::after {
+            content: ']';
+            margin-left: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            color: var(--matrix-green);
+        }
+
+        .nav-links a:hover {
+            color: var(--matrix-green);
+        }
+
+        .nav-links a:hover::before,
+        .nav-links a:hover::after {
+            opacity: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 0 5%;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+        }
+
+        .glitch {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            position: relative;
+            animation: glitch-skew 1s infinite linear alternate-reverse;
+            color: var(--text-primary);
+            text-shadow: 2px 2px var(--matrix-green), -2px -2px var(--cyber-cyan);
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 var(--cyber-magenta);
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim 3s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 var(--cyber-cyan);
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim2 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(14px, 9999px, 127px, 0); }
+            20% { clip: rect(66px, 9999px, 9px, 0); }
+            40% { clip: rect(100px, 9999px, 84px, 0); }
+            60% { clip: rect(24px, 9999px, 148px, 0); }
+            80% { clip: rect(73px, 9999px, 34px, 0); }
+            100% { clip: rect(54px, 9999px, 111px, 0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(122px, 9999px, 16px, 0); }
+            20% { clip: rect(82px, 9999px, 137px, 0); }
+            40% { clip: rect(37px, 9999px, 63px, 0); }
+            60% { clip: rect(115px, 9999px, 94px, 0); }
+            80% { clip: rect(4px, 9999px, 118px, 0); }
+            100% { clip: rect(61px, 9999px, 25px, 0); }
+        }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(1deg); }
+            10% { transform: skew(-1deg); }
+            20% { transform: skew(0.5deg); }
+            30% { transform: skew(-0.5deg); }
+            40% { transform: skew(0.2deg); }
+            50% { transform: skew(0deg); }
+            60% { transform: skew(-0.3deg); }
+            70% { transform: skew(0.3deg); }
+            80% { transform: skew(-0.1deg); }
+            90% { transform: skew(0.1deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin: 2rem 0;
+            letter-spacing: 3px;
+        }
+
+        .hero-tagline {
+            font-size: 1.1rem;
+            color: var(--matrix-green);
+            margin-bottom: 3rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 3rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--dark-bg);
+            background: var(--matrix-green);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Terminal Window */
+        .terminal-window {
+            position: absolute;
+            bottom: 10%;
+            right: 5%;
+            width: 400px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--matrix-green);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+        }
+
+        .terminal-header {
+            background: rgba(0, 255, 65, 0.1);
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27ca40; }
+
+        .terminal-title {
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 0.8rem;
+            color: var(--matrix-green);
+        }
+
+        .terminal-body {
+            padding: 1rem;
+            font-size: 0.85rem;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .terminal-line.prompt::before {
+            content: 'root@cybernexus:~$ ';
+            color: var(--matrix-green);
+        }
+
+        .terminal-line.output {
+            color: var(--text-secondary);
+        }
+
+        .terminal-line.success {
+            color: var(--matrix-green);
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Section Styles */
+        section {
+            padding: 6rem 5%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+        }
+
+        .section-title span {
+            color: var(--matrix-green);
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+            max-width: 600px;
+        }
+
+        /* Features Section */
+        .features {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            padding: 2rem;
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--matrix-green), transparent);
+            transform: scaleX(0);
+            transition: transform 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            border-color: var(--matrix-green);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 65, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--matrix-green);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.05) 0%, transparent 100%);
+            border-top: 1px solid rgba(0, 255, 65, 0.1);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat-item {
+            position: relative;
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--matrix-green);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stat-item::after {
+            content: '0x';
+            position: absolute;
+            top: 5px;
+            right: calc(100% + 10px);
+            font-size: 0.8rem;
+            color: var(--matrix-green);
+            opacity: 0.5;
+        }
+
+        /* Community Section */
+        .community {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .community-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .community-text h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .community-text p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .community-features {
+            list-style: none;
+            margin: 2rem 0;
+        }
+
+        .community-features li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .community-features li::before {
+            content: '>>';
+            color: var(--matrix-green);
+            font-weight: bold;
+        }
+
+        .community-visual {
+            position: relative;
+            height: 400px;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .network-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--matrix-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .network-node::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--matrix-green);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        @keyframes ripple {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, var(--matrix-green), transparent);
+            transform-origin: left center;
+            opacity: 0.5;
+            animation: lineGlow 2s infinite;
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 255, 0.05) 100%);
+            text-align: center;
+        }
+
+        .cta-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta-content h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .cta-content p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.8;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--matrix-green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 3rem 5%;
+            border-top: 1px solid rgba(0, 255, 65, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--matrix-green);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--matrix-green);
+        }
+
+        .footer-bottom {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .ascii-art {
+            font-size: 0.6rem;
+            color: var(--matrix-green);
+            opacity: 0.3;
+            margin-top: 1rem;
+            white-space: pre;
+            line-height: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .glitch {
+                font-size: 3.5rem;
+            }
+
+            .terminal-window {
+                display: none;
+            }
+
+            .community-content {
+                grid-template-columns: 1fr;
+            }
+
+            .community-visual {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .glitch {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                gap: 2rem;
+            }
+
+            .stat-number {
+                font-size: 3rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--matrix-dark);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--matrix-green);
+        }
+
+        /* Selection */
+        ::selection {
+            background: var(--matrix-green);
+            color: var(--dark-bg);
+        }
+
+        .cursor-blink {
+            animation: cursorBlink 1s infinite;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Background -->
+    <canvas id="matrix-bg"></canvas>
+
+    <!-- Scanlines Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">CyberNexus</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#community">Community</a></li>
+            <li><a href="#stats">Stats</a></li>
+            <li><a href="#join">Join</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="glitch" data-text="CyberNexus">CyberNexus</h1>
+            <p class="hero-subtitle">// W3LC0M3 T0 TH3 N3XUS</p>
+            <p class="hero-tagline">Where hackers unite, knowledge flows, and the future is written</p>
+            <a href="#join" class="cta-button">Initialize Protocol</a>
+        </div>
+
+        <!-- Terminal Window -->
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <span class="terminal-title">root@cybernexus</span>
+            </div>
+            <div class="terminal-body" id="terminal-body">
+                <!-- Terminal content will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title">System <span>Capabilities</span></h2>
+        <p class="section-subtitle">Unlock your full potential with our suite of hacker-grade tools and resources</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🔓</span>
+                <h3>CTF Ar3na</h3>
+                <p>Real-world Capture The Flag challenges. Test your skills across web, crypto, pwn, and more. Climb the global leaderboard.</p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🧠</span>
+                <h3>Kn0wladg3 Bas3</h3>
+                <p>Curated tutorials, writeups, and research papers. From beginner to elite, level up your security expertise.</p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3>Live H4cking</h3>
+                <p>Practice in safe, isolated environments. Real scenarios, zero consequences. Learn by doing, not reading.</p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🛡️</span>
+                <h3>D3f3ns3 Grid</h3>
+                <p>Blue team operations and threat hunting. Discover vulnerabilities before the adversaries do.</p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🌐</span>
+                <h3>N3twork Intel</h3>
+                <p>OSINT reconnaissance tools and techniques. Gather, analyze, and act on intelligence data.</p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🔥</span>
+                <h3>3xploit Lab</h3>
+                <p>Safe sandbox for exploit development. Test and validate security research in controlled conditions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats" id="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" data-count="1337">0</div>
+                <div class="stat-label">Active Members</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="9001">0</div>
+                <div class="stat-label">CTF Challenges</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="42">0</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="99">0</div>
+                <div class="stat-label">% Uptime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="community" id="community">
+        <h2 class="section-title">Join <span>Th3 N3twork</span></h2>
+        <p class="section-subtitle">Connect with elite hackers, security researchers, and cybersecurity enthusiasts worldwide</p>
+
+        <div class="community-content">
+            <div class="community-text">
+                <h3>The Hive Mind Awaits</h3>
+                <p>CyberNexus isn't just a platform—it's a digital sanctuary for those who question, explore, and push boundaries. Our community spans security researchers, ethical hackers, penetration testers, and curious minds united by one passion: understanding systems from the inside out.</p>
+
+                <ul class="community-features">
+                    <li>Real-time collaboration channels</li>
+                    <li>Mentorship from industry veterans</li>
+                    <li>Exclusive workshops and webinars</li>
+                    <li>Job board with top security firms</li>
+                    <li>Anonymous participation options</li>
+                    <li>Regular community events & meetups</li>
+                </ul>
+            </div>
+
+            <div class="community-visual">
+                <!-- Network nodes will be generated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="join">
+        <div class="cta-content">
+            <h2>Ready to Enter?</h2>
+            <p>The matrix has you... but you can choose to see how deep the rabbit hole goes. Join thousands of hackers who've already taken the red pill.</p>
+            <form class="input-group" onsubmit="handleSignup(event)">
+                <input type="email" placeholder="enter_your_email@shell.com" required>
+                <button type="submit" class="cta-button">EXECUTE</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">CyberNexus</div>
+            <ul class="footer-links">
+                <li><a href="#">About</a></li>
+                <li><a href="#">Documentation</a></li>
+                <li><a href="#">Privacy Protocol</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 CyberNexus. All systems operational. Stay curious.</p>
+            <pre class="ascii-art">
+    ███╗   ██╗███████╗██╗  ██╗██╗   ██╗
+    ████╗  ██║██╔════╝╚██╗██╔╝██║   ██║
+    ██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║
+    ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║
+    ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝
+    ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝
+            </pre>
+        </div>
+    </footer>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?~`アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        const charArray = chars.split('');
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10, 10, 15, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px JetBrains Mono';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                // Randomly make some characters green
+                if (Math.random() > 0.98) {
+                    ctx.fillStyle = '#00ff41';
+                } else if (Math.random() > 0.95) {
+                    ctx.fillStyle = '#003b00';
+                } else {
+                    ctx.fillStyle = '#00ff41';
+                }
+
+                ctx.fillText(text, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 33);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Terminal Animation
+        const terminalCommands = [
+            { cmd: 'whoami', output: 'elite_hacker' },
+            { cmd: 'cat /etc/motd', output: 'Welcome to CyberNexus - The revolution is digitized' },
+            { cmd: 'nmap -sV cyberspace', output: 'Starting Nscan 7.94...\n[+] 65535 ports open\n[+] System appears vulnerable' },
+            { cmd: 'echo $HACKER_LEVEL', output: 'GOD_MODE_ENABLED' },
+            { cmd: 'ls -la /root/secrets', output: 'total 4\ndrwxr-xr-x 2 root root 4096 Jan 01 00:00 .\ndrwxr-xr-x 3 root root 4096 Jan 01 00:00 ..\n-rw-r--r-- 1 root root   42 Jan 01 00:00 flag.txt' },
+            { cmd: 'curl api.cybernexus.io/status', output: '{"status": "operational", "members": 1337, "next_event": "HACKTHEPLANET_2025"}' },
+            { cmd: 'neofetch', output: `
+        \`-oyhdNm/  .+hhhhhydddhs/.\`
+       \`smNmNdhmso  \`+yhddddddy/.\`
+      \`odNMMMMNdy:   \`+shdddds/\`
+     \`+hMMMMMMMMmds-   \`:ysss/\`
+    \`/yNMMMMMMMMMNmhs-\`    \`\`
+   \`-oyNMMMMMMMMMMMNdyo:\`
+  \`./osNMMMMMMMMMMMMMmy+
+  \`.-/+yNMMMMMMMMMMMMmy:
+   \`-:/+yNMMMMMMMNmho.\`
+     \`.-:/+oyhhys+:.\`
+       User: elite_hacker
+       OS: CyberNexus OS 1337
+       Kernel: 7.7.7-elite
+       Shell: zsh 5.9
+       DE: GNOME 42
+       Theme: Matrix Green` },
+            { cmd: 'top', output: 'PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND\n1337 root      20   0   12.5g   4.2g   2.1g R  99.9   0.1   1337:42 matrix_process' }
+        ];
+
+        let currentCommandIndex = 0;
+        const terminalBody = document.getElementById('terminal-body');
+
+        function showCommand(cmdObj) {
+            const promptLine = document.createElement('div');
+            promptLine.className = 'terminal-line prompt';
+            promptLine.textContent = cmdObj.cmd;
+
+            const outputLine = document.createElement('div');
+            outputLine.className = 'terminal-line output';
+            outputLine.textContent = cmdObj.output;
+            outputLine.style.animationDelay = '0.5s';
+
+            terminalBody.appendChild(promptLine);
+            terminalBody.appendChild(outputLine);
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+
+            currentCommandIndex++;
+            if (currentCommandIndex < terminalCommands.length) {
+                setTimeout(() => showCommand(terminalCommands[currentCommandIndex]), 2000);
+            }
+        }
+
+        setTimeout(() => showCommand(terminalCommands[0]), 1000);
+
+        // Counter Animation
+        function animateCounter(element, target) {
+            const duration = 2000;
+            const start = performance.now();
+            const startValue = 0;
+
+            function update(currentTime) {
+                const elapsed = currentTime - start;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const current = Math.floor(startValue + (target - startValue) * progress);
+                element.textContent = current;
+                element.setAttribute('data-count', current);
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Intersection Observer for stats
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const statNumbers = entry.target.querySelectorAll('.stat-number');
+                    statNumbers.forEach(stat => {
+                        const target = parseInt(stat.getAttribute('data-count'));
+                        animateCounter(stat, target);
+                    });
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        statsObserver.observe(document.querySelector('.stats'));
+
+        // Network Visual
+        function createNetworkNodes() {
+            const container = document.querySelector('.community-visual');
+            const nodes = [];
+
+            for (let i = 0; i < 15; i++) {
+                const node = document.createElement('div');
+                node.className = 'network-node';
+                node.style.left = Math.random() * 80 + 10 + '%';
+                node.style.top = Math.random() * 80 + 10 + '%';
+                node.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(node);
+                nodes.push(node);
+            }
+
+            // Create connections
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const distance = Math.random();
+                    if (distance > 0.7) {
+                        const line = document.createElement('div');
+                        line.className = 'connection-line';
+
+                        const x1 = parseFloat(nodes[i].style.left);
+                        const y1 = parseFloat(nodes[i].style.top);
+                        const x2 = parseFloat(nodes[j].style.left);
+                        const y2 = parseFloat(nodes[j].style.top);
+
+                        const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)) * 4;
+                        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+                        line.style.width = length + '%';
+                        line.style.left = x1 + '%';
+                        line.style.top = y1 + '%';
+                        line.style.transform = `rotate(${angle}deg)`;
+                        line.style.animationDelay = Math.random() * 2 + 's';
+
+                        container.appendChild(line);
+                    }
+                }
+            }
+        }
+
+        createNetworkNodes();
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Form submission
+        function handleSignup(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input').value;
+            alert(`Welcome to the Nexus, ${email}!\n\nYour journey begins now...`);
+            event.target.reset();
+        }
+
+        // Glitch effect on hover for feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.animation = 'none';
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 10);
+            });
+        });
+
+        // Console Easter Egg
+        console.log('%c STOP! ', 'background: #00ff41; color: #000; font-size: 20px; font-weight: bold; padding: 10px;');
+        console.log('%c If you\'re reading this, you\'re already one of us. ', 'color: #00ff41; font-size: 14px;');
+        console.log('%c The Nexus welcomes those who dare to explore. ', 'color: #00ff41; font-size: 12px;');
+        console.log('%c\n   [CYBERNEXUS SYSTEM v13.37]', 'color: #00ff41; font-family: monospace;');
+    </script>
+</body>
+</html>
