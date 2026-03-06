@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情页</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 商品主图轮播 -->
+        <div class="product-gallery">
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="carousel-slides" id="carouselSlides">
+                        <!-- 图片将通过JS动态生成 -->
+                    </div>
+                </div>
+                <button class="carousel-btn prev-btn" id="prevBtn">‹</button>
+                <button class="carousel-btn next-btn" id="nextBtn">›</button>
+                <div class="carousel-indicators" id="carouselIndicators">
+                    <!-- 指示器将通过JS动态生成 -->
+                </div>
+            </div>
+            <!-- 缩略图 -->
+            <div class="thumbnail-list" id="thumbnailList">
+                <!-- 缩略图将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 商品信息 -->
+        <div class="product-info">
+            <h1 class="product-title" id="productTitle">高品质无线蓝牙耳机</h1>
+
+            <div class="product-price">
+                <span class="price-label">价格：</span>
+                <span class="price-symbol">¥</span>
+                <span class="price-value" id="productPrice">299</span>
+                <span class="price-original">¥599</span>
+                <span class="price-discount">5.0折</span>
+            </div>
+
+            <!-- 销量信息 -->
+            <div class="product-sales">
+                <span>月销 <strong id="monthlySales">2000+</strong></span>
+                <span>累计评价 <strong id="totalReviews">500+</strong></span>
+                <span>收藏 <strong id="favorites">3000+</strong></span>
+            </div>
+
+            <!-- 规格选择 -->
+            <div class="spec-section">
+                <div class="spec-group" data-spec="color">
+                    <div class="spec-label">颜色</div>
+                    <div class="spec-options" id="colorOptions">
+                        <button class="spec-btn" data-value="黑色" data-image-hover="black">黑色</button>
+                        <button class="spec-btn" data-value="白色" data-image-hover="white">白色</button>
+                        <button class="spec-btn" data-value="蓝色" data-image-hover="blue">蓝色</button>
+                        <button class="spec-btn" data-value="红色" data-image-hover="red">红色</button>
+                    </div>
+                </div>
+
+                <div class="spec-group" data-spec="version">
+                    <div class="spec-label">版本</div>
+                    <div class="spec-options" id="versionOptions">
+                        <button class="spec-btn" data-value="标准版">标准版</button>
+                        <button class="spec-btn" data-value="升级版">升级版</button>
+                        <button class="spec-btn" data-value="旗舰版">旗舰版</button>
+                    </div>
+                </div>
+
+                <div class="spec-group" data-spec="capacity">
+                    <div class="spec-label">套餐</div>
+                    <div class="spec-options" id="capacityOptions">
+                        <button class="spec-btn" data-value="官方标配">官方标配</button>
+                        <button class="spec-btn" data-value="带保护套">带保护套</button>
+                        <button class="spec-btn" data-value="豪华大礼包">豪华大礼包</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数量选择 -->
+            <div class="quantity-section">
+                <div class="quantity-label">数量</div>
+                <div class="quantity-control">
+                    <button class="quantity-btn minus-btn" id="minusBtn">−</button>
+                    <input type="number" class="quantity-input" id="quantityInput" value="1" min="1" max="99">
+                    <button class="quantity-btn plus-btn" id="plusBtn">+</button>
+                </div>
+                <span class="stock-info">库存<em id="stockCount">999</em>件</span>
+            </div>
+
+            <!-- 服务信息 -->
+            <div class="service-info">
+                <div class="service-title">服务</div>
+                <div class="service-items">
+                    <span class="service-item">✓ 7天退换</span>
+                    <span class="service-item">✓ 15天换货</span>
+                    <span class="service-item">✓ 顺丰包邮</span>
+                    <span class="service-item">✓ 官方正品</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn btn-cart" id="addToCartBtn">
+                    <span class="btn-icon">🛒</span>
+                    加入购物车
+                </button>
+                <button class="btn btn-buy" id="buyNowBtn">
+                    立即购买
+                </button>
+                <button class="btn btn-favorite" id="favoriteBtn">
+                    <span class="favorite-icon">♡</span>
+                </button>
+            </div>
+
+            <!-- 当前选择展示 -->
+            <div class="selected-specs" id="selectedSpecs">
+                已选：<span id="selectedSpecsText">请选择规格</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 购物车弹窗 -->
+    <div class="cart-modal" id="cartModal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <div class="modal-icon">✓</div>
+            <h3>已成功加入购物车</h3>
+            <p id="cartModalText"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-secondary" id="continueShoppingBtn">继续购物</button>
+                <button class="modal-btn btn-primary" id="goToCartBtn">去购物车结算</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
