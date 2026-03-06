@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宠物饮水量追踪器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .card-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .pet-input {
+            margin-bottom: 20px;
+        }
+
+        .pet-input label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .pet-input input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .pet-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .data-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .day-input {
+            position: relative;
+        }
+
+        .day-input label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .day-input input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .day-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group::after {
+            content: 'ml';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .stat-card:nth-child(3) {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2d3436;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #636e72;
+            font-size: 0.95em;
+        }
+
+        .emoji {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .data-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        .message {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💧 宠物饮水量追踪器</h1>
+            <p>记录7天饮水量，关注宠物健康</p>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📋 数据输入</h2>
+
+            <div class="pet-input">
+                <label for="petName">宠物名称</label>
+                <input type="text" id="petName" placeholder="输入宠物的名字" maxlength="20">
+            </div>
+
+            <div class="data-inputs" id="dataInputs">
+                <!-- 7天的输入框将由JS生成 -->
+            </div>
+
+            <div class="buttons">
+                <button class="btn-primary" onclick="saveData()">💾 保存数据</button>
+                <button class="btn-secondary" onclick="clearData()">🗑️ 清空数据</button>
+                <button class="btn-success" onclick="loadSampleData()">📊 加载示例数据</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📈 饮水量趋势</h2>
+            <div class="chart-container">
+                <canvas id="waterChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📊 统计信息</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="emoji">💧</span>
+                    <div class="stat-value" id="totalWater">0</div>
+                    <div class="stat-label">7天总饮水量 (ml)</div>
+                </div>
+                <div class="stat-card">
+                    <span class="emoji">📊</span>
+                    <div class="stat-value" id="avgWater">0</div>
+                    <div class="stat-label">日均饮水量 (ml)</div>
+                </div>
+                <div class="stat-card">
+                    <span class="emoji">🎯</span>
+                    <div class="stat-value" id="maxDay">-</div>
+                    <div class="stat-label">最高饮水量天</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+        const STORAGE_KEY = 'petWaterData';
+
+        // 生成过去7天的日期标签
+        function generateDayLabels() {
+            const labels = [];
+            const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(days[date.getDay()]);
+            }
+            return labels;
+        }
+
+        // 初始化输入框
+        function initInputs() {
+            const container = document.getElementById('dataInputs');
+            const labels = generateDayLabels();
+
+            labels.forEach((day, index) => {
+                const div = document.createElement('div');
+                div.className = 'day-input';
+                div.innerHTML = `
+                    <label>${day}</label>
+                    <div class="input-group">
+                        <input type="number" id="day${index}" min="0" max="5000" placeholder="0" onchange="updateChart()">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('waterChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: generateDayLabels(),
+                    datasets: [{
+                        label: '饮水量 (ml)',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(79, 172, 254, 0.8)',
+                            'rgba(0, 242, 254, 0.8)',
+                            'rgba(253, 121, 168, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(118, 75, 162, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(245, 87, 108, 1)',
+                            'rgba(79, 172, 254, 1)',
+                            'rgba(0, 242, 254, 1)',
+                            'rgba(253, 121, 168, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(102, 126, 234, 0.9)',
+                            titleFont: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 14
+                            },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' ml';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ml';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+
+        // 更新图表
+        function updateChart() {
+            if (!chart) return;
+
+            const data = [];
+            for (let i = 0; i < 7; i++) {
+                const value = document.getElementById(`day${i}`).value;
+                data.push(value ? parseInt(value) : 0);
+            }
+
+            chart.data.datasets[0].data = data;
+            chart.update('active');
+        }
+
+        // 计算统计数据
+        function calculateStats() {
+            const data = [];
+            for (let i = 0; i < 7; i++) {
+                const value = document.getElementById(`day${i}`).value;
+                data.push(value ? parseInt(value) : 0);
+            }
+
+            const total = data.reduce((sum, val) => sum + val, 0);
+            const avg = total > 0 ? Math.round(total / 7) : 0;
+            const maxVal = Math.max(...data);
+            const days = generateDayLabels();
+            const maxDayIndex = data.indexOf(maxVal);
+
+            document.getElementById('totalWater').textContent = total;
+            document.getElementById('avgWater').textContent = avg;
+            document.getElementById('maxDay').textContent = maxVal > 0 ? days[maxDayIndex] : '-';
+        }
+
+        // 显示消息
+        function showMessage(message, type = 'success') {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+
+            const firstCard = document.querySelector('.card');
+            firstCard.parentNode.insertBefore(messageDiv, firstCard);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        // 保存数据
+        function saveData() {
+            const petName = document.getElementById('petName').value.trim();
+            const data = [];
+
+            for (let i = 0; i < 7; i++) {
+                const value = document.getElementById(`day${i}`).value;
+                data.push(value ? parseInt(value) : 0);
+            }
+
+            const dataToSave = {
+                petName: petName || '我的宠物',
+                waterData: data,
+                date: new Date().toISOString()
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            showMessage('✅ 数据保存成功！');
+            calculateStats();
+        }
+
+        // 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                document.getElementById('petName').value = parsed.petName || '';
+
+                parsed.waterData.forEach((value, index) => {
+                    document.getElementById(`day${index}`).value = value || '';
+                });
+
+                updateChart();
+                calculateStats();
+            }
+        }
+
+        // 清空数据
+        function clearData() {
+            if (confirm('确定要清空所有数据吗？')) {
+                document.getElementById('petName').value = '';
+                for (let i = 0; i < 7; i++) {
+                    document.getElementById(`day${i}`).value = '';
+                }
+                localStorage.removeItem(STORAGE_KEY);
+                updateChart();
+                calculateStats();
+                showMessage('🗑️ 数据已清空', 'success');
+            }
+        }
+
+        // 加载示例数据
+        function loadSampleData() {
+            const sampleData = [250, 300, 280, 350, 320, 290, 310];
+            document.getElementById('petName').value = '小白';
+
+            sampleData.forEach((value, index) => {
+                document.getElementById(`day${index}`).value = value;
+            });
+
+            updateChart();
+            calculateStats();
+            showMessage('✅ 示例数据已加载！');
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initInputs();
+            initChart();
+            loadData();
+        });
+    </script>
+</body>
+</html>
