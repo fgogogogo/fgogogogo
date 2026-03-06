@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialHub - 用户主页</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-hashtag"></i>
+                <span>SocialHub</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#" class="nav-link active">主页</a>
+                <a href="#" class="nav-link">发现</a>
+                <a href="#" class="nav-link">通知</a>
+                <a href="#" class="nav-link">消息</a>
+            </div>
+            <div class="nav-user">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=CurrentUser" alt="用户" class="nav-avatar">
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="main-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <div class="sidebar-user">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=CurrentUser" alt="用户" class="sidebar-avatar">
+                    <div class="sidebar-user-info">
+                        <h4>我的账户</h4>
+                        <p>@myaccount</p>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <a href="#" class="sidebar-link"><i class="fas fa-home"></i> 首页</a>
+                <a href="#" class="sidebar-link"><i class="fas fa-user"></i> 个人资料</a>
+                <a href="#" class="sidebar-link"><i class="fas fa-bookmark"></i> 收藏</a>
+                <a href="#" class="sidebar-link"><i class="fas fa-cog"></i> 设置</a>
+            </div>
+        </aside>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 封面图 -->
+            <div class="cover-photo">
+                <div class="cover-overlay"></div>
+            </div>
+
+            <!-- 个人资料信息 -->
+            <div class="profile-header">
+                <div class="profile-avatar-wrapper">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlexChen" alt="头像" class="profile-avatar">
+                    <button class="edit-avatar-btn"><i class="fas fa-camera"></i></button>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name">Alex Chen</h1>
+                    <p class="profile-username">@alexchen_dev</p>
+                    <p class="profile-bio">全栈开发者 | 技术博主 | 开源爱好者</p>
+                    <div class="profile-location">
+                        <i class="fas fa-map-marker-alt"></i> 北京
+                        <i class="fas fa-link" style="margin-left: 15px;"></i>
+                        <a href="#">alexchen.dev</a>
+                        <i class="far fa-calendar-alt" style="margin-left: 15px;"></i>
+                        2023年1月加入
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-edit-profile">编辑资料</button>
+                    <button class="btn btn-share"><i class="fas fa-share-alt"></i></button>
+                </div>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-number">1,234</span>
+                    <span class="stat-label">帖子</span>
+                </div>
+                <div class="stat-item stat-item-following" onclick="openFollowModal('following')">
+                    <span class="stat-number">567</span>
+                    <span class="stat-label">关注</span>
+                </div>
+                <div class="stat-item stat-item-followers" onclick="openFollowModal('followers')">
+                    <span class="stat-number">2,890</span>
+                    <span class="stat-label">粉丝</span>
+                </div>
+            </div>
+
+            <!-- 标签页 -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="posts">
+                    <i class="fas fa-th-list"></i> 帖子
+                </button>
+                <button class="tab-btn" data-tab="media">
+                    <i class="fas fa-image"></i> 媒体
+                </button>
+                <button class="tab-btn" data-tab="likes">
+                    <i class="fas fa-heart"></i> 喜欢
+                </button>
+            </div>
+
+            <!-- 动态流 -->
+            <div class="feed">
+                <!-- 发布新帖子 -->
+                <div class="post-create">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlexChen" alt="头像" class="post-avatar">
+                    <div class="post-create-content">
+                        <textarea placeholder="有什么新鲜事？" id="postInput"></textarea>
+                        <div class="post-create-actions">
+                            <div class="post-create-tools">
+                                <button class="tool-btn"><i class="far fa-image"></i></button>
+                                <button class="tool-btn"><i class="far fa-smile"></i></button>
+                                <button class="tool-btn"><i class="fas fa-poll"></i></button>
+                            </div>
+                            <button class="btn btn-post" onclick="createPost()">发布</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帖子列表 -->
+                <div id="postsList">
+                    <!-- 帖子会通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧边栏 -->
+        <aside class="right-sidebar">
+            <!-- 搜索框 -->
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="搜索用户、话题...">
+            </div>
+
+            <!-- 推荐关注 -->
+            <div class="widget">
+                <h3>推荐关注</h3>
+                <div class="widget-list">
+                    <div class="widget-user">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" alt="头像" class="widget-avatar">
+                        <div class="widget-user-info">
+                            <h4>Sarah Lee</h4>
+                            <p>@sarahlee</p>
+                        </div>
+                        <button class="btn-follow">关注</button>
+                    </div>
+                    <div class="widget-user">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mike" alt="头像" class="widget-avatar">
+                        <div class="widget-user-info">
+                            <h4>Mike Wang</h4>
+                            <p>@mikewang</p>
+                        </div>
+                        <button class="btn-follow">关注</button>
+                    </div>
+                    <div class="widget-user">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma" alt="头像" class="widget-avatar">
+                        <div class="widget-user-info">
+                            <h4>Emma Zhang</h4>
+                            <p>@emmazhang</p>
+                        </div>
+                        <button class="btn-follow">关注</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热门话题 -->
+            <div class="widget">
+                <h3>热门话题</h3>
+                <div class="trend-list">
+                    <div class="trend-item">
+                        <span class="trend-category">科技</span>
+                        <h4>#AI技术</h4>
+                        <span class="trend-count">12.5K 讨论</span>
+                    </div>
+                    <div class="trend-item">
+                        <span class="trend-category">体育</span>
+                        <h4>#世界杯</h4>
+                        <span class="trend-count">8.3K 讨论</span>
+                    </div>
+                    <div class="trend-item">
+                        <span class="trend-category">娱乐</span>
+                        <h4>#新电影上映</h4>
+                        <span class="trend-count">5.7K 讨论</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 关注/粉丝列表模态框 -->
+    <div id="followModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">关注列表</h2>
+                <button class="modal-close" onclick="closeFollowModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <ul id="followList" class="follow-list">
+                    <!-- 列表项会通过JavaScript动态加载 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
