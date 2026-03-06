@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>篝火效果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #fireCanvas {
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(255, 100, 0, 0.3);
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff6b35;
+            font-family: 'Georgia', serif;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Campfire</h1>
+        <canvas id="fireCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fireCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置画布大小
+        canvas.width = 600;
+        canvas.height = 500;
+
+        // 篝火参数
+        const fireConfig = {
+            baseX: canvas.width / 2,
+            baseY: canvas.height - 100,
+            particleCount: 150,
+            sparkCount: 50,
+            woodWidth: 80,
+            woodHeight: 20
+        };
+
+        // 火焰粒子类
+        class FlameParticle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = fireConfig.baseX + (Math.random() - 0.5) * 40;
+                this.y = fireConfig.baseY - 30;
+                this.size = Math.random() * 15 + 5;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = -(Math.random() * 3 + 2);
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+
+                // 随机火焰颜色
+                const colors = [
+                    { r: 255, g: 100, b: 0 },
+                    { r: 255, g: 150, b: 0 },
+                    { r: 255, g: 200, b: 50 },
+                    { r: 255, g: 50, b: 0 }
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedX *= 0.99;
+                this.speedY *= 0.98;
+                this.life -= this.decay;
+                this.size *= 0.98;
+
+                if (this.life <= 0 || this.size < 1) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+
+                // 创建火焰渐变
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+                gradient.addColorStop(0, `rgba(255, 255, 200, ${this.life})`);
+                gradient.addColorStop(0.3, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life * 0.8})`);
+                gradient.addColorStop(0.6, `rgba(${this.color.r}, ${this.color.g > 50 ? this.color.g - 50 : 0}, 0, ${this.life * 0.5})`);
+                gradient.addColorStop(1, `rgba(${this.color.r}, 0, 0, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // 火花类
+        class Spark {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = fireConfig.baseX + (Math.random() - 0.5) * 30;
+                this.y = fireConfig.baseY - 50;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.speedY = -(Math.random() * 5 + 3);
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedX *= 0.98;
+                this.speedY *= 0.96;
+                this.life -= this.decay;
+
+                if (this.life <= 0) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = `rgba(255, 200, 100, ${this.life})`;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = 'rgba(255, 150, 50, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 绘制木柴
+        function drawWood() {
+            ctx.save();
+
+            // 底部木柴1 - 横放
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(
+                fireConfig.baseX - fireConfig.woodWidth / 2,
+                fireConfig.baseY,
+                fireConfig.woodWidth,
+                fireConfig.woodHeight
+            );
+
+            // 木柴纹理
+            ctx.strokeStyle = '#3a2718';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(fireConfig.baseX - fireConfig.woodWidth / 2 + i * 18, fireConfig.baseY + 3);
+                ctx.lineTo(fireConfig.baseX - fireConfig.woodWidth / 2 + i * 18 + 10, fireConfig.baseY + fireConfig.woodHeight - 3);
+                ctx.stroke();
+            }
+
+            // 左侧倾斜木柴
+            ctx.save();
+            ctx.translate(fireConfig.baseX - 20, fireConfig.baseY);
+            ctx.rotate(-0.4);
+            ctx.fillStyle = '#5a4738';
+            ctx.fillRect(-fireConfig.woodWidth / 2, 0, fireConfig.woodWidth, fireConfig.woodHeight - 5);
+            ctx.restore();
+
+            // 左侧木柴纹理
+            ctx.save();
+            ctx.translate(fireConfig.baseX - 20, fireConfig.baseY);
+            ctx.rotate(-0.4);
+            ctx.strokeStyle = '#4a3728';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-fireConfig.woodWidth / 2 + i * 20, 3);
+                ctx.lineTo(-fireConfig.woodWidth / 2 + i * 20 + 8, fireConfig.woodHeight - 8);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 右侧倾斜木柴
+            ctx.save();
+            ctx.translate(fireConfig.baseX + 20, fireConfig.baseY);
+            ctx.rotate(0.4);
+            ctx.fillStyle = '#5a4738';
+            ctx.fillRect(-fireConfig.woodWidth / 2, 0, fireConfig.woodWidth, fireConfig.woodHeight - 5);
+            ctx.restore();
+
+            // 右侧木柴纹理
+            ctx.save();
+            ctx.translate(fireConfig.baseX + 20, fireConfig.baseY);
+            ctx.rotate(0.4);
+            ctx.strokeStyle = '#4a3728';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-fireConfig.woodWidth / 2 + i * 20, 3);
+                ctx.lineTo(-fireConfig.woodWidth / 2 + i * 20 + 8, fireConfig.woodHeight - 8);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        // 绘制地面
+        function drawGround() {
+            ctx.save();
+            const groundGradient = ctx.createLinearGradient(
+                0, fireConfig.baseY + fireConfig.woodHeight,
+                0, canvas.height
+            );
+            groundGradient.addColorStop(0, '#2a2a2a');
+            groundGradient.addColorStop(1, '#1a1a1a');
+
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, fireConfig.baseY + fireConfig.woodHeight, canvas.width, canvas.height - (fireConfig.baseY + fireConfig.woodHeight));
+
+            // 石头圆圈
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const stoneX = fireConfig.baseX + Math.cos(angle) * 100;
+                const stoneY = fireConfig.baseY + 30 + Math.sin(angle) * 30;
+
+                ctx.fillStyle = '#3a3a3a';
+                ctx.beginPath();
+                ctx.ellipse(stoneX, stoneY, 25, 18, angle, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#4a4a4a';
+                ctx.beginPath();
+                ctx.ellipse(stoneX - 2, stoneY - 2, 20, 14, angle, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 绘制背景光晕
+        function drawGlow() {
+            ctx.save();
+            const glowGradient = ctx.createRadialGradient(
+                fireConfig.baseX, fireConfig.baseY - 50,
+                0,
+                fireConfig.baseX, fireConfig.baseY - 50,
+                150
+            );
+            glowGradient.addColorStop(0, 'rgba(255, 100, 0, 0.3)');
+            glowGradient.addColorStop(0.5, 'rgba(255, 50, 0, 0.1)');
+            glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, fireConfig.baseY - 200, canvas.width, 250);
+            ctx.restore();
+        }
+
+        // 添加闪烁效果
+        let flickerIntensity = 0;
+        function updateFlicker() {
+            flickerIntensity = Math.sin(Date.now() * 0.01) * 0.2 + 0.8;
+        }
+
+        // 初始化粒子
+        const flames = [];
+        for (let i = 0; i < fireConfig.particleCount; i++) {
+            flames.push(new FlameParticle());
+        }
+
+        const sparks = [];
+        for (let i = 0; i < fireConfig.sparkCount; i++) {
+            sparks.push(new Spark());
+        }
+
+        // 动画循环
+        function animate() {
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新闪烁
+            updateFlicker();
+
+            // 绘制场景
+            drawGlow();
+            drawGround();
+            drawWood();
+
+            // 绘制火焰
+            flames.sort((a, b) => a.y - b.y);
+            flames.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // 绘制火花
+            sparks.forEach(spark => {
+                spark.update();
+                spark.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 开始动画
+        animate();
+    </script>
+</body>
+</html>
