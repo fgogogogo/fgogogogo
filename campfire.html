@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>篝火燃烧动效</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a2e 100%);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .title {
+            position: absolute;
+            top: 20px;
+            color: #ff6b35;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🔥 篝火燃烧动效</div>
+    <canvas id="fireCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('fireCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置画布大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 火焰粒子类
+        class FlameParticle {
+            constructor(centerX, baseY) {
+                this.centerX = centerX;
+                this.baseY = baseY;
+                this.reset();
+            }
+
+            reset() {
+                // 从中心点随机偏移
+                this.x = this.centerX + (Math.random() - 0.5) * 40;
+                this.y = this.baseY + Math.random() * 20;
+
+                // 向上运动速度
+                this.speedY = 2 + Math.random() * 3;
+
+                // 水平摆动
+                this.speedX = (Math.random() - 0.5) * 1;
+
+                // 粒子大小
+                this.size = 8 + Math.random() * 20;
+
+                // 初始透明度
+                this.alpha = 0.8 + Math.random() * 0.2;
+
+                // 颜色 (从黄到红)
+                this.hue = 20 + Math.random() * 30; // 橙色到黄色
+
+                // 摆动参数
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.05 + Math.random() * 0.05;
+
+                // 衰减速度
+                this.decay = 0.008 + Math.random() * 0.012;
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+
+                // 逐渐变小和变透明
+                this.size *= 0.98;
+                this.alpha -= this.decay;
+
+                // 颜色从黄色渐变到红色
+                if (this.alpha < 0.5) {
+                    this.hue = 10 + Math.random() * 15; // 红色
+                }
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+
+                // 绘制火焰粒子
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+
+                const color = `hsla(${this.hue}, 100%, ${50 + this.alpha * 30}%, ${this.alpha})`;
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, `hsla(${this.hue}, 100%, 40%, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            isDead() {
+                return this.alpha <= 0 || this.size <= 1;
+            }
+        }
+
+        // 火星粒子类
+        class SparkParticle {
+            constructor(centerX, baseY) {
+                this.centerX = centerX;
+                this.baseY = baseY;
+                this.reset();
+            }
+
+            reset() {
+                this.x = this.centerX + (Math.random() - 0.5) * 30;
+                this.y = this.baseY - Math.random() * 50;
+                this.speedY = 1 + Math.random() * 2;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.size = 1 + Math.random() * 2;
+                this.alpha = 1;
+                this.decay = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.x += this.speedX;
+                this.speedX *= 0.99;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = '#ffcc00';
+                ctx.shadowColor = '#ff6600';
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            isDead() {
+                return this.alpha <= 0;
+            }
+        }
+
+        // 木柴
+        class Log {
+            constructor(x, y, angle, length) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.length = length;
+                this.width = 12;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // 木柴主体
+                const gradient = ctx.createLinearGradient(-this.length/2, 0, this.length/2, 0);
+                gradient.addColorStop(0, '#4a3728');
+                gradient.addColorStop(0.5, '#6b4423');
+                gradient.addColorStop(1, '#4a3728');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-this.length/2, -this.width/2, this.length, this.width);
+
+                // 木柴纹理
+                ctx.strokeStyle = '#3a2718';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    const offset = -this.length/2 + 20 + i * 20;
+                    ctx.moveTo(offset, -this.width/2 + 2);
+                    ctx.lineTo(offset + 10, this.width/2 - 2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // 闪烁星星
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height * 0.6;
+                this.size = 0.5 + Math.random() * 1;
+                this.alpha = Math.random();
+                this.twinkleSpeed = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                this.alpha += this.twinkleSpeed;
+                if (this.alpha > 1 || this.alpha < 0) {
+                    this.twinkleSpeed *= -1;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.abs(this.alpha);
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 主场景
+        class CampfireScene {
+            constructor() {
+                this.centerX = canvas.width / 2;
+                this.baseY = canvas.height * 0.65;
+
+                // 火焰粒子
+                this.flames = [];
+                this.maxFlames = 150;
+
+                // 火星粒子
+                this.sparks = [];
+                this.maxSparks = 50;
+
+                // 木柴
+                this.logs = this.createLogs();
+
+                // 星星
+                this.stars = [];
+                for (let i = 0; i < 100; i++) {
+                    this.stars.push(new Star());
+                }
+            }
+
+            createLogs() {
+                const logs = [];
+                const centerX = this.centerX;
+                const baseY = this.baseY + 30;
+
+                // 底层两根平行木柴
+                logs.push(new Log(centerX - 40, baseY, 0.15, 120));
+                logs.push(new Log(centerX + 40, baseY, -0.15, 120));
+
+                // 上面交叉木柴
+                logs.push(new Log(centerX, baseY - 15, Math.PI / 6, 110));
+                logs.push(new Log(centerX, baseY - 15, -Math.PI / 6, 110));
+
+                return logs;
+            }
+
+            update() {
+                // 更新中心位置
+                this.centerX = canvas.width / 2;
+                this.baseY = canvas.height * 0.65;
+
+                // 更新木柴位置
+                this.logs = this.createLogs();
+
+                // 添加新火焰粒子
+                while (this.flames.length < this.maxFlames) {
+                    this.flames.push(new FlameParticle(this.centerX, this.baseY));
+                }
+
+                // 添加新火星粒子
+                while (this.sparks.length < this.maxSparks) {
+                    if (Math.random() < 0.1) {
+                        this.sparks.push(new SparkParticle(this.centerX, this.baseY));
+                    }
+                    break;
+                }
+
+                // 更新火焰粒子
+                this.flames = this.flames.filter(flame => {
+                    flame.update();
+                    return !flame.isDead();
+                });
+
+                // 更新火星粒子
+                this.sparks = this.sparks.filter(spark => {
+                    spark.update();
+                    return !spark.isDead();
+                });
+
+                // 更新星星
+                this.stars.forEach(star => star.update());
+            }
+
+            draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 绘制星空
+                this.stars.forEach(star => star.draw());
+
+                // 绘制地面
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+
+                // 绘制发光效果
+                const glowGradient = ctx.createRadialGradient(
+                    this.centerX, this.baseY - 50, 0,
+                    this.centerX, this.baseY - 50, 200
+                );
+                glowGradient.addColorStop(0, 'rgba(255, 100, 0, 0.15)');
+                glowGradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.05)');
+                glowGradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
+
+                ctx.fillStyle = glowGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 绘制木柴
+                this.logs.forEach(log => log.draw());
+
+                // 绘制火焰
+                this.flames.forEach(flame => flame.draw());
+
+                // 绘制火星
+                this.sparks.forEach(spark => spark.draw());
+            }
+
+            animate() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // 启动动画
+        const scene = new CampfireScene();
+        scene.animate();
+    </script>
+</body>
+</html>
