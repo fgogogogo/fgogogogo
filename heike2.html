@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberNexus | H3ck3r N3tw0rk Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #00ff41;
+            --dark-green: #003b00;
+            --matrix-bg: #0d0208;
+            --terminal-bg: rgba(0, 20, 0, 0.9);
+            --glitch-cyan: #00ffff;
+            --glitch-magenta: #ff00ff;
+        }
+
+        body {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            background: var(--matrix-bg);
+            color: var(--primary-green);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Matrix Rain Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        /* Glitch Effect for Header */
+        .glitch {
+            position: relative;
+            animation: glitch-skew 3s infinite linear alternate-reverse;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch-effect 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+            color: var(--glitch-cyan);
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+            transform: translate(-2px, -2px);
+        }
+
+        .glitch::after {
+            animation: glitch-effect 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+            color: var(--glitch-magenta);
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+            transform: translate(2px, 2px);
+        }
+
+        @keyframes glitch-effect {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, 3px); }
+            80% { transform: translate(3px, -3px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(0deg); }
+            21% { transform: skew(1deg); }
+            22% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(13, 2, 8, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid var(--dark-green);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            text-shadow: 0 0 10px var(--primary-green), 0 0 20px var(--primary-green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--primary-green);
+            text-decoration: none;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-green);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            text-shadow: 0 0 8px var(--primary-green);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            margin-bottom: 1rem;
+            letter-spacing: 8px;
+            line-height: 1.2;
+        }
+
+        .hero .subtitle {
+            font-size: clamp(1rem, 3vw, 1.8rem);
+            color: rgba(0, 255, 65, 0.7);
+            margin-bottom: 2rem;
+            letter-spacing: 4px;
+        }
+
+        .typing-effect {
+            overflow: hidden;
+            border-right: 3px solid var(--primary-green);
+            white-space: nowrap;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--primary-green) }
+        }
+
+        .cta-button {
+            margin-top: 2rem;
+            padding: 1.2rem 3rem;
+            background: transparent;
+            border: 2px solid var(--primary-green);
+            color: var(--primary-green);
+            font-family: inherit;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-green);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .cta-button:hover::before {
+            left: 0;
+        }
+
+        .cta-button:hover {
+            color: var(--matrix-bg);
+            box-shadow: 0 0 20px var(--primary-green);
+        }
+
+        /* Terminal Section */
+        .terminal-section {
+            padding: 8rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .terminal-window {
+            background: var(--terminal-bg);
+            border: 1px solid var(--dark-green);
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: rgba(0, 50, 0, 0.5);
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--dark-green);
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse-glow 2s infinite;
+        }
+
+        .terminal-button:nth-child(1) { background: #ff5f56; }
+        .terminal-button:nth-child(2) { background: #ffbd2e; }
+        .terminal-button:nth-child(3) { background: #27ca40; }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .terminal-content {
+            padding: 2rem;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .terminal-line {
+            margin-bottom: 1rem;
+            display: flex;
+        }
+
+        .terminal-prompt {
+            color: var(--glitch-cyan);
+            margin-right: 1rem;
+        }
+
+        .terminal-command {
+            color: var(--primary-green);
+        }
+
+        .terminal-output {
+            color: rgba(0, 255, 65, 0.8);
+            white-space: pre-wrap;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 4rem;
+            letter-spacing: 5px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .feature-card {
+            background: rgba(0, 20, 0, 0.6);
+            border: 1px solid var(--dark-green);
+            padding: 2.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-card p {
+            color: rgba(0, 255, 65, 0.7);
+            font-size: 0.95rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, transparent, rgba(0, 30, 0, 0.5), transparent);
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .stat-item h3 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px var(--primary-green);
+        }
+
+        .stat-item p {
+            color: rgba(0, 255, 65, 0.7);
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--dark-green);
+            text-align: center;
+            background: rgba(0, 20, 0, 0.3);
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .social-links a {
+            color: var(--primary-green);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            text-shadow: 0 0 15px var(--primary-green);
+            transform: scale(1.2);
+        }
+
+        .copyright {
+            color: rgba(0, 255, 65, 0.5);
+            font-size: 0.85rem;
+        }
+
+        /* Scanning Line Effect */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+            animation: scan 8s linear infinite;
+            z-index: 9999;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            nav {
+                padding: 1rem 1.5rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+                font-size: 0.85rem;
+            }
+
+            .hero h1 {
+                letter-spacing: 3px;
+            }
+
+            .hero .subtitle {
+                letter-spacing: 2px;
+            }
+
+            .terminal-content {
+                font-size: 0.85rem;
+                padding: 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Leetspeak Decorative Elements */
+        .leet-decoration {
+            position: fixed;
+            font-size: 0.7rem;
+            color: rgba(0, 255, 65, 0.1);
+            pointer-events: none;
+            user-select: none;
+            font-family: monospace;
+        }
+
+        .leet-1 { top: 10%; left: 5%; }
+        .leet-2 { top: 30%; right: 3%; }
+        .leet-3 { bottom: 20%; left: 8%; }
+        .leet-4 { top: 60%; right: 6%; }
+        .leet-5 { bottom: 40%; right: 10%; }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="scan-line"></div>
+
+    <!-- Leetspeak Decorative Elements -->
+    <div class="leet-decoration leet-1">0x1F</div>
+    <div class="leet-decoration leet-2">H4CK</div>
+    <div class="leet-decoration leet-3">N3XUS</div>
+    <div class="leet-decoration leet-4">1337</div>
+    <div class="leet-decoration leet-5">0x777</div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo glitch" data-text="CyberN3xus">CyberN3xus</div>
+        <ul class="nav-links">
+            <li><a href="#features">F34tures</a></li>
+            <li><a href="#terminal">T3rminal</a></li>
+            <li><a href="#community">C0mmunity</a></li>
+            <li><a href="#access">Acc3ss</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1 class="glitch" data-text="CyberNexus">CyberNexus</h1>
+        <p class="subtitle typing-effect">Welcome to the Digital Underground...</p>
+        <p style="max-width: 600px; margin-top: 2rem; color: rgba(0, 255, 65, 0.7);">
+            Where modern cybersecurity meets the spirit of 90s hacker culture. Learn. Connect. Evolve.
+        </p>
+        <button class="cta-button" onclick="initiateSequence()">Initialize Sequence</button>
+    </section>
+
+    <!-- Terminal Section -->
+    <section class="terminal-section" id="terminal">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+            </div>
+            <div class="terminal-content" id="terminal-content">
+                <div class="terminal-line">
+                    <span class="terminal-prompt">root@cybernexus:~$</span>
+                    <span class="terminal-command">./init_platform.sh</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-output">[+] Initializing CyberNexus platform...
+[+] Loading security modules... DONE
+[+] Establishing encrypted connections... DONE
+[*>] Welcome, fellow explorer.
+[*>] "The Matrix has its gates..." - Unknown
+[?] Ready to begin your journey?</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title glitch" data-text="PLATFORM FEATURES">PLATFORM FEATURES</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>S3curity Research</h3>
+                <p>Access cutting-edge cybersecurity research, vulnerability databases, and penetration testing tools. Stay ahead of emerging threats.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>N3twork Analysis</h3>
+                <p>Advanced network traffic analysis, protocol inspection, and real-time monitoring capabilities for the modern security professional.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💻</div>
+                <h3>C0ding Labs</h3>
+                <p>Interactive coding environments for exploit development, reverse engineering, and security tool creation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Elite Community</h3>
+                <p>Connect with like-minded security researchers, share knowledge, and collaborate on projects in our encrypted forums.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>CTF Arena</h3>
+                <p>Compete in Capture The Flag challenges, hone your skills, and climb the global leaderboard. From beginner to elite levels.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Knowl3dge Base</h3>
+                <p>Comprehensive documentation, tutorials, and guides covering everything from basic concepts to advanced techniques.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>13,337</h3>
+                <p>Active Members</p>
+            </div>
+            <div class="stat-item">
+                <h3>5,000+</h3>
+                <p>Security Tools</p>
+            </div>
+            <div class="stat-item">
+                <h3>24/7</h3>
+                <p>Community Support</p>
+            </div>
+            <div class="stat-item">
+                <h3>99.9%</h3>
+                <p>Uptime Guarantee</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="social-links">
+                <a href="#" title="GitHub">▤</a>
+                <a href="#" title="Discord">◆</a>
+                <a href="#" title="Twitter">╋</a>
+                <a href="#" title="IRC">⌘</a>
+            </div>
+            <p class="copyright">&copy; 2025 CyberNexus | There Is No Spoon | All Rights Reserved</p>
+            <p class="copyright" style="font-size: 0.7rem; margin-top: 0.5rem;">
+                "The only true security is the one you build yourself."
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Characters falling (modern unicode + katakana + nums)
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>{}[]|/\\@#$%^&*';
+        const charArray = chars.split('');
+        const fontSize = 14;
+        let columns = canvas.width / fontSize;
+        let drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(13, 2, 8, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                // Random brightness for depth effect
+                const brightness = Math.random();
+                if (brightness > 0.95) {
+                    ctx.fillStyle = '#ffffff';
+                } else if (brightness > 0.8) {
+                    ctx.fillStyle = '#00ff41';
+                } else {
+                    ctx.fillStyle = 'rgba(0, 255, 65, 0.5)';
+                }
+
+                ctx.fillText(text, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 35);
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Terminal Animation
+        function typeWriter(text, element, delay = 30) {
+            return new Promise(resolve => {
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(type, delay);
+                    } else {
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        // Initialize Button Action
+        function initiateSequence() {
+            const terminal = document.getElementById('terminal-content');
+            terminal.innerHTML = '';
+
+            const sequence = [
+                { prompt: 'root@cybernexus:~$', command: './initialize_access.sh' },
+                { prompt: '', output: '[*] Establishing secure connection...' },
+                { prompt: '', output: '[*] Verifying credentials...' },
+                { prompt: '', output: '[+] Connection established' },
+                { prompt: '', output: '[*>] Access granted. Welcome to CyberNexus.' },
+                { prompt: '>', output: 'Press any key to continue...' }
+            ];
+
+            let delay = 0;
+            sequence.forEach((line, index) => {
+                setTimeout(() => {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'terminal-line';
+
+                    if (line.prompt) {
+                        const promptSpan = document.createElement('span');
+                        promptSpan.className = 'terminal-prompt';
+                        promptSpan.textContent = line.prompt;
+                        lineDiv.appendChild(promptSpan);
+
+                        if (line.command) {
+                            const commandSpan = document.createElement('span');
+                            commandSpan.className = 'terminal-command';
+                            commandSpan.textContent = line.command;
+                            lineDiv.appendChild(commandSpan);
+                        }
+                    } else if (line.output) {
+                        const outputSpan = document.createElement('span');
+                        outputSpan.className = 'terminal-output';
+                        outputSpan.textContent = line.output;
+                        lineDiv.appendChild(outputSpan);
+                    }
+
+                    terminal.appendChild(lineDiv);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }, delay);
+                delay += 800;
+            });
+
+            // Scroll to terminal
+            setTimeout(() => {
+                document.getElementById('terminal').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+
+        // Dynamic background speed based on mouse position
+        let matrixSpeed = 35;
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            matrixSpeed = 20 + (x * 30);
+        });
+
+        // Glitch effect on hover for feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.animation = 'glitch-skew 0.3s ease';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.animation = '';
+            });
+        });
+
+        // Easter egg: Konami code
+        let konamiCode = [];
+        const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.key);
+            konamiCode = konamiCode.slice(-10);
+
+            if (konamiCode.join(',') === konamiSequence.join(',')) {
+                document.body.style.filter = 'hue-rotate(180deg)';
+                setTimeout(() => {
+                    document.body.style.filter = '';
+                }, 2000);
+            }
+        });
+
+        console.log('%c Welcome to CyberNexus ', 'background: #00ff41; color: #0d0208; font-size: 20px; font-family: monospace;');
+        console.log('%c The Matrix has you...', 'color: #00ff41; font-size: 14px; font-family: monospace;');
+    </script>
+</body>
+</html>
