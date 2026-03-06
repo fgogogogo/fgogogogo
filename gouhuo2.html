@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>篝火燃烧效果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a3a 100%);
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('fireCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置画布大小
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 篝火中心位置
+        const centerX = canvas.width / 2;
+        const groundY = canvas.height * 0.75;
+
+        // 粒子数组
+        const particles = [];
+        const sparks = [];
+
+        // 火焰粒子类
+        class FireParticle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                // 从篝火底部产生
+                this.x = centerX + (Math.random() - 0.5) * 60;
+                this.y = groundY;
+
+                // 向上的速度
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = -Math.random() * 4 - 2;
+
+                // 粒子属性
+                this.size = Math.random() * 30 + 20;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+
+                // 颜色变化（从黄色到红色再到透明）
+                this.hue = Math.random() * 30 + 20; // 橙黄色调
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.size *= 0.98;
+
+                // 左右摇摆
+                this.vx += (Math.random() - 0.5) * 0.3;
+
+                if (this.life <= 0 || this.size < 1) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const alpha = this.life * 0.6;
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+
+                // 颜色随生命周期变化：黄 → 橙 → 红 → 暗红
+                const hue = this.hue + (1 - this.life) * 20;
+                gradient.addColorStop(0, `hsla(${hue}, 100%, 70%, ${alpha})`);
+                gradient.addColorStop(0.3, `hsla(${hue + 10}, 100%, 50%, ${alpha * 0.8})`);
+                gradient.addColorStop(0.6, `hsla(${hue + 20}, 100%, 40%, ${alpha * 0.5})`);
+                gradient.addColorStop(1, `hsla(${hue + 30}, 100%, 30%, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // 火花粒子类
+        class Spark {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = centerX + (Math.random() - 0.5) * 40;
+                this.y = groundY - 50;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = -Math.random() * 5 - 3;
+                this.size = Math.random() * 3 + 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.05; // 重力
+                this.life -= this.decay;
+
+                if (this.life <= 0) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, ${Math.floor(200 + this.life * 55)}, 100, ${this.life})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 发光效果
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = `rgba(255, 150, 50, ${this.life * 0.5})`;
+            }
+        }
+
+        // 木头类
+        class Log {
+            constructor(x, angle, length) {
+                this.x = x;
+                this.y = groundY;
+                this.angle = angle;
+                this.length = length;
+                this.width = 15;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // 木头主体
+                const gradient = ctx.createLinearGradient(0, -this.width/2, 0, this.width/2);
+                gradient.addColorStop(0, '#4a3728');
+                gradient.addColorStop(0.5, '#6b4423');
+                gradient.addColorStop(1, '#3a2718');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-this.length/2, -this.width/2, this.length, this.width);
+
+                // 木头纹理
+                ctx.strokeStyle = '#2a1708';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 5; i++) {
+                    const lineX = -this.length/2 + Math.random() * this.length;
+                    ctx.beginPath();
+                    ctx.moveTo(lineX, -this.width/2);
+                    ctx.lineTo(lineX, this.width/2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // 初始化粒子
+        for (let i = 0; i < 80; i++) {
+            const particle = new FireParticle();
+            particle.y = groundY - Math.random() * 200; // 分散初始位置
+            particles.push(particle);
+        }
+
+        // 初始化火花
+        for (let i = 0; i < 30; i++) {
+            const spark = new Spark();
+            spark.y = groundY - Math.random() * 300;
+            sparks.push(spark);
+        }
+
+        // 创建木柴
+        const logs = [
+            new Log(centerX - 30, -0.3, 100),
+            new Log(centerX + 30, 0.3, 100),
+            new Log(centerX, 0, 120)
+        ];
+
+        // 绘制地面
+        function drawGround() {
+            const gradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+            gradient.addColorStop(0, '#2a2a3a');
+            gradient.addColorStop(1, '#1a1a2a');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+            // 地面光晕
+            const glowGradient = ctx.createRadialGradient(centerX, groundY, 0, centerX, groundY, 200);
+            glowGradient.addColorStop(0, 'rgba(255, 150, 50, 0.2)');
+            glowGradient.addColorStop(1, 'rgba(255, 150, 50, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+        }
+
+        // 绘制星星
+        const stars = [];
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * groundY,
+                size: Math.random() * 2,
+                twinkle: Math.random() * Math.PI * 2
+            });
+        }
+
+        function drawStars(time) {
+            stars.forEach(star => {
+                const brightness = 0.5 + Math.sin(time * 0.001 + star.twinkle) * 0.5;
+                ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // 主动画循环
+        let time = 0;
+        function animate() {
+            time++;
+
+            // 清除画布
+            ctx.fillStyle = 'rgba(10, 10, 26, 0.3)'; // 拖尾效果
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制星星
+            drawStars(time);
+
+            // 绘制地面
+            drawGround();
+
+            // 绘制木柴
+            logs.forEach(log => log.draw());
+
+            // 设置混合模式为叠加，产生发光效果
+            ctx.globalCompositeOperation = 'lighter';
+
+            // 更新和绘制火焰粒子
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // 更新和绘制火花
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(255, 150, 50, 0.8)';
+            sparks.forEach(spark => {
+                spark.update();
+                spark.draw();
+            });
+
+            // 恢复混合模式
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // 窗口大小改变时重新设置画布
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
