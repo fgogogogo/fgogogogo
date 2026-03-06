@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图标记点 - 店铺/景点位置</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>📍 地图标记管理</h1>
+
+            <div class="add-marker-form">
+                <h2>添加新标记</h2>
+                <input type="text" id="markerName" placeholder="标记名称（如：星巴克咖啡）" />
+                <input type="text" id="markerType" placeholder="类型（店铺/景点）" />
+                <input type="text" id="markerAddress" placeholder="地址（可选）" />
+                <input type="text" id="markerPhone" placeholder="电话（可选）" />
+                <textarea id="markerDesc" placeholder="描述信息（可选）" rows="3"></textarea>
+                <button id="addMarkerBtn">➕ 添加标记</button>
+            </div>
+
+            <div class="marker-list">
+                <h2>标记列表 (<span id="markerCount">0</span>)</h2>
+                <div id="markerListContainer"></div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-info">
+                <p>💡 点击地图任意位置添加标记，或在左侧表单填写信息</p>
+                <p id="coordinates"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

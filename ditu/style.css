@@ -1,0 +1,348 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    background: #f5f5f5;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    width: 350px;
+    background: white;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.sidebar h1 {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.add-marker-form {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.add-marker-form h2 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.add-marker-form input,
+.add-marker-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: border-color 0.3s;
+}
+
+.add-marker-form input:focus,
+.add-marker-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.add-marker-form textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+#addMarkerBtn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#addMarkerBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#addMarkerBtn:active {
+    transform: translateY(0);
+}
+
+/* 标记列表样式 */
+.marker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.marker-list h2 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#markerListContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.marker-item {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 3px solid #667eea;
+}
+
+.marker-item:hover {
+    background: #f0f0f0;
+    transform: translateX(4px);
+}
+
+.marker-item-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.marker-item-type {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #667eea;
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+
+.marker-item-type.scenery {
+    background: #f093fb;
+}
+
+.marker-item-address {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.marker-item-desc {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.marker-item-coords {
+    font-size: 11px;
+    color: #999;
+    font-family: monospace;
+}
+
+.marker-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.marker-item-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.marker-item-btn.delete {
+    background: #ff4757;
+    color: white;
+}
+
+.marker-item-btn.delete:hover {
+    background: #ee3344;
+}
+
+/* 地图容器样式 */
+.map-container {
+    flex: 1;
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.map-info {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    z-index: 1000;
+}
+
+.map-info p {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.map-info p:first-child {
+    color: #667eea;
+    font-weight: 600;
+}
+
+#coordinates {
+    font-family: monospace;
+    color: #888;
+}
+
+/* 自定义标记样式 */
+.custom-marker {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker.scenery {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.custom-marker:hover {
+    transform: scale(1.2);
+    transition: transform 0.3s;
+}
+
+/* 弹出窗口样式 */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+}
+
+.leaflet-popup-content {
+    margin: 12px 16px;
+    min-width: 200px;
+}
+
+.popup-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.popup-type {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #667eea;
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.popup-type.scenery {
+    background: #f093fb;
+}
+
+.popup-info {
+    font-size: 13px;
+    color: #666;
+    margin: 4px 0;
+}
+
+.popup-info strong {
+    color: #333;
+}
+
+/* 滚动条样式 */
+.sidebar::-webkit-scrollbar,
+.marker-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.marker-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.marker-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.marker-list::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-height: 40vh;
+    }
+
+    .map-container {
+        height: 60vh;
+    }
+
+    .map-info {
+        bottom: 10px;
+        padding: 8px 16px;
+    }
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-state-text {
+    font-size: 14px;
+}
