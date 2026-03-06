@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宠物饮水量追踪器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="pet-avatar">🐱</div>
+                <div>
+                    <h1>我的宠物饮水记录</h1>
+                    <p class="subtitle">保持健康，从喝水开始 💧</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <p class="stat-label">7天总饮水量</p>
+                    <p class="stat-value" id="totalWater">0 ml</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-info">
+                    <p class="stat-label">日均饮水量</p>
+                    <p class="stat-value" id="avgWater">0 ml</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-info">
+                    <p class="stat-label">最高单日</p>
+                    <p class="stat-value" id="maxWater">0 ml</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="section-header">
+                <h2>7天饮水趋势</h2>
+                <select id="petType" class="pet-selector">
+                    <option value="cat">猫咪 🐱</option>
+                    <option value="dog">狗狗 🐕</option>
+                    <option value="rabbit">兔子 🐰</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="waterChart"></canvas>
+            </div>
+        </div>
+
+        <div class="data-input">
+            <h3>📝 记录今日饮水</h3>
+            <div class="input-group">
+                <input type="number" id="waterAmount" placeholder="输入饮水量 (ml)" min="0">
+                <button onclick="addWaterRecord()">添加记录</button>
+            </div>
+        </div>
+
+        <div class="data-table">
+            <h3>📋 详细记录</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>饮水量 (ml)</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tips-section">
+            <h3>💡 饮水小贴士</h3>
+            <div class="tips" id="tipsContent">
+                <p>💪 成年猫咪每天需要约40-60ml/kg的水</p>
+                <p>🐕 狗狗每天需要约50-100ml/kg的水</p>
+                <p>🌡️ 夏天或运动后需要更多的水</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
