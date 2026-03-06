@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberNexus | Where Digital Rebels Connect</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            --neon-green: #00ff41;
+            --neon-cyan: #00fff5;
+            --neon-purple: #bc13fe;
+            --dark-bg: #0a0a0f;
+            --darker-bg: #050508;
+            --card-bg: rgba(15, 15, 25, 0.8);
+            --text-primary: #e0e0e0;
+            --text-secondary: #888;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Matrix Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-green);
+            border-radius: 4px;
+        }
+
+        /* Glitch Effect */
+        .glitch {
+            position: relative;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch-1 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+
+        .glitch::after {
+            animation: glitch-2 3s infinite linear alternate-reverse;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(-2px, 2px); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(10, 10, 15, 0.7);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-green);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 6rem 5% 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 65, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+            margin-bottom: 2rem;
+            background: rgba(0, 255, 245, 0.05);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--neon-green) 50%, var(--neon-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.4rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .leetspeak-accent {
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+            color: var(--dark-bg);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--neon-green);
+            border: 2px solid var(--neon-green);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Stats Section */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            padding: 3rem 5%;
+            background: var(--darker-bg);
+            border-top: 1px solid rgba(0, 255, 65, 0.1);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--neon-green);
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 5%;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            color: var(--neon-cyan);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            border-radius: 12px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        .feature-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .feature-code {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 255, 245, 0.1);
+        }
+
+        /* Terminal Section */
+        .terminal-section {
+            padding: 6rem 5%;
+            background: var(--darker-bg);
+        }
+
+        .terminal-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-header {
+            background: rgba(0, 255, 65, 0.1);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+        }
+
+        .terminal-button:nth-child(2) {
+            background: #ffbd2e;
+        }
+
+        .terminal-button:nth-child(3) {
+            background: #27ca40;
+        }
+
+        .terminal-title {
+            margin-left: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .terminal-body {
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            min-height: 300px;
+        }
+
+        .terminal-line {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: var(--neon-green);
+            margin-right: 1rem;
+        }
+
+        .terminal-command {
+            color: var(--neon-cyan);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            margin-left: 0;
+        }
+
+        .terminal-output .success {
+            color: var(--neon-green);
+        }
+
+        .terminal-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: var(--neon-green);
+            animation: blink 1s infinite;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Community Section */
+        .community {
+            padding: 6rem 5%;
+        }
+
+        .community-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .community-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .community-card:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 40px rgba(0, 255, 245, 0.1);
+        }
+
+        .community-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-bg);
+            margin-bottom: 1rem;
+        }
+
+        .community-quote {
+            color: var(--text-primary);
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .community-author {
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+        }
+
+        .community-role {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 5%;
+            text-align: center;
+            background: linear-gradient(180deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+        }
+
+        .cta-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .email-input-group {
+            display: flex;
+            gap: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+
+        .email-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            min-width: 250px;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        .email-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 5%;
+            background: var(--darker-bg);
+            border-top: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .footer-tagline {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .footer-right {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--neon-green);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-bottom p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: clamp(2rem, 10vw, 3.5rem);
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .email-input-group {
+                flex-direction: column;
+            }
+
+            .email-input {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .cta-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        /* Floating Elements */
+        .floating-binary {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--neon-green);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">CYBERNEXUS</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#terminal">Terminal</a>
+            <a href="#community">Community</a>
+            <a href="#join">Join</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-badge">Initialize_v2.0.24</div>
+        <h1 class="hero-title glitch" data-text="CyberNexus">CyberNexus</h1>
+        <p class="hero-subtitle">
+            Where digital <span class="leetspeak-accent">r3b3ls</span> converge to shape the future.
+            Join the underground network for <span class="leetspeak-accent">1337</span> developers,
+            security researchers, and <span class="leetspeak-accent">cyph3rpunks</span>.
+        </p>
+        <div class="cta-group">
+            <a href="#join" class="btn btn-primary">/INITIALIZE</a>
+            <a href="#features" class="btn btn-secondary">EXPLORE_SYSTEM</a>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-value" data-target="1337">0</div>
+            <div class="stat-label">Active Members</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" data-target="500">0</div>
+            <div class="stat-label">Projects Launched</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" data-target="99">0</div>
+            <div class="stat-label">Security Score</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" data-target="24">0</div>
+            <div class="stat-label">Hour Support</div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <p class="section-tag">/* SYSTEM_CAPABILITIES */</p>
+            <h2 class="section-title">Core Modules</h2>
+            <p class="section-description">
+                Everything you need to navigate the digital frontier. Built by rebels, for rebels.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3 class="feature-title">Zero-Knowledge Architecture</h3>
+                <p class="feature-description">
+                    Your data remains encrypted at rest and in transit. We can't see what you share, ensuring complete privacy and deniability.
+                </p>
+                <div class="feature-code">
+                    &gt; encrypt(plaintext) = ciphertext<br>
+                    &gt; key_exists_on(your_device) = true
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Decentralized Grid</h3>
+                <p class="feature-description">
+                    No single point of failure. Our distributed architecture ensures uptime even when authorities try to shut us down.
+                </p>
+                <div class="feature-code">
+                    &gt; redundancy_level = 99.99%<br>
+                    &gt; nodes = distributed_globally
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🕹️</div>
+                <h3 class="feature-title">Capture The Flag Arena</h3>
+                <p class="feature-description">
+                    Practice your skills on our live-fire cybersecurity challenges. Compete with others and climb the global leaderboard.
+                </p>
+                <div class="feature-code">
+                    &gt; challenges = updated_daily<br>
+                    &gt; prizes = crypto_and_reputation
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3 class="feature-title">Encrypted Comms</h3>
+                <p class="feature-description">
+                    End-to-end encrypted chat rooms, forums, and direct messaging. Organize, collaborate, and share without surveillance.
+                </p>
+                <div class="feature-code">
+                    &gt; protocol = signal_protocol<br>
+                    &gt; metadata_leakage = null
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <h3 class="feature-title">Hacker's Toolkit</h3>
+                <p class="feature-description">
+                    Access curated tools for penetration testing, network analysis, cryptography, and operational security. All open source.
+                </p>
+                <div class="feature-code">
+                    &gt; tools = audited & verified<br>
+                    &gt; licensing = GPL_v3/MIT
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Dark Web Intelligence</h3>
+                <p class="feature-description">
+                    Real-time threat intelligence from the darknet and deep web. Stay ahead of emerging vulnerabilities and exploits.
+                </p>
+                <div class="feature-code">
+                    &gt; data_sources = tor_i2p<br>
+                    &gt; analysis = ML_enhanced
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Terminal Section -->
+    <section class="terminal-section" id="terminal">
+        <div class="section-header">
+            <p class="section-tag">/* LIVE_DEMO */</p>
+            <h2 class="section-title">Test Your Skills</h2>
+            <p class="section-description">
+                Try this CTF-style challenge right here. Can you find the flag?
+            </p>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+                <span class="terminal-title">guest@cybernexus:~</span>
+            </div>
+            <div class="terminal-body" id="terminal-output">
+                <!-- Terminal output will be generated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="community" id="community">
+        <div class="section-header">
+            <p class="section-tag">/* OPERATIVES */</p>
+            <h2 class="section-title">The Collective</h2>
+            <p class="section-description">
+                voices from the underground. Real members, real experiences.
+            </p>
+        </div>
+
+        <div class="community-grid">
+            <div class="community-card">
+                <div class="community-avatar">N</div>
+                <p class="community-quote">"Finally got into cybersecurity after years of self-doubt. The CTF challenges here gave me the confidence to land my pentesting dream job."</p>
+                <p class="community-author">NeonWolf</p>
+                    <span class="community-role">— Penetration Tester</span>
+            </div>
+
+            <div class="community-card">
+                <div class="community-avatar">C</div>
+                <p class="community-quote">"The encrypted chats saved my team during a sensitive whistleblowing operation. This platform is the real deal for activists."</p>
+                <p class="community-author">CipherPunk</p>
+                    <span class="community-role">— Digital Rights Activist</span>
+            </div>
+
+            <div class="community-card">
+                <div class="community-avatar">Z</div>
+                <p class="community-quote">"Started as a script kiddie, now I'm contributing to open-source security tools thanks to the mentors I met on CyberNexus."</p>
+                <p class="community-author">ZeroCool</p>
+                    <span class="community-role">— Security Researcher</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="join">
+        <div class="cta-content">
+            <h2 class="cta-title">Ready to Enter the Matrix?</h2>
+            <p class="cta-description">
+                Join <span class="leetspeak-accent">1337</span>+ digital rebels who are already shaping the future.
+                No invite code required... yet.
+            </p>
+            <form class="email-input-group" onsubmit="handleSignup(event)">
+                <input type="email" class="email-input" placeholder="your@email.com" required>
+                <button type="submit" class="btn btn-primary">/JOIN_NETWORK</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-left">
+                <span class="footer-logo">CYBERNEXUS</span>
+                <span class="footer-tagline">The revolution will be encrypted</span>
+            </div>
+            <div class="footer-right">
+                <a href="#" class="footer-link">Manifesto</a>
+                <a href="#" class="footer-link">PGP Key</a>
+                <a href="#" class="footer-link">Onion Link</a>
+                <a href="#" class="footer-link">GitHub</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 CyberNexus | All rights reversed | <span class="leetspeak-accent">n0 copies r1ght</span></p>
+        </div>
+    </footer>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const matrixChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10, 10, 15, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrixChars.charAt(Math.floor(Math.random() * matrixChars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 35);
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Animated counter
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = target / 50;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 30);
+        }
+
+        // Intersection Observer for counters
+        const observerOptions = {
+            threshold: 0.5
+        };
+
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    const target = parseInt(element.dataset.target);
+                    animateCounter(element, target);
+                    counterObserver.unobserve(element);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.stat-value').forEach(stat => {
+            counterObserver.observe(stat);
+        });
+
+        // Terminal Animation
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalLines = [
+            { type: 'command', text: 'ls -la' },
+            { type: 'output', text: 'drwxr-xr-x  4 guest  staff   128 Jan 15 09:23 .' },
+            { type: 'output', text: 'drwxr-xr-x  3 root   staff    96 Jan 15 09:23 ..' },
+            { type: 'output', text: '-rw-r--r--  1 guest  staff  2048 Jan 15 09:23 challenge.txt' },
+            { type: 'output', text: '-r--------  1 guest  staff    64 Jan 15 09:23 flag.enc' },
+            { type: 'command', text: 'cat challenge.txt' },
+            { type: 'output', text: 'Welcome, operative. Your mission, should you choose to accept:' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'HINT: The encryption uses a simple ROT cipher. The key is the ASCII sum of "HACK".' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Good luck. The future depends on you.' },
+            { type: 'command', text: 'python3 -c "print(ord(\'H\')+ord(\'A\')+ord(\'C\')+ord(\'K\'))"' },
+            { type: 'output', text: '289' },
+            { type: 'command', text: './decrypt 289 flag.enc' },
+            { type: 'output', text: '<span class="success">FLAG{CYBERNEXUS_WELCOME_TO_THE_UNDERGROUND}</span>' },
+            { type: 'output', text: '<span class="success">Success! Challenge completed.</span>' },
+            { type: 'command', text: '' }
+        ];
+
+        let lineIndex = 0;
+        let charIndex = 0;
+        let currentLine = null;
+        let isTyping = false;
+
+        function typeLine() {
+            if (isTyping) return;
+            isTyping = true;
+
+            if (lineIndex >= terminalLines.length) {
+                isTyping = false;
+                return;
+            }
+
+            const lineData = terminalLines[lineIndex];
+
+            if (!currentLine) {
+                currentLine = document.createElement('div');
+                currentLine.className = 'terminal-line';
+
+                if (lineData.type === 'command') {
+                    const prompt = document.createElement('span');
+                    prompt.className = 'terminal-prompt';
+                    prompt.textContent = 'guest@cybernexus:~$ ';
+                    currentLine.appendChild(prompt);
+
+                    const command = document.createElement('span');
+                    command.className = 'terminal-command';
+                    command.textContent = '';
+                    currentLine.appendChild(command);
+                    terminalOutput.appendChild(currentLine);
+
+                    typeText(command, lineData.text);
+                } else {
+                    const output = document.createElement('div');
+                    output.className = 'terminal-output';
+                    output.innerHTML = lineData.text;
+                    terminalOutput.appendChild(output);
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    currentLine = null;
+                    lineIndex++;
+                    isTyping = false;
+                    setTimeout(typeLine, 200);
+                }
+            }
+        }
+
+        function typeText(element, text) {
+            if (charIndex < text.length) {
+                element.textContent += text[charIndex];
+                charIndex++;
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                setTimeout(() => typeText(element, text), 30);
+            } else {
+                charIndex = 0;
+                currentLine = null;
+                lineIndex++;
+                isTyping = false;
+                setTimeout(typeLine, 500);
+            }
+        }
+
+        // Start terminal animation when visible
+        const terminalObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    typeLine();
+                    terminalObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        terminalObserver.observe(terminalOutput);
+
+        // Add cursor to terminal
+        const cursor = document.createElement('span');
+        cursor.className = 'terminal-cursor';
+        terminalOutput.appendChild(cursor);
+
+        // Form submission handler
+        function handleSignup(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('.email-input').value;
+            alert(`Welcome to the resistance, ${email}!\nCheck your inbox for confirmation instructions.\n\nRemember: The first rule of CyberNexus is... well, you know.`);
+            event.target.reset();
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add random floating binary code
+        function createFloatingBinary() {
+            const binary = document.createElement('div');
+            binary.className = 'floating-binary';
+            binary.textContent = Math.random() > 0.5 ? '1' : '0';
+            binary.style.left = Math.random() * 100 + 'vw';
+            binary.style.animationDuration = (15 + Math.random() * 10) + 's';
+            binary.style.fontSize = (0.6 + Math.random() * 0.6) + 'rem';
+            document.body.appendChild(binary);
+
+            setTimeout(() => {
+                binary.remove();
+            }, 25000);
+        }
+
+        // Create floating binary elements periodically
+        setInterval(createFloatingBinary, 2000);
+
+        // Initial batch of floating binary
+        for (let i = 0; i < 10; i++) {
+            setTimeout(createFloatingBinary, i * 200);
+        }
+    </script>
+</body>
+</html>
