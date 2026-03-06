@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>店铺/景点地图</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .map-container {
+            display: flex;
+            height: calc(100vh - 100px);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 320px;
+            background: #f8f9fa;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #e9ecef;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .location-list {
+            padding: 10px;
+        }
+
+        .location-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e9ecef;
+        }
+
+        .location-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .location-item .type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .location-item .type.shop {
+            background: #ffeaa7;
+            color: #d35400;
+        }
+
+        .location-item .type.attraction {
+            background: #a8e6cf;
+            color: #00b894;
+        }
+
+        .location-item h3 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .location-item p {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* 地图 */
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        /* 自定义标记样式 */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-marker.shop {
+            background: #d35400;
+        }
+
+        .custom-marker.attraction {
+            background: #00b894;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .map-container {
+                flex-direction: column-reverse;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 40%;
+            }
+
+            #map {
+                height: 60%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ 店铺/景点地图</h1>
+        <p>点击标记点或侧边栏列表查看详情</p>
+    </div>
+
+    <div class="map-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>位置列表</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="shop">🏪 店铺</button>
+                    <button class="filter-btn" data-filter="attraction">🎯 景点</button>
+                </div>
+            </div>
+            <div class="location-list" id="locationList"></div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+        // 示例位置数据
+        const locations = [
+            // 北京天安门附近
+            {
+                id: 1,
+                name: "天安门广场",
+                type: "attraction",
+                lat: 39.9054,
+                lng: 116.3976,
+                description: "世界上最大的城市广场之一",
+                address: "北京市东城区"
+            },
+            {
+                id: 2,
+                name: "故宫博物院",
+                type: "attraction",
+                lat: 39.9163,
+                lng: 116.3971,
+                description: "中国古代皇家宫殿",
+                address: "北京市东城区景山前街4号"
+            },
+            {
+                id: 3,
+                name: "王府井百货",
+                type: "shop",
+                lat: 39.9119,
+                lng: 116.4106,
+                description: "北京知名购物中心",
+                address: "北京市东城区王府井大街"
+            },
+            {
+                id: 4,
+                name: "景山公园",
+                type: "attraction",
+                lat: 39.9239,
+                lng: 116.3963,
+                description: "可以俯瞰紫禁城全景",
+                address: "北京市西城区景山西街44号"
+            },
+            {
+                id: 5,
+                name: "全聚德烤鸭店",
+                type: "shop",
+                lat: 39.8995,
+                lng: 116.4189,
+                description: "百年老字号烤鸭店",
+                address: "北京市东城区前门大街"
+            },
+            {
+                id: 6,
+                name: "北海公园",
+                type: "attraction",
+                lat: 39.9283,
+                lng: 116.3887,
+                description: "中国现存最古老、最完整的皇家园林",
+                address: "北京市西城区文津街1号"
+            },
+            {
+                id: 7,
+                name: "东方新天地",
+                type: "shop",
+                lat: 39.9087,
+                lng: 116.4142,
+                description: "高端购物中心",
+                address: "北京市东城区东长安街"
+            },
+            {
+                id: 8,
+                name: "国家博物馆",
+                type: "attraction",
+                lat: 39.9029,
+                lng: 116.3988,
+                description: "世界上建筑面积最大的博物馆",
+                address: "北京市东城区东长安街"
+            }
+        ];
+
+        // 初始化地图（以北京为中心）
+        const map = L.map('map').setView([39.914, 116.404], 14);
+
+        // 添加 OpenStreetMap 图层
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        const markers = {};
+        let currentFilter = 'all';
+
+        // 创建自定义图标
+        function createIcon(type) {
+            const className = type === 'shop' ? 'custom-marker shop' : 'custom-marker attraction';
+            return L.divIcon({
+                className: className,
+                html: `<div style="width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center;">
+                    <div style="transform: rotate(45deg); font-size: 14px;">
+                        ${type === 'shop' ? '🏪' : '🎯'}
+                    </div>
+                </div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
+        }
+
+        // 在地图上添加标记
+        function addMarkers(locations) {
+            locations.forEach(location => {
+                const marker = L.marker([location.lat, location.lng], {
+                    icon: createIcon(location.type)
+                }).addTo(map);
+
+                // 添加弹出信息
+                const popupContent = `
+                    <div style="min-width: 200px;">
+                        <h3 style="margin: 0 0 8px 0; color: #333;">${location.name}</h3>
+                        <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-bottom: 8px; background: ${location.type === 'shop' ? '#ffeaa7' : '#a8e6cf'}; color: ${location.type === 'shop' ? '#d35400' : '#00b894'};">
+                            ${location.type === 'shop' ? '🏪 店铺' : '🎯 景点'}
+                        </span>
+                        <p style="margin: 5px 0; color: #666; font-size: 13px;">${location.description}</p>
+                        <p style="margin: 5px 0; color: #999; font-size: 12px;">📍 ${location.address}</p>
+                        <button onclick="flyToLocation(${location.lat}, ${location.lng})" style="margin-top: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            📍 定位到此处
+                        </button>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                markers[location.id] = marker;
+            });
+        }
+
+        // 渲染侧边栏列表
+        function renderLocationList(filter = 'all') {
+            const listContainer = document.getElementById('locationList');
+            listContainer.innerHTML = '';
+
+            const filteredLocations = filter === 'all'
+                ? locations
+                : locations.filter(loc => loc.type === filter);
+
+            filteredLocations.forEach(location => {
+                const item = document.createElement('div');
+                item.className = 'location-item';
+                item.innerHTML = `
+                    <span class="type ${location.type}">${location.type === 'shop' ? '🏪 店铺' : '🎯 景点'}</span>
+                    <h3>${location.name}</h3>
+                    <p>${location.description}</p>
+                `;
+                item.addEventListener('click', () => {
+                    // 地图飞到该位置并打开弹出框
+                    map.flyTo([location.lat, location.lng], 16, {
+                        duration: 1.5
+                    });
+                    setTimeout(() => {
+                        markers[location.id].openPopup();
+                    }, 1500);
+                });
+                listContainer.appendChild(item);
+            });
+        }
+
+        // 定位功能
+        window.flyToLocation = function(lat, lng) {
+            map.flyTo([lat, lng], 17, {
+                duration: 1.5
+            });
+        };
+
+        // 筛选按钮事件
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 更新按钮状态
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 筛选标记点
+                const filter = btn.dataset.filter;
+                currentFilter = filter;
+
+                // 更新地图上的标记
+                Object.entries(markers).forEach(([id, marker]) => {
+                    const location = locations.find(l => l.id === parseInt(id));
+                    if (filter === 'all' || location.type === filter) {
+                        if (!map.hasLayer(marker)) {
+                            marker.addTo(map);
+                        }
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
+
+                // 更新列表
+                renderLocationList(filter);
+            });
+        });
+
+        // 初始化
+        addMarkers(locations);
+        renderLocationList();
+    </script>
+</body>
+</html>
