@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>磁流体物理模拟 | Ferrofluid Simulation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'Menlo', 'Consolas', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+  canvas#gl {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+  /* 控制面板 */
+  #panel {
+    position: fixed;
+    top: 16px; right: 16px;
+    width: 280px;
+    background: rgba(12, 12, 20, 0.88);
+    border: 1px solid rgba(100, 140, 255, 0.15);
+    border-radius: 10px;
+    padding: 18px;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    user-select: none;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  #panel::-webkit-scrollbar { width: 4px; }
+  #panel::-webkit-scrollbar-thumb { background: rgba(100,140,255,0.3); border-radius: 2px; }
+  #panel h2 {
+    font-size: 14px;
+    color: #8aa0ff;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .ctrl-group {
+    margin-bottom: 12px;
+  }
+  .ctrl-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #8890a8;
+  }
+  .ctrl-group label span { color: #a0b0ff; font-weight: bold; }
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(100, 140, 255, 0.15);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #6a8cff;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(100,140,255,0.5);
+  }
+  .divider {
+    height: 1px;
+    background: rgba(100,140,255,0.1);
+    margin: 14px 0;
+  }
+  . preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .preset-btn {
+    background: rgba(100, 140, 255, 0.08);
+    border: 1px solid rgba(100, 140, 255, 0.15);
+    color: #8890a8;
+    padding: 7px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .preset-btn:hover {
+    background: rgba(100, 140, 255, 0.18);
+    color: #c0d0ff;
+    border-color: rgba(100,140,255,0.4);
+  }
+  .preset-btn.active {
+    background: rgba(100, 140, 255, 0.25);
+    color: #e0e8ff;
+    border-color: #6a8cff;
+    box-shadow: 0 0 8px rgba(100,140,255,0.2);
+  }
+  /* 信息栏 */
+  #info {
+    position: fixed;
+    bottom: 14px; left: 14px;
+    font-size: 11px;
+    color: #555;
+    z-index: 10;
+  }
+  #fps {
+    position: fixed;
+    top: 16px; left: 16px;
+    font-size: 12px;
+    color: #556;
+    z-index: 10;
+  }
+  /* 提示 */
+  #hint {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #445;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="fps">FPS: --</div>
+
+<div id="panel">
+  <h2>控制面板</h2>
+
+  <div class="ctrl-group">
+    <label>粘度系数 <span id="valViscosity">0.15</span></label>
+    <input type="range" id="slViscosity" min="0.01" max="1.0" step="0.01" value="0.15">
+  </div>
+  <div class="ctrl-group">
+    <label>磁场强度 <span id="valMagStr">1.50</span></label>
+    <input type="range" id="slMagStr" min="0" max="5.0" step="0.05" value="1.5">
+  </div>
+  <div class="ctrl-group">
+    <label>表面张力 <span id="valSurface">0.80</span></label>
+    <input type="range" id="slSurface" min="0.1" max="2.0" step="0.05" value="0.8">
+  </div>
+  <div class="ctrl-group">
+    <label>粒子数量 <span id="valCount">1500</span></label>
+    <input type="range" id="slCount" min="500" max="5000" step="100" value="1500">
+  </div>
+  <div class="ctrl-group">
+    <label>重力 <span id="valGravity">0.80</span></label>
+    <input type="range" id="slGravity" min="0" max="2.0" step="0.05" value="0.8">
+  </div>
+  <div class="ctrl-group">
+    <label>磁铁范围 <span id="valRange">0.35</span></label>
+    <input type="range" id="slRange" min="0.1" max="0.8" step="0.01" value="0.35">
+  </div>
+
+  <div class="divider"></div>
+  <h2>预设场景</h2>
+  <div class="preset-grid">
+    <button class="preset-btn" data-preset="free">自由模式</button>
+    <button class="preset-btn" data-preset="spikes">经典尖刺</button>
+    <button class="preset-btn" data-preset="dual">双极对抗</button>
+    <button class="preset-btn" data-preset="rotate">旋转磁场</button>
+    <button class="preset-btn" data-preset="draw">磁力书写</button>
+  </div>
+</div>
+
+<div id="hint">移动鼠标控制磁场 | 按住左键增强 | 右键反转极性 | 滚轮调范围</div>
+
+<script>
+// ============================================================
+// 配置参数
+// ============================================================
+const CONFIG = {
+  particleCount: 1500,
+  viscosity: 0.15,
+  magStrength: 1.5,
+  surfaceTension: 0.8,
+  gravity: 0.8,
+  magnetRange: 0.35,
+  smoothingRadius: 0.065,
+  restDensity: 12.0,
+  stiffness: 200.0,
+  dt: 0.004,
+  metaballRadius: 0.022,
+  metaballThreshold: 1.0,
+};
+
+// ============================================================
+// WebGL 初始化
+// ============================================================
+const canvas = document.getElementById('gl');
+let gl, programMetaball;
+let uResolution, uPositions, uRadius, uThreshold, uMagPos, uMagStr, uMagRange, uMagPolarity, uAllMag, uTime, uShowField;
+let simW, simH;
+
+function initGL() {
+  gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+  if (!gl) { alert('WebGL 不可用'); return false; }
+
+  // 获取 FLOAT 纹理支持（必须）
+  if (!gl.getExtension('OES_texture_float')) { alert('浏览器不支持浮点纹理 (OES_texture_float)'); return false; }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  // -- Metaball shader --
+  const vsSrc = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+  const fsSrc = `
+    precision highp float;
+    uniform vec2 u_resolution;
+    uniform sampler2D u_positions;
+    uniform float u_radius;
+    uniform float u_threshold;
+    uniform vec2 u_magPos;
+    uniform float u_magStr;
+    uniform float u_magRange;
+    uniform float u_magPolarity;
+    uniform sampler2D u_allMag;
+    uniform float u_time;
+    uniform float u_showField;
+
+    // 磁场计算
+    float magField(vec2 p, vec2 m, float str, float range) {
+      vec2 d = p - m;
+      float r = max(length(d), 0.01);
+      float falloff = range / (r * r * r + range * range * range * 0.01);
+      return str * falloff * falloff / (falloff + 1.0) * 0.5;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      vec2 simCoord = vec2(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0);
+
+      float aspect = u_resolution.x / u_resolution.y;
+      simCoord.x *= aspect;
+
+      // 采样粒子位置纹理
+      float sum = 0.0;
+      vec2 grad = vec2(0.0);
+
+      // 分批计算以避免采样限制
+      float r2 = u_radius * u_radius;
+
+      for (int i = 0; i < 5000; i++) {
+        float fi = float(i);
+        vec4 pd = texture2D(u_positions, vec2((fi + 0.5) / 5000.0, 0.5));
+
+        if (pd.x > 10.0) break;
+
+        vec2 pp = pd.xy;
+        vec2 d = simCoord - pp;
+        float dist2 = dot(d, d);
+        float rr = r2 * (0.8 + pd.z * 0.4);
+        float val = rr / (dist2 + 0.00001);
+        sum += val;
+
+        // 法线梯度
+        float invD = val / (dist2 + 0.00001);
+        grad += d * invD;
+      }
+
+      vec3 color = vec3(0.0);
+
+      // 磁场可视化
+      if (u_showField > 0.5) {
+        float field = magField(simCoord, u_magPos, u_magStr, u_magRange) * u_magPolarity;
+
+        // 额外磁铁
+        for (int j = 0; j < 8; j++) {
+          vec4 md = texture2D(u_allMag, vec2((float(j) + 0.5) / 8.0, 0.5));
+          if (md.x > 10.0) break;
+          field += magField(simCoord, md.xy, md.z, md.w);
+        }
+
+        float absF = abs(field);
+        // 等高线
+        float line = fract(absF * 40.0);
+        line = 1.0 - smoothstep(0.0, 0.08, line) * smoothstep(1.0, 0.92, line);
+        vec3 fieldColor = mix(vec3(0.02, 0.02, 0.06), vec3(0.08, 0.12, 0.3), absF * 2.0);
+        color += fieldColor * 0.6;
+        color += vec3(0.1, 0.15, 0.4) * line * min(absF * 5.0, 1.0) * 0.3;
+      }
+
+      // Metaball 表面渲染
+      if (sum > u_threshold) {
+        float density = sum - u_threshold;
+
+        // 法线
+        float gradLen = length(grad);
+        vec2 normal = gradLen > 0.001 ? normalize(grad) : vec2(0.0, 1.0);
+
+        // 菲涅尔（法线视角依赖）
+        float viewDotNormal = length(normal); // 近似：表面法线越长说明越侧向
+        float fresnel = pow(clamp(1.0 - viewDotNormal * 0.7, 0.0, 1.0), 2.0);
+
+        // 环境基色（深黑色金属）
+        vec3 baseColor = vec3(0.02, 0.02, 0.025);
+
+        // 镜面高光
+        vec2 lightDir = normalize(vec2(0.3, 0.6));
+        float spec = pow(max(dot(normal, lightDir), 0.0), 60.0);
+
+        // 边缘光
+        vec3 rimColor = vec3(0.15, 0.25, 0.55);
+        vec3 specColor = vec3(0.8, 0.85, 1.0);
+
+        // 磁场附近颜色变化
+        float mainField = magField(simCoord, u_magPos, u_magStr, u_magRange);
+        vec3 magGlow = vec3(0.05, 0.1, 0.2) * mainField;
+
+        // 细微表面纹理噪声
+        float noise = fract(sin(dot(simCoord * 50.0, vec2(12.9898, 78.233))) * 43758.5453);
+        float microDetail = noise * 0.02;
+
+        color = baseColor + microDetail;
+        color += rimColor * fresnel * 0.6;
+        color += specColor * spec * 0.7;
+        color += magGlow;
+
+        // 附加磁铁的影响
+        for (int j = 0; j < 8; j++) {
+          vec4 md = texture2D(u_allMag, vec2((float(j) + 0.5) / 8.0, 0.5));
+          if (md.x > 10.0) break;
+          float ef = magField(simCoord, md.xy, abs(md.z), md.w);
+          color += vec3(0.05, 0.1, 0.2) * ef;
+        }
+
+        // 密度过渡（边缘抗锯齿）
+        float edgeSmooth = smoothstep(0.0, 0.3, density);
+        float alpha = edgeSmooth * (0.85 + fresnel * 0.15);
+
+        color *= alpha;
+      } else {
+        // 外层微光（靠近流体边缘处变亮）
+        float glow = exp(-sum * 3.0);
+        color += vec3(0.04, 0.06, 0.12) * (1.0 - glow);
+      }
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  programMetaball = createProgram(vsSrc, fsSrc);
+  uResolution = gl.getUniformLocation(programMetaball, 'u_resolution');
+  uPositions = gl.getUniformLocation(programMetaball, 'u_positions');
+  uRadius = gl.getUniformLocation(programMetaball, 'u_radius');
+  uThreshold = gl.getUniformLocation(programMetaball, 'u_threshold');
+  uMagPos = gl.getUniformLocation(programMetaball, 'u_magPos');
+  uMagStr = gl.getUniformLocation(programMetaball, 'u_magStr');
+  uMagRange = gl.getUniformLocation(programMetaball, 'u_magRange');
+  uMagPolarity = gl.getUniformLocation(programMetaball, 'u_magPolarity');
+  uAllMag = gl.getUniformLocation(programMetaball, 'u_allMag');
+  uTime = gl.getUniformLocation(programMetaball, 'u_time');
+  uShowField = gl.getUniformLocation(programMetaball, 'u_showField');
+
+  // 全屏四边形
+  const quadBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(programMetaball, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  // 粒子位置纹理（RGBA float / UNSIGNED_BYTE 近似）
+  // 使用两个通道：position texture (vec4: x, y, density, extra)
+  posTex = createDataTexture(5000);
+  magTex = createDataTexture(8);
+
+  return true;
+}
+
+let posTex, magTex;
+
+function createDataTexture(size) {
+  const data = new Float32Array(size * 4);
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, 1, 0, gl.RGBA, gl.FLOAT, data);
+  return tex;
+}
+
+function createProgram(vs, fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compileShader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, compileShader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    console.error('Shader link error:', gl.getProgramInfoLog(p));
+  }
+  return p;
+}
+
+function compileShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  simW = canvas.width;
+  simH = canvas.height;
+}
+
+// ============================================================
+// 粒子系统 & SPH 物理
+// ============================================================
+class Particle {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.vx = 0; this.vy = 0;
+    this.density = 0;
+    this.pressure = 0;
+    this.fx = 0; this.fy = 0;
+  }
+}
+
+// 空间哈希网格
+class SpatialHash {
+  constructor(cellSize) {
+    this.cellSize = cellSize;
+    this.grid = new Map();
+  }
+  clear() { this.grid.clear(); }
+  key(cx, cy) { return (cx * 73856093) ^ (cy * 19349663); }
+  insert(p, idx) {
+    const cx = Math.floor(p.x / this.cellSize);
+    const cy = Math.floor(p.y / this.cellSize);
+    const k = this.key(cx, cy);
+    if (!this.grid.has(k)) this.grid.set(k, []);
+    this.grid.get(k).push(idx);
+  }
+  neighbors(p) {
+    const cx = Math.floor(p.x / this.cellSize);
+    const cy = Math.floor(p.y / this.cellSize);
+    const result = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const k = this.key(cx + dx, cy + dy);
+        const cell = this.grid.get(k);
+        if (cell) result.push(...cell);
+      }
+    }
+    return result;
+  }
+}
+
+class SPHSolver {
+  constructor() {
+    this.particles = [];
+    this.spatialHash = new SpatialHash(CONFIG.smoothingRadius * 2);
+    this.aspect = 1;
+  }
+
+  init(count) {
+    this.particles = [];
+    // 初始化粒子：在中心区域随机分布（水滴形态）
+    const aspect = this.aspect;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 0.3;
+      const x = Math.cos(angle) * r * 0.8;
+      const y = Math.sin(angle) * r * 0.5 + 0.05;
+      this.particles.push(new Particle(x, y));
+    }
+  }
+
+  setAspect(a) {
+    this.aspect = a;
+  }
+
+  // SPH 核函数（Poly6）
+  poly6(r, h) {
+    if (r >= h) return 0;
+    const t = h * h - r * r;
+    return 315.0 / (64.0 * Math.PI * Math.pow(h, 9)) * t * t * t;
+  }
+
+  // Spiky核梯度
+  spikyGrad(r, h) {
+    if (r >= h || r < 0.0001) return 0;
+    const t = h - r;
+    return -45.0 / (Math.PI * Math.pow(h, 6)) * t * t;
+  }
+
+  // 粘性核拉普拉斯
+  viscLap(r, h) {
+    if (r >= h) return 0;
+    return 45.0 / (Math.PI * Math.pow(h, 6)) * (h - r);
+  }
+
+  solve(dt, magnets) {
+    const ps = this.particles;
+    const n = ps.length;
+    const h = CONFIG.smoothingRadius;
+    const h2 = h * h;
+    const hash = this.spatialHash;
+    hash.cellSize = h * 2;
+
+    // 插入空间哈希
+    hash.clear();
+    for (let i = 0; i < n; i++) {
+      hash.insert(ps[i], i);
+    }
+
+    // 1. 计算密度和压力
+    for (let i = 0; i < n; i++) {
+      const pi = ps[i];
+      pi.density = 0;
+      const neighbors = hash.neighbors(pi);
+      for (let ji = 0; ji < neighbors.length; ji++) {
+        const j = neighbors[ji];
+        const pj = ps[j];
+        const dx = pi.x - pj.x;
+        const dy = pi.y - pj.y;
+        const r2 = dx * dx + dy * dy;
+        pi.density += this.poly6(Math.sqrt(r2), h);
+      }
+      pi.density = Math.max(pi.density, 0.001);
+      pi.pressure = CONFIG.stiffness * (pi.density - CONFIG.restDensity);
+    }
+
+    // 2. 计算力
+    const boundsX = this.aspect * 0.95;
+    const boundsY = 0.95;
+
+    for (let i = 0; i < n; i++) {
+      const pi = ps[i];
+      let fx = 0, fy = 0;
+      const neighbors = hash.neighbors(pi);
+
+      for (let ji = 0; ji < neighbors.length; ji++) {
+        const j = neighbors[ji];
+        if (i === j) continue;
+        const pj = ps[j];
+        const dx = pi.x - pj.x;
+        const dy = pi.y - pj.y;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        if (r >= h || r < 0.0001) continue;
+
+        // 压力梯度力
+        const pressGrad = this.spikyGrad(r, h);
+        const pressF = (pi.pressure + pj.pressure) / (2.0 * pj.density) * pressGrad;
+        fx += pressF * dx / r;
+        fy += pressF * dy / r;
+
+        // 粘性力
+        const visc = CONFIG.viscosity * this.viscLap(r, h) / pj.density;
+        fx += visc * (pj.vx - pi.vx);
+        fy += visc * (pj.vy - pi.vy);
+
+        // 表面张力（简单近似：粒子向密度高的方向收缩）
+        if (r < h * 0.8) {
+          const surfStr = CONFIG.surfaceTension * 0.0005;
+          const diff = pj.density - pi.density;
+          fx -= surfStr * diff * dx / r;
+          fy -= surfStr * diff * dy / r;
+        }
+      }
+
+      // 磁力（来自所有磁铁）
+      for (let m = 0; m < magnets.length; m++) {
+        const mag = magnets[m];
+        const dx = mag.x - pi.x;
+        const dy = mag.y - pi.y;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        const effR = Math.max(r, 0.02);
+
+        // 偶极子场力: F ∝ ∇(1/r²) = -2/r³ * r_hat
+        const strength = mag.strength * mag.polarity;
+        const range = mag.range;
+        const normR = effR / range;
+        const falloff = 1.0 / (normR * normR * normR + 0.1);
+        const force = strength * falloff * falloff * 0.015;
+
+        fx += force * dx / effR;
+        fy += force * dy / effR;
+      }
+
+      // 粒子间磁偶极相互作用（近程）
+      for (let ji = 0; ji < neighbors.length; ji++) {
+        const j = neighbors[ji];
+        if (i === j) continue;
+        const pj = ps[j];
+        const dx = pj.x - pi.x;
+        const dy = pj.y - pi.y;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        if (r < h * 0.6 && r > 0.001) {
+          // 尖刺效应：在强磁场下粒子排成链状
+          // 朝向磁铁方向时吸引，垂直时排斥
+          let mx = 0, my = 0, totalStr = 0;
+          for (let m = 0; m < magnets.length; m++) {
+            const mag = magnets[m];
+            const mdx = mag.x - pi.x;
+            const mdy = mag.y - pi.y;
+            const mr = Math.sqrt(mdx * mdx + mdy * mdy);
+            if (mr < 0.01) continue;
+            const ms = mag.strength * mag.polarity / (mr * mr + 0.01);
+            mx += mdx / mr * ms;
+            my += mdy / mr * ms;
+            totalStr += Math.abs(ms);
+          }
+          if (totalStr > 0.0001) {
+            mx /= totalStr;
+            my /= totalStr;
+            // 粒子间连线与磁场方向的对齐程度
+            const dotP = (dx / r) * mx + (dy / r) * my;
+            const chainForce = totalStr * 0.0003;
+            // 对齐方向吸引，垂直方向排斥
+            fx += chainForce * dotP * dx / r;
+            fy += chainForce * dotP * dy / r;
+          }
+        }
+      }
+
+      // 重力
+      fy -= CONFIG.gravity * 0.003;
+
+      // 阻尼
+      fx -= pi.vx * 0.02;
+      fy -= pi.vy * 0.02;
+
+      pi.fx = fx;
+      pi.fy = fy;
+    }
+
+    // 3. 时间积分（半隐式欧拉）
+    for (let i = 0; i < n; i++) {
+      const pi = ps[i];
+      pi.vx += pi.fx * dt;
+      pi.vy += pi.fy * dt;
+
+      // 速度限制
+      const speed = Math.sqrt(pi.vx * pi.vx + pi.vy * pi.vy);
+      const maxSpeed = 2.0;
+      if (speed > maxSpeed) {
+        pi.vx *= maxSpeed / speed;
+        pi.vy *= maxSpeed / speed;
+      }
+
+      pi.x += pi.vx * dt;
+      pi.y += pi.vy * dt;
+
+      // 边界碰撞
+      if (pi.x < -boundsX) { pi.x = -boundsX; pi.vx *= -0.3; }
+      if (pi.x > boundsX) { pi.x = boundsX; pi.vx *= -0.3; }
+      if (pi.y < -boundsY) { pi.y = -boundsY; pi.vy *= -0.3; }
+      if (pi.y > boundsY) { pi.y = boundsY; pi.vy *= -0.3; }
+    }
+  }
+}
+
+// ============================================================
+// 磁场模型
+// ============================================================
+class MagneticField {
+  constructor() {
+    this.primary = { x: 0, y: 0, strength: 0, range: 0.35, polarity: 1.0 };
+    this.extras = []; // 额外磁铁（预设场景用）
+  }
+
+  getAllMagnets() {
+    const all = [];
+    if (this.primary.strength > 0.01) {
+      all.push({ ...this.primary });
+    }
+    for (const m of this.extras) {
+      all.push({ ...m });
+    }
+    return all;
+  }
+}
+
+// ============================================================
+// 模拟主循环
+// ============================================================
+class Simulation {
+  constructor() {
+    this.solver = new SPHSolver();
+    this.field = new MagneticField();
+    this.time = 0;
+    this.preset = 'free';
+    this.drawTrail = []; // 磁力书写用
+    this.rotAngle = 0; // 旋转磁场
+  }
+
+  init() {
+    this.solver.init(CONFIG.particleCount);
+  }
+
+  resize(aspect) {
+    this.solver.setAspect(aspect);
+  }
+
+  update(dt) {
+    this.time += dt;
+
+    // 预设场景逻辑
+    if (this.preset === 'spikes') {
+      // 经典尖刺：磁铁在液面上方中心
+      this.field.primary.x = 0;
+      this.field.primary.y = 0.5;
+      this.field.primary.strength = CONFIG.magStrength * 2.0;
+      this.field.primary.polarity = 1.0;
+    } else if (this.preset === 'dual') {
+      // 双极对抗
+      this.field.extras = [
+        { x: -0.4, y: 0, strength: CONFIG.magStrength * 1.5, range: CONFIG.magnetRange, polarity: 1.0 },
+        { x: 0.4, y: 0, strength: CONFIG.magStrength * 1.5, range: CONFIG.magnetRange, polarity: -1.0 },
+      ];
+    } else if (this.preset === 'rotate') {
+      // 旋转磁场
+      this.rotAngle += dt * 1.2;
+      const rx = Math.cos(this.rotAngle) * 0.4;
+      const ry = Math.sin(this.rotAngle) * 0.3;
+      this.field.primary.x = rx;
+      this.field.primary.y = ry;
+      this.field.primary.strength = CONFIG.magStrength * 1.8;
+      this.field.primary.polarity = 1.0;
+      this.field.extras = [];
+    } else if (this.preset === 'draw') {
+      // 磁力书写 - 只使用drawTrail中的磁铁
+      const now = this.time;
+      this.field.extras = this.drawTrail.filter(t => now - t.time < 3.0).map(t => ({
+        x: t.x, y: t.y,
+        strength: CONFIG.magStrength * (1.0 - (now - t.time) / 3.0),
+        range: CONFIG.magnetRange,
+        polarity: 1.0,
+      }));
+      this.field.primary.strength *= 0.3; // 主磁铁弱化
+    } else {
+      // 自由模式
+      if (this.preset !== 'free') {
+        this.field.extras = [];
+      }
+    }
+
+    const magnets = this.field.getAllMagnets();
+    const steps = 3;
+    const subDt = CONFIG.dt;
+    for (let s = 0; s < steps; s++) {
+      this.solver.solve(subDt, magnets);
+    }
+  }
+
+  addDrawPoint(x, y) {
+    if (this.preset === 'draw') {
+      this.drawTrail.push({ x, y, time: this.time });
+      // 限制trail长度
+      if (this.drawTrail.length > 200) {
+        this.drawTrail = this.drawTrail.slice(-200);
+      }
+    }
+  }
+
+  setPreset(name) {
+    this.preset = name;
+    this.drawTrail = [];
+    this.rotAngle = 0;
+    if (name !== 'free' && name !== 'rotate' && name !== 'draw') {
+      if (name === 'dual') {
+        this.field.primary.strength = 0;
+        this.field.extras = [
+          { x: -0.4, y: 0, strength: CONFIG.magStrength * 1.5, range: CONFIG.magnetRange, polarity: 1.0 },
+          { x: 0.4, y: 0, strength: CONFIG.magStrength * 1.5, range: CONFIG.magnetRange, polarity: -1.0 },
+        ];
+      } else {
+        this.field.extras = [];
+      }
+    } else if (name === 'free') {
+      this.field.extras = [];
+    } else if (name === 'draw') {
+      this.field.extras = [];
+    }
+  }
+}
+
+// ============================================================
+// 渲染
+// ============================================================
+// 预分配缓冲区，避免每帧 GC
+const posData = new Float32Array(5000 * 4);
+const magData = new Float32Array(8 * 4);
+
+function render(sim) {
+  gl.useProgram(programMetaball);
+
+  gl.uniform2f(uResolution, simW, simH);
+  gl.uniform1f(uRadius, CONFIG.metaballRadius);
+  gl.uniform1f(uThreshold, CONFIG.metaballThreshold);
+  gl.uniform2f(uMagPos, sim.field.primary.x, sim.field.primary.y);
+  gl.uniform1f(uMagStr, sim.field.primary.strength);
+  gl.uniform1f(uMagRange, sim.field.primary.range);
+  gl.uniform1f(uMagPolarity, sim.field.primary.polarity);
+  gl.uniform1f(uTime, sim.time);
+  const allMagnets = sim.field.getAllMagnets();
+  gl.uniform1f(uShowField, allMagnets.length > 0 ? 1.0 : 0.0);
+
+  // 更新粒子位置纹理
+  const n = sim.solver.particles.length;
+  posData.fill(0);
+  for (let i = 0; i < n; i++) {
+    const p = sim.solver.particles[i];
+    posData[i * 4] = p.x;
+    posData[i * 4 + 1] = p.y;
+    posData[i * 4 + 2] = Math.min(p.density / CONFIG.restDensity, 2.0);
+    posData[i * 4 + 3] = 0;
+  }
+  // 标记结束
+  if (n < 5000) {
+    posData[n * 4] = 999.0;
+  }
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, posTex);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 5000, 1, gl.RGBA, gl.FLOAT, posData);
+  gl.uniform1i(uPositions, 0);
+
+  // 更新额外磁铁纹理
+  magData.fill(0);
+  const extras = sim.field.extras;
+  for (let i = 0; i < Math.min(extras.length, 8); i++) {
+    magData[i * 4] = extras[i].x;
+    magData[i * 4 + 1] = extras[i].y;
+    magData[i * 4 + 2] = extras[i].strength * extras[i].polarity;
+    magData[i * 4 + 3] = extras[i].range;
+  }
+  if (extras.length < 8) {
+    magData[extras.length * 4] = 999.0;
+  }
+
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, magTex);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 8, 1, gl.RGBA, gl.FLOAT, magData);
+  gl.uniform1i(uAllMag, 1);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ============================================================
+// 交互控制
+// ============================================================
+let mouseDown = false;
+let rightMouseDown = false;
+let sim;
+
+function setupControls() {
+  const aspect = () => simW / simH;
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+
+    if (sim.preset === 'free' || sim.preset === 'draw') {
+      sim.field.primary.x = nx * aspect();
+      sim.field.primary.y = ny;
+      sim.field.primary.strength = mouseDown ? CONFIG.magStrength * 2.5 : CONFIG.magStrength;
+      sim.field.primary.polarity = rightMouseDown ? -1.0 : 1.0;
+      sim.field.primary.range = CONFIG.magnetRange;
+
+      if (mouseDown && sim.preset === 'draw') {
+        sim.addDrawPoint(nx * aspect(), ny);
+      }
+    }
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) mouseDown = true;
+    if (e.button === 2) rightMouseDown = true;
+  });
+
+  canvas.addEventListener('mouseup', (e) => {
+    if (e.button === 0) mouseDown = false;
+    if (e.button === 2) rightMouseDown = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseDown = false;
+    rightMouseDown = false;
+    if (sim.preset === 'free') {
+      sim.field.primary.strength = 0;
+    }
+  });
+
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    CONFIG.magnetRange = Math.max(0.1, Math.min(0.8, CONFIG.magnetRange - e.deltaY * 0.001));
+    document.getElementById('slRange').value = CONFIG.magnetRange;
+    document.getElementById('valRange').textContent = CONFIG.magnetRange.toFixed(2);
+  }, { passive: false });
+
+  // 触摸支持
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const nx = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((touch.clientY - rect.top) / rect.height) * 2 - 1);
+
+    if (sim.preset === 'free' || sim.preset === 'draw') {
+      sim.field.primary.x = nx * aspect();
+      sim.field.primary.y = ny;
+      sim.field.primary.strength = CONFIG.magStrength * 1.5;
+      sim.field.primary.polarity = 1.0;
+      sim.field.primary.range = CONFIG.magnetRange;
+
+      if (sim.preset === 'draw') {
+        sim.addDrawPoint(nx * aspect(), ny);
+      }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchstart', (e) => {
+    mouseDown = true;
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const nx = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((touch.clientY - rect.top) / rect.height) * 2 - 1);
+    if (sim.preset === 'free' || sim.preset === 'draw') {
+      sim.field.primary.x = nx * aspect();
+      sim.field.primary.y = ny;
+      sim.field.primary.strength = CONFIG.magStrength * 2.5;
+    }
+  });
+
+  canvas.addEventListener('touchend', () => {
+    mouseDown = false;
+    if (sim.preset === 'free') {
+      sim.field.primary.strength = 0;
+    }
+  });
+
+  // 参数面板
+  const sl = (id, valId, key, fmt) => {
+    const slider = document.getElementById(id);
+    const valEl = document.getElementById(valId);
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      CONFIG[key] = v;
+      valEl.textContent = fmt ? fmt(v) : v;
+
+      if (key === 'particleCount') {
+        const diff = v - sim.solver.particles.length;
+        if (diff > 0) {
+          for (let i = 0; i < diff; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = Math.random() * 0.1;
+            sim.solver.particles.push(new Particle(
+              Math.cos(angle) * r,
+              Math.sin(angle) * r
+            ));
+          }
+        } else {
+          sim.solver.particles.splice(v);
+        }
+      }
+    });
+  };
+
+  sl('slViscosity', 'valViscosity', 'viscosity', v => v.toFixed(2));
+  sl('slMagStr', 'valMagStr', 'magStrength', v => v.toFixed(2));
+  sl('slSurface', 'valSurface', 'surfaceTension', v => v.toFixed(2));
+  sl('slCount', 'valCount', 'particleCount', v => Math.round(v));
+  sl('slGravity', 'valGravity', 'gravity', v => v.toFixed(2));
+  sl('slRange', 'valRange', 'magnetRange', v => v.toFixed(2));
+
+  // 预设按钮
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sim.setPreset(btn.dataset.preset);
+
+      if (btn.dataset.preset === 'spikes') {
+        sim.solver.init(CONFIG.particleCount);
+        // 把粒子移到下方，模拟液面
+        for (const p of sim.solver.particles) {
+          p.x = (Math.random() - 0.5) * 0.8;
+          p.y = -0.2 + Math.random() * 0.15;
+        }
+      } else if (btn.dataset.preset === 'dual') {
+        sim.solver.init(CONFIG.particleCount);
+      }
+    });
+  });
+
+  // 默认选中自由模式
+  document.querySelector('[data-preset="free"]').classList.add('active');
+}
+
+// ============================================================
+// 主循环
+// ============================================================
+let lastTime = 0;
+let frameCount = 0;
+let fpsTime = 0;
+const fpsEl = document.getElementById('fps');
+
+function loop(now) {
+  requestAnimationFrame(loop);
+
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  // FPS
+  frameCount++;
+  if (now - fpsTime > 500) {
+    fpsEl.textContent = `FPS: ${Math.round(frameCount * 1000 / (now - fpsTime))} | 粒子: ${sim.solver.particles.length}`;
+    frameCount = 0;
+    fpsTime = now;
+  }
+
+  sim.resize(simW / simH);
+  sim.update(dt);
+
+  gl.clearColor(0.02, 0.02, 0.04, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  render(sim);
+}
+
+// ============================================================
+// 启动
+// ============================================================
+function main() {
+  if (!initGL()) return;
+  sim = new Simulation();
+  sim.init();
+  setupControls();
+  lastTime = performance.now();
+  fpsTime = lastTime;
+  requestAnimationFrame(loop);
+}
+
+main();
+</script>
+</body>
+</html>
