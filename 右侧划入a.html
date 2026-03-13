@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通知系统</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px 20px;
+  }
+
+  h1 { color: #1a1a2e; margin-bottom: 24px; font-size: 28px; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    max-width: 600px;
+  }
+
+  button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.3px;
+  }
+  button:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+  button:active { transform: translateY(0); }
+
+  .btn-success { background: #16a34a; }
+  .btn-error   { background: #dc2626; }
+  .btn-info    { background: #2563eb; }
+  .btn-warning { background: #d97706; }
+
+  /* ---------- 通知容器 ---------- */
+  #toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column-reverse; /* 最新的在底部 */
+    gap: 12px;
+    z-index: 9999;
+    pointer-events: none;
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  /* ---------- 单条通知 ---------- */
+  .toast {
+    pointer-events: auto;
+    min-width: 340px;
+    max-width: 440px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-radius: 10px;
+    color: #fff;
+    box-shadow: 0 8px 30px rgba(0,0,0,.18);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    /* -- 滑入 -- */
+    transform: translateX(120%);
+    opacity: 0;
+    animation: slideIn 0.45s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  }
+
+  .toast.removing {
+    animation: slideOut 0.38s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+
+  @keyframes slideIn {
+    0%   { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(0);    opacity: 1; }
+  }
+
+  @keyframes slideOut {
+    0%   { transform: translateX(0);    opacity: 1; max-height: 120px; margin-bottom: 12px; }
+    50%  { transform: translateX(40%);  opacity: 0; }
+    100% { transform: translateX(120%); opacity: 0; max-height: 0; margin-bottom: 0; padding: 0 20px; }
+  }
+
+  /* -- 底部进度条 -- */
+  .toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: rgba(255,255,255,.35);
+    border-radius: 0 0 10px 10px;
+    animation: progress linear forwards;
+  }
+
+  @keyframes progress {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
+
+  /* -- 类型颜色 -- */
+  .toast-success { background: linear-gradient(135deg, #16a34a, #15803d); }
+  .toast-error   { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+  .toast-info    { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+  .toast-warning { background: linear-gradient(135deg, #d97706, #b45309); }
+
+  /* -- 图标 + 内容 -- */
+  .toast-icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+  .toast-body { flex: 1; }
+  .toast-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+  .toast-msg   { font-size: 13px; opacity: .9; line-height: 1.45; }
+
+  .toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.7);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    line-height: 1;
+    transition: color .2s;
+  }
+  .toast-close:hover { color: #fff; }
+
+  /* -- 移动端适配 -- */
+  @media (max-width: 520px) {
+    #toast-container { right: 12px; top: 12px; left: 12px; }
+    .toast { min-width: unset; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>交互式通知系统</h1>
+
+<div class="controls">
+  <button class="btn-success" onclick="notify({ type:'success', priority:'low',    title:'操作成功',        message:'你的更改已保存。' })">成功（低优先级）</button>
+  <button class="btn-info"    onclick="notify({ type:'info',    priority:'medium', title:'系统提示',        message:'新版本 v2.5 已发布，请尽快更新。' })">信息（中优先级）</button>
+  <button class="btn-warning" onclick="notify({ type:'warning', priority:'high',   title:'存储空间不足',    message:'你的存储空间剩余不足 5%，请尽快清理。' })">警告（高优先级）</button>
+  <button class="btn-error"   onclick="notify({ type:'error',   priority:'critical',title:'登录失败',       message:'连续多次登录失败，账户可能被锁定。' })">严重错误（紧急）</button>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* ============================================================
+ *  通知系统核心
+ * ============================================================ */
+
+const ICONS = {
+  success: '✓',
+  error:   '✕',
+  info:    'ℹ',
+  warning: '⚠',
+};
+
+// 不同优先级对应的停留时间（毫秒）
+const DURATION = {
+  low:      2500,
+  medium:   4000,
+  high:     6500,
+  critical: 9000,
+};
+
+// 全局队列，记录当前活跃通知
+const activeToasts = new Set();
+
+/**
+ * 发送一条通知
+ * @param {{ type:string, priority:string, title:string, message:string }} opts
+ */
+function notify({ type = 'info', priority = 'medium', title = '', message = '' }) {
+  const container = document.getElementById('toast-container');
+
+  // 创建 DOM
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${ICONS[type] || ICONS.info}</span>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-msg">${message}</div>
+    </div>
+    <button class="toast-close" aria-label="关闭">✕</button>
+    <div class="toast-progress" style="animation-duration:${DURATION[priority] || 4000}ms"></div>
+  `;
+
+  container.appendChild(el);
+  activeToasts.add(el);
+
+  // 堆叠限制：最多同时显示 6 条
+  while (container.children.length > 6) {
+    dismiss(container.firstElementChild);
+  }
+
+  // 自动消失计时器
+  const autoTimer = setTimeout(() => dismiss(el), DURATION[priority] || 4000);
+
+  // 点击关闭（不冒泡到关闭按钮的点击也不会有问题）
+  const close = (e) => {
+    e.stopPropagation();
+    clearTimeout(autoTimer);
+    dismiss(el);
+    el.removeEventListener('click', close);
+  };
+  el.querySelector('.toast-close').addEventListener('click', close);
+  // 也可以点击通知本身来关闭
+  el.addEventListener('click', close);
+}
+
+/**
+ * 平滑移除一条通知
+ */
+function dismiss(el) {
+  if (!el || !el.parentNode || el.classList.contains('removing')) return;
+  el.classList.add('removing');
+  activeToasts.delete(el);
+
+  // 动画结束后移除 DOM
+  el.addEventListener('animationend', () => {
+    el.remove();
+  }, { once: true });
+
+  // 兜底：万一 animationend 没触发
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 500);
+}
+</script>
+
+</body>
+</html>
