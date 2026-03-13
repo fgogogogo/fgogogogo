@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动态广场</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5;
+    color: #1d2129;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.15);
+  }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+
+  /* Container */
+  .container {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Publish Box */
+  .publish-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .publish-box textarea {
+    width: 100%;
+    border: 2px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color .2s;
+    font-family: inherit;
+  }
+  .publish-box textarea:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  .publish-box textarea::placeholder { color: #bbb; }
+  .publish-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .publish-tools { display: flex; gap: 6px; }
+  .tool-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: background .2s;
+    color: #666;
+  }
+  .tool-btn:hover { background: #f0f0f0; }
+  .publish-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+  }
+  .publish-btn:hover { opacity: .88; }
+  .publish-btn:active { transform: scale(.96); }
+
+  /* Image Preview */
+  .image-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .image-preview .preview-item {
+    width: 72px; height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .image-preview .preview-item img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .image-preview .preview-item .remove-img {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    border: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Post Card */
+  .post-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    animation: fadeIn .35s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .user-info { flex: 1; }
+  .username { font-weight: 600; font-size: 15px; }
+  .post-time { font-size: 12px; color: #999; margin-top: 2px; }
+  .post-delete {
+    background: none; border: none;
+    color: #ccc; font-size: 18px;
+    cursor: pointer; padding: 4px;
+    border-radius: 6px;
+    transition: color .2s, background .2s;
+  }
+  .post-delete:hover { color: #e74c3c; background: #fdf0ef; }
+
+  .post-content {
+    font-size: 15px;
+    line-height: 1.65;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .post-images {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .post-images.grid-1 { grid-template-columns: 1fr; }
+  .post-images.grid-2 { grid-template-columns: 1fr 1fr; }
+  .post-images.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .post-images img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Actions */
+  .post-actions {
+    display: flex;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 8px;
+    gap: 4px;
+  }
+  .action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888;
+    transition: background .2s, color .2s;
+  }
+  .action-btn:hover { background: #f5f5f5; }
+  .action-btn svg { width: 18px; height: 18px; transition: transform .25s ease; }
+
+  .action-btn.liked { color: #e74c3c; }
+  .action-btn.liked svg { animation: heartPop .4s ease; }
+  @keyframes heartPop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+
+  /* Comment Section */
+  .comment-section {
+    border-top: 1px solid #f0f0f0;
+    margin-top: 6px;
+    padding-top: 10px;
+  }
+  .comment-list { margin-bottom: 8px; }
+  .comment-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    align-items: flex-start;
+    animation: fadeIn .25s ease;
+  }
+  .comment-item + .comment-item { border-top: 1px solid #f8f8f8; }
+  .comment-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    flex-shrink: 0;
+  }
+  .comment-body { flex: 1; }
+  .comment-name { font-weight: 600; font-size: 13px; }
+  .comment-text {
+    font-size: 13px;
+    color: #555;
+    margin-top: 2px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  .comment-time {
+    font-size: 11px;
+    color: #bbb;
+    margin-top: 3px;
+  }
+  .comment-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .comment-del:hover { color: #e74c3c; }
+
+  .comment-input-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .comment-input-wrap input {
+    flex: 1;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .comment-input-wrap input:focus { border-color: #667eea; }
+  .comment-send {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 18px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .2s, transform .15s;
+  }
+  .comment-send:hover { opacity: .85; }
+  .comment-send:active { transform: scale(.96); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #bbb;
+  }
+  .empty-state svg { width: 64px; height: 64px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>动态广场</h1>
+</div>
+
+<div class="container">
+  <!-- Publish Area -->
+  <div class="publish-box">
+    <textarea id="postInput" placeholder="分享你的想法..." rows="3"></textarea>
+    <div id="imagePreview" class="image-preview"></div>
+    <div class="publish-toolbar">
+      <div class="publish-tools">
+        <label class="tool-btn" title="添加图片">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+        </label>
+        <button class="tool-btn" title="表情">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </button>
+      </div>
+      <button class="publish-btn" onclick="publishPost()">发布</button>
+    </div>
+  </div>
+
+  <!-- Post Feed -->
+  <div id="postFeed"></div>
+</div>
+
+<script>
+// ==================== Data ====================
+let posts = [
+  {
+    id: 1,
+    user: '小明',
+    content: '今天天气真好，适合出去走走 🌤️',
+    images: [],
+    time: Date.now() - 3600000,
+    liked: false,
+    likes: 12,
+    comments: [
+      { id: 1, user: '小红', text: '确实，阳光很舒服呀！', time: Date.now() - 3000000 },
+      { id: 2, user: '阿杰', text: '去哪里玩了？', time: Date.now() - 1800000 }
+    ]
+  },
+  {
+    id: 2,
+    user: '技术达人',
+    content: '分享一个前端小技巧：使用 CSS Grid 配合 aspect-ratio 可以轻松实现等比图片网格布局，再也不用担心图片变形了！\n\n#前端开发 #CSS',
+    images: [],
+    time: Date.now() - 7200000,
+    liked: true,
+    likes: 36,
+    comments: [
+      { id: 3, user: '前端新手', text: '学到了，谢谢分享！', time: Date.now() - 6000000 }
+    ]
+  },
+  {
+    id: 3,
+    user: '美食家',
+    content: '周末自己做的提拉米苏，第一次尝试居然成功了！',
+    images: [],
+    time: Date.now() - 86400000,
+    liked: false,
+    likes: 58,
+    comments: []
+  }
+];
+
+let pendingImages = [];
+let nextPostId = 4;
+let nextCommentId = 10;
+
+const EMOJI_LIST = ['😊','😂','🥰','😎','🤔','👍','❤️','🔥','✨','🎉','😢','👋','🙌','💯','🌸','🍿'];
+
+// ==================== Format Time ====================
+function formatTime(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+  if (diff < 2592000000) return Math.floor(diff / 86400000) + ' 天前';
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getInitial(name) {
+  return name.charAt(0);
+}
+
+function randomColor() {
+  const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a','#fee140','#30cfd0'];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// ==================== Like SVG ====================
+function heartSVG(filled) {
+  return `<svg viewBox="0 0 24 24" fill="${filled?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+}
+
+function commentSVG() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+}
+
+function shareSVG() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+}
+
+// ==================== Render ====================
+function renderFeed() {
+  const feed = document.getElementById('postFeed');
+  if (posts.length === 0) {
+    feed.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <p>还没有动态，快来发布第一条吧！</p>
+      </div>`;
+    return;
+  }
+
+  feed.innerHTML = posts.map(post => {
+    let imagesHTML = '';
+    if (post.images && post.images.length > 0) {
+      const cls = post.images.length <= 1 ? 'grid-1' : post.images.length <= 2 ? 'grid-2' : 'grid-3';
+      imagesHTML = `<div class="post-images ${cls}">${post.images.map(img =>
+        `<img src="${img}" alt="图片" loading="lazy">`
+      ).join('')}</div>`;
+    }
+
+    const commentsHTML = post.comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-avatar" style="background:${randomColor()}">${getInitial(c.user)}</div>
+        <div class="comment-body">
+          <div class="comment-name">${escHTML(c.user)}</div>
+          <div class="comment-text">${escHTML(c.text)}</div>
+          <div class="comment-time">${formatTime(c.time)}</div>
+        </div>
+        <button class="comment-del" onclick="deleteComment(${post.id},${c.id})" title="删除">&times;</button>
+      </div>
+    `).join('');
+
+    return `
+      <div class="post-card" id="post-${post.id}">
+        <div class="post-header">
+          <div class="avatar" style="background:${randomColor()}">${getInitial(post.user)}</div>
+          <div class="user-info">
+            <div class="username">${escHTML(post.user)}</div>
+            <div class="post-time">${formatTime(post.time)}</div>
+          </div>
+          <button class="post-delete" onclick="deletePost(${post.id})" title="删除">&times;</button>
+        </div>
+        <div class="post-content">${escHTML(post.content)}</div>
+        ${imagesHTML}
+        <div class="post-actions">
+          <button class="action-btn ${post.liked?'liked':''}" onclick="toggleLike(${post.id})">
+            ${heartSVG(post.liked)}
+            <span>${post.likes > 0 ? post.likes : '赞'}</span>
+          </button>
+          <button class="action-btn" onclick="focusComment(${post.id})">
+            ${commentSVG()}
+            <span>${post.comments.length > 0 ? post.comments.length : '评论'}</span>
+          </button>
+          <button class="action-btn" onclick="sharePost(${post.id})">
+            ${shareSVG()}
+            <span>分享</span>
+          </button>
+        </div>
+        ${post.comments.length > 0 || post.showComments ? `
+          <div class="comment-section">
+            <div class="comment-list">${commentsHTML}</div>
+            <div class="comment-input-wrap">
+              <input type="text" placeholder="写评论..." id="commentInput-${post.id}"
+                     onkeydown="if(event.key==='Enter')addComment(${post.id})">
+              <button class="comment-send" onclick="addComment(${post.id})">发送</button>
+            </div>
+          </div>
+        ` : `
+          <div class="comment-section">
+            <div class="comment-input-wrap">
+              <input type="text" placeholder="写评论..." id="commentInput-${post.id}"
+                     onkeydown="if(event.key==='Enter')addComment(${post.id})"
+                     style="display:none">
+              <button class="comment-send" onclick="focusComment(${post.id})" style="font-size:12px;">写评论...</button>
+            </div>
+          </div>
+        `}
+      </div>
+    `;
+  }).join('');
+}
+
+function escHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== Actions ====================
+function publishPost() {
+  const input = document.getElementById('postInput');
+  const content = input.value.trim();
+  if (!content && pendingImages.length === 0) return;
+
+  const names = ['我','用户' + Math.floor(Math.random()*1000),'匿名用户'];
+  posts.unshift({
+    id: nextPostId++,
+    user: names[0],
+    content,
+    images: [...pendingImages],
+    time: Date.now(),
+    liked: false,
+    likes: 0,
+    comments: []
+  });
+
+  input.value = '';
+  pendingImages = [];
+  document.getElementById('imagePreview').innerHTML = '';
+  renderFeed();
+}
+
+function toggleLike(id) {
+  const post = posts.find(p => p.id === id);
+  if (!post) return;
+  post.liked = !post.liked;
+  post.likes += post.liked ? 1 : -1;
+  renderFeed();
+}
+
+function focusComment(id) {
+  const post = posts.find(p => p.id === id);
+  if (post) post.showComments = true;
+  renderFeed();
+  const input = document.getElementById('commentInput-' + id);
+  if (input) input.focus();
+}
+
+function addComment(postId) {
+  const input = document.getElementById('commentInput-' + postId);
+  const text = input.value.trim();
+  if (!text) return;
+
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+
+  post.comments.push({
+    id: nextCommentId++,
+    user: '我',
+    text,
+    time: Date.now()
+  });
+  post.showComments = true;
+  renderFeed();
+}
+
+function deleteComment(postId, commentId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments = post.comments.filter(c => c.id !== commentId);
+  renderFeed();
+}
+
+function deletePost(id) {
+  if (!confirm('确定删除这条动态吗？')) return;
+  posts = posts.filter(p => p.id !== id);
+  renderFeed();
+}
+
+function sharePost(id) {
+  const post = posts.find(p => p.id === id);
+  if (!post) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(post.content.substring(0, 100));
+    showToast('已复制到剪贴板');
+  } else {
+    showToast('已分享');
+  }
+}
+
+// ==================== Toast ====================
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  Object.assign(el.style, {
+    position: 'fixed', bottom: '40px', left: '50%', transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,.75)', color: '#fff', padding: '10px 22px',
+    borderRadius: '20px', fontSize: '14px', zIndex: '9999',
+    animation: 'fadeIn .25s ease'
+  });
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 1800);
+}
+
+// ==================== Image Upload ====================
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  if (pendingImages.length + files.length > 9) {
+    showToast('最多上传 9 张图片');
+    return;
+  }
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      pendingImages.push(ev.target.result);
+      renderImagePreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+function renderImagePreview() {
+  const container = document.getElementById('imagePreview');
+  container.innerHTML = pendingImages.map((src, i) => `
+    <div class="preview-item">
+      <img src="${src}" alt="预览">
+      <button class="remove-img" onclick="removeImage(${i})">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removeImage(index) {
+  pendingImages.splice(index, 1);
+  renderImagePreview();
+}
+
+// ==================== Init ====================
+renderFeed();
+</script>
+
+</body>
+</html>
