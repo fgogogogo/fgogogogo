@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>商品详情</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+/* ========== 轮播图 ========== */
+.swiper {
+  position: relative;
+  width: 100%;
+  height: 375px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.swiper-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: transform;
+}
+
+.swiper-slide {
+  min-width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+}
+
+.swiper-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.swiper-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.swiper-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s;
+}
+
+.swiper-dot.active {
+  width: 18px;
+  background: #fff;
+}
+
+.swiper-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ========== 价格区 ========== */
+.price-section {
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  padding: 16px;
+  padding-bottom: 20px;
+  color: #fff;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price-symbol {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.price-current {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.price-original {
+  font-size: 13px;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.price-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.price-tag {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.sold-info {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* ========== 商品信息 ========== */
+.product-info {
+  background: #fff;
+  padding: 14px 16px;
+  position: relative;
+}
+
+.product-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-title-tag {
+  display: inline-block;
+  font-size: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  padding: 1px 5px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+  font-weight: normal;
+}
+
+.product-subtitle {
+  font-size: 13px;
+  color: #999;
+  margin-top: 8px;
+}
+
+.product-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f5f5f5;
+  font-size: 12px;
+  color: #999;
+}
+
+/* ========== 优惠券 ========== */
+.coupon-section {
+  background: #fff;
+  margin-top: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coupon-section .label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.coupon-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+  margin: 0 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.coupon-list::-webkit-scrollbar {
+  display: none;
+}
+
+.coupon-item {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #ff4d4f;
+  border: 1px solid #ff4d4f;
+  padding: 3px 10px;
+  border-radius: 3px;
+  background: rgba(255, 77, 79, 0.04);
+}
+
+.coupon-arrow {
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* ========== 规格区 ========== */
+.sku-section {
+  background: #fff;
+  margin-top: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sku-section .label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.sku-selected {
+  flex: 1;
+  margin: 0 10px;
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sku-section .arrow {
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* ========== 服务区 ========== */
+.service-section {
+  background: #fff;
+  margin-top: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.service-section .label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.service-list {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  margin-left: 20px;
+}
+
+.service-item {
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.service-icon {
+  color: #4caf50;
+  font-size: 12px;
+}
+
+/* ========== 评价区 ========== */
+.review-section {
+  background: #fff;
+  margin-top: 10px;
+  padding: 14px 16px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.review-header .title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.review-header .count {
+  font-size: 13px;
+  color: #999;
+}
+
+.review-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.review-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.review-tag {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #666;
+  padding: 4px 12px;
+  background: #f5f5f5;
+  border-radius: 14px;
+}
+
+.review-tag.active {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.08);
+}
+
+.review-summary {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.review-score {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ff4d4f;
+}
+
+.review-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.review-progress {
+  flex: 1;
+}
+
+.review-progress-bar {
+  height: 4px;
+  background: #f0f0f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.review-progress-fill {
+  height: 100%;
+  background: #ff4d4f;
+  border-radius: 2px;
+}
+
+.review-item {
+  padding: 12px 0;
+  border-top: 1px solid #f8f8f8;
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.review-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f0f0f0, #ddd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 13px;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-name {
+  font-size: 13px;
+  color: #999;
+}
+
+.review-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.review-images {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.review-images img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.review-date {
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 8px;
+}
+
+/* ========== 详情 Tab ========== */
+.detail-section {
+  margin-top: 10px;
+  background: #fff;
+}
+
+.detail-tabs {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+}
+
+.detail-tab {
+  flex: 1;
+  text-align: center;
+  padding: 14px 0;
+  font-size: 14px;
+  color: #666;
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.detail-tab.active {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.detail-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  background: #ff4d4f;
+  border-radius: 1px;
+}
+
+.detail-content {
+  display: none;
+}
+
+.detail-content.active {
+  display: block;
+}
+
+/* 参数 */
+.params-table {
+  padding: 16px;
+}
+
+.param-row {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f8f8;
+  font-size: 13px;
+}
+
+.param-name {
+  width: 80px;
+  flex-shrink: 0;
+  color: #999;
+}
+
+.param-value {
+  flex: 1;
+  color: #333;
+}
+
+/* 详情图片 */
+.detail-images {
+  padding: 16px;
+}
+
+.detail-images img {
+  width: 100%;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* ========== 底部栏 ========== */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 750px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+
+.bottom-icons {
+  display: flex;
+  padding: 0 8px;
+}
+
+.bottom-icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10px;
+  color: #999;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bottom-icon-item .icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.bottom-icon-item.collected .icon {
+  color: #ff4d4f;
+}
+
+.bottom-actions {
+  flex: 1;
+  display: flex;
+  margin-left: 8px;
+}
+
+.btn-cart, .btn-buy {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.btn-cart:active, .btn-buy:active {
+  opacity: 0.8;
+}
+
+.btn-cart {
+  background: linear-gradient(135deg, #ffab00, #ffa940);
+  color: #fff;
+  margin-right: 8px;
+}
+
+.btn-buy {
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  color: #fff;
+}
+
+/* ========== SKU 弹窗 ========== */
+.sku-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.sku-mask.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sku-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: 750px;
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  z-index: 201;
+  transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sku-panel.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.sku-panel-header {
+  display: flex;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.sku-panel-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f5f5f5;
+}
+
+.sku-panel-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sku-panel-info {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sku-panel-price {
+  color: #ff4d4f;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.sku-panel-price-symbol {
+  font-size: 14px;
+}
+
+.sku-panel-stock {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.sku-panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+}
+
+.sku-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sku-group {
+  margin-bottom: 20px;
+}
+
+.sku-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.sku-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sku-option {
+  padding: 7px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  color: #333;
+  background: #fff;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.sku-option.selected {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.04);
+}
+
+.sku-option.disabled {
+  border-color: #eee;
+  color: #ccc;
+  background: #fafafa;
+  cursor: not-allowed;
+}
+
+.sku-quantity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.sku-quantity-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.quantity-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f8f8f8;
+  font-size: 18px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.quantity-btn:active {
+  background: #f0f0f0;
+}
+
+.quantity-btn.disabled {
+  color: #ddd;
+  cursor: not-allowed;
+}
+
+.quantity-input {
+  width: 48px;
+  height: 32px;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.sku-panel-footer {
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.sku-panel-btn {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.sku-panel-btn:active {
+  opacity: 0.85;
+}
+
+.sku-panel-btn.cart-btn {
+  background: linear-gradient(135deg, #ffab00, #ffa940);
+  color: #fff;
+}
+
+.sku-panel-btn.buy-btn {
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  color: #fff;
+}
+
+/* ========== Toast ========== */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+.toast.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ========== 飞入动画 ========== */
+.fly-dot {
+  position: fixed;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffab00;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* ========== 底部占位 ========== */
+.bottom-placeholder {
+  height: 60px;
+}
+
+/* ========== 收藏动画 ========== */
+@keyframes collectPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.bottom-icon-item.animating .icon {
+  animation: collectPop 0.3s ease;
+}
+
+/* ========== 图片预览 ========== */
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-overlay.visible {
+  display: flex;
+}
+
+.preview-overlay img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview-counter {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14px;
+}
+
+.preview-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- 轮播图 -->
+<div class="swiper" id="swiper">
+  <div class="swiper-track" id="swiperTrack"></div>
+  <div class="swiper-dots" id="swiperDots"></div>
+  <div class="swiper-counter"><span id="swiperCurrent">1</span>/<span id="swiperTotal">1</span></div>
+</div>
+
+<!-- 价格区 -->
+<div class="price-section">
+  <div class="price-row">
+    <span class="price-symbol">&yen;</span>
+    <span class="price-current" id="displayPrice">299</span>
+    <span class="price-original">&yen;599</span>
+  </div>
+  <div class="price-tags">
+    <span class="price-tag">满300减50</span>
+    <span class="price-tag">新人专享券</span>
+    <span class="price-tag">限时特惠</span>
+  </div>
+  <div class="sold-info">月销 2.6万+ · 累计评价 1.2万+</div>
+</div>
+
+<!-- 商品信息 -->
+<div class="product-info">
+  <h1 class="product-title">
+    <span class="product-title-tag">热销</span>2024新款冬季加厚羽绒服女中长款韩版宽松大码白鸭绒外套保暖修身显瘦
+  </h1>
+  <p class="product-subtitle">90%白鸭绒填充 | 防风防水面料 | 2024秋冬新款</p>
+  <div class="product-stats">
+    <span>收藏 3.8万</span>
+    <span>快递: 免运费</span>
+  </div>
+</div>
+
+<!-- 优惠券 -->
+<div class="coupon-section" id="couponSection">
+  <span class="label">优惠券</span>
+  <div class="coupon-list">
+    <span class="coupon-item">满200减20</span>
+    <span class="coupon-item">满400减60</span>
+    <span class="coupon-item">满800减150</span>
+    <span class="coupon-item">新客减10</span>
+  </div>
+  <span class="coupon-arrow">›</span>
+</div>
+
+<!-- 规格选择 -->
+<div class="sku-section" id="skuSection">
+  <span class="label">已选</span>
+  <span class="sku-selected" id="skuSelectedText">请选择 颜色、尺码</span>
+  <span class="arrow">›</span>
+</div>
+
+<!-- 服务 -->
+<div class="service-section">
+  <span class="label">服务</span>
+  <div class="service-list">
+    <span class="service-item"><span class="service-icon">✓</span>7天无理由</span>
+    <span class="service-item"><span class="service-icon">✓</span>运费险</span>
+    <span class="service-item"><span class="service-icon">✓</span>假一赔四</span>
+  </div>
+</div>
+
+<!-- 评价 -->
+<div class="review-section" id="reviewSection">
+  <div class="review-header">
+    <span class="title">宝贝评价(1.2万)</span>
+    <span class="count">好评率 98% ›</span>
+  </div>
+  <div class="review-tags" id="reviewTags">
+    <span class="review-tag active" data-filter="all">全部(1.2万)</span>
+    <span class="review-tag" data-filter="good">好评(1.15万)</span>
+    <span class="review-tag" data-filter="img">有图(3268)</span>
+    <span class="review-tag" data-filter="middle">中评(152)</span>
+  </div>
+  <div class="review-summary">
+    <span class="review-score">4.9</span>
+    <div class="review-progress">
+      <div class="review-progress-bar">
+        <div class="review-progress-fill" style="width:98%"></div>
+      </div>
+    </div>
+    <span class="review-label">高于同类 96%</span>
+  </div>
+  <div class="review-item">
+    <div class="review-user">
+      <div class="review-avatar">小</div>
+      <span class="review-name">小***米</span>
+    </div>
+    <p class="review-content">羽绒服收到了，质量超出预期！面料手感很好，90%白鸭绒填充非常保暖，穿起来不臃肿。颜色和图片一样没有色差，非常满意的一次购物～</p>
+    <div class="review-images">
+      <img src="https://picsum.photos/seed/review1/200/200" alt="">
+      <img src="https://picsum.photos/seed/review2/200/200" alt="">
+      <img src="https://picsum.photos/seed/review3/200/200" alt="">
+    </div>
+    <p class="review-date">2024-12-15</p>
+  </div>
+  <div class="review-item">
+    <div class="review-user">
+      <div class="review-avatar">A</div>
+      <span class="review-name">A***a</span>
+    </div>
+    <p class="review-content">版型很好看，显瘦效果明显，就是袖口稍微有点紧，其他都很满意，这个价格能买到这个质量真的值了。</p>
+    <div class="review-images">
+      <img src="https://picsum.photos/seed/review4/200/200" alt="">
+    </div>
+    <p class="review-date">2024-12-10</p>
+  </div>
+  <div class="review-item">
+    <div class="review-user">
+      <div class="review-avatar">L</div>
+      <span class="review-name">L***n</span>
+    </div>
+    <p class="review-content">回购了第三件了，给妈妈也买了一件，穿上特别暖和，发货也快，推荐！</p>
+    <p class="review-date">2024-12-08</p>
+  </div>
+</div>
+
+<!-- 商品详情 -->
+<div class="detail-section">
+  <div class="detail-tabs">
+    <div class="detail-tab active" data-tab="params">商品参数</div>
+    <div class="detail-tab" data-tab="detail">图文详情</div>
+  </div>
+  <div class="detail-content active" id="tab-params">
+    <div class="params-table">
+      <div class="param-row"><span class="param-name">品牌</span><span class="param-value">ARCTERYX</span></div>
+      <div class="param-row"><span class="param-name">填充物</span><span class="param-value">90%白鸭绒</span></div>
+      <div class="param-row"><span class="param-name">款式</span><span class="param-value">中长款</span></div>
+      <div class="param-row"><span class="param-name">厚薄</span><span class="param-value">加厚</span></div>
+      <div class="param-row"><span class="param-name">面料</span><span class="param-value">高密度防风防水涤纶</span></div>
+      <div class="param-row"><span class="param-name">里料</span><span class="param-value">聚酯纤维</span></div>
+      <div class="param-row"><span class="param-name">适用季节</span><span class="param-value">冬季</span></div>
+      <div class="param-row"><span class="param-name">风格</span><span class="param-value">韩版</span></div>
+      <div class="param-row"><span class="param-name">领型</span><span class="param-value">立领</span></div>
+      <div class="param-row"><span class="param-name">衣门襟</span><span class="param-value">拉链</span></div>
+    </div>
+  </div>
+  <div class="detail-content" id="tab-detail">
+    <div class="detail-images">
+      <img src="https://picsum.photos/seed/detail1/750/1000" alt="">
+      <img src="https://picsum.photos/seed/detail2/750/800" alt="">
+      <img src="https://picsum.photos/seed/detail3/750/900" alt="">
+      <img src="https://picsum.photos/seed/detail4/750/1200" alt="">
+    </div>
+  </div>
+</div>
+
+<!-- 底部占位 -->
+<div class="bottom-placeholder"></div>
+
+<!-- 底部操作栏 -->
+<div class="bottom-bar">
+  <div class="bottom-icons">
+    <div class="bottom-icon-item" id="btnService">
+      <span class="icon">💬</span>
+      <span>客服</span>
+    </div>
+    <div class="bottom-icon-item" id="btnShop">
+      <span class="icon">🏪</span>
+      <span>店铺</span>
+    </div>
+    <div class="bottom-icon-item" id="btnCollect">
+      <span class="icon">🤍</span>
+      <span>收藏</span>
+    </div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn-cart" id="btnCart">加入购物车</button>
+    <button class="btn-buy" id="btnBuy">立即购买</button>
+  </div>
+</div>
+
+<!-- SKU 弹窗 -->
+<div class="sku-mask" id="skuMask"></div>
+<div class="sku-panel" id="skuPanel">
+  <div class="sku-panel-header">
+    <div class="sku-panel-img" id="skuPanelImg">
+      <img src="https://picsum.photos/seed/product1/200/200" alt="">
+    </div>
+    <div class="sku-panel-info">
+      <div class="sku-panel-price"><span class="sku-panel-price-symbol">&yen;</span><span id="skuPanelPrice">299</span></div>
+      <div class="sku-panel-stock">库存：<span id="skuPanelStock">386</span>件</div>
+      <div class="sku-panel-stock">已选：<span id="skuPanelSelected">请选择规格</span></div>
+    </div>
+    <div class="sku-panel-close" id="skuPanelClose">✕</div>
+  </div>
+  <div class="sku-panel-body" id="skuPanelBody"></div>
+  <div class="sku-panel-footer">
+    <button class="sku-panel-btn" id="skuPanelBtn">确认</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 图片预览 -->
+<div class="preview-overlay" id="previewOverlay">
+  <img src="" alt="" id="previewImg">
+  <div class="preview-counter"><span id="previewCurrent">1</span> / <span id="previewTotal">1</span></div>
+  <div class="preview-close" id="previewClose">✕</div>
+</div>
+
+<script>
+// ==================== 商品数据 ====================
+const productData = {
+  images: [
+    { url: 'https://picsum.photos/seed/prod1/750/750', color: '珍珠白' },
+    { url: 'https://picsum.photos/seed/prod2/750/750', color: '珍珠白' },
+    { url: 'https://picsum.photos/seed/prod3/750/750', color: '珍珠白' },
+    { url: 'https://picsum.photos/seed/prod4/750/750', color: '樱花粉' },
+    { url: 'https://picsum.photos/seed/prod5/750/750', color: '樱花粉' },
+  ],
+  specs: [
+    {
+      name: '颜色',
+      key: 'color',
+      options: ['珍珠白', '樱花粉', '雾霾蓝', '经典黑']
+    },
+    {
+      name: '尺码',
+      key: 'size',
+      options: ['S (80-95斤)', 'M (95-110斤)', 'L (110-125斤)', 'XL (125-140斤)', 'XXL (140-155斤)']
+    }
+  ],
+  skuList: [
+    { color: '珍珠白', size: 'S (80-95斤)',  price: 299, stock: 86 },
+    { color: '珍珠白', size: 'M (95-110斤)', price: 299, stock: 120 },
+    { color: '珍珠白', size: 'L (110-125斤)', price: 299, stock: 95 },
+    { color: '珍珠白', size: 'XL (125-140斤)', price: 319, stock: 50 },
+    { color: '珍珠白', size: 'XXL (140-155斤)', price: 339, stock: 35 },
+    { color: '樱花粉', size: 'S (80-95斤)',  price: 299, stock: 72 },
+    { color: '樱花粉', size: 'M (95-110斤)', price: 299, stock: 100 },
+    { color: '樱花粉', size: 'L (110-125斤)', price: 299, stock: 80 },
+    { color: '樱花粉', size: 'XL (125-140斤)', price: 319, stock: 40 },
+    { color: '樱花粉', size: 'XXL (140-155斤)', price: 339, stock: 20 },
+    { color: '雾霾蓝', size: 'S (80-95斤)',  price: 309, stock: 65 },
+    { color: '雾霾蓝', size: 'M (95-110斤)', price: 309, stock: 88 },
+    { color: '雾霾蓝', size: 'L (110-125斤)', price: 309, stock: 56 },
+    { color: '雾霾蓝', size: 'XL (125-140斤)', price: 329, stock: 30 },
+    { color: '雾霾蓝', size: 'XXL (140-155斤)', price: 349, stock: 0 },
+    { color: '经典黑', size: 'S (80-95斤)',  price: 299, stock: 90 },
+    { color: '经典黑', size: 'M (95-110斤)', price: 299, stock: 150 },
+    { color: '经典黑', size: 'L (110-125斤)', price: 299, stock: 110 },
+    { color: '经典黑', size: 'XL (125-140斤)', price: 319, stock: 60 },
+    { color: '经典黑', size: 'XXL (140-155斤)', price: 339, stock: 25 },
+  ]
+};
+
+// ==================== 状态管理 ====================
+let currentSlide = 0;
+let swiperTimer = null;
+let selectedSpecs = {};  // { color: '珍珠白', size: 'M (95-110斤)' }
+let quantity = 1;
+let collected = false;
+let cartCount = 0;
+let skuAction = 'cart'; // 'cart' or 'buy'
+
+// ==================== 轮播图 ====================
+const swiperTrack = document.getElementById('swiperTrack');
+const swiperDots = document.getElementById('swiperDots');
+const swiperCurrent = document.getElementById('swiperCurrent');
+const swiperTotal = document.getElementById('swiperTotal');
+
+function initSwiper() {
+  swiperTotal.textContent = productData.images.length;
+  swiperTrack.innerHTML = productData.images.map((img, i) =>
+    `<div class="swiper-slide"><img src="${img.url}" alt="商品图${i + 1}" loading="lazy"></div>`
+  ).join('');
+  swiperDots.innerHTML = productData.images.map((_, i) =>
+    `<div class="swiper-dot${i === 0 ? ' active' : ''}"></div>`
+  ).join('');
+  startAutoPlay();
+}
+
+function goToSlide(index) {
+  const len = productData.images.length;
+  if (index < 0) index = len - 1;
+  if (index >= len) index = 0;
+  currentSlide = index;
+  swiperTrack.style.transform = `translateX(-${index * 100}%)`;
+  swiperCurrent.textContent = index + 1;
+  document.querySelectorAll('.swiper-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === index);
+  });
+}
+
+function startAutoPlay() {
+  stopAutoPlay();
+  swiperTimer = setInterval(() => goToSlide(currentSlide + 1), 5000);
+}
+
+function stopAutoPlay() {
+  if (swiperTimer) clearInterval(swiperTimer);
+}
+
+// 触摸滑动
+let touchStartX = 0, touchStartY = 0, touchMoveX = 0, isSwiping = false;
+
+document.getElementById('swiper').addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchMoveX = touchStartX;
+  isSwiping = false;
+  stopAutoPlay();
+}, { passive: true });
+
+document.getElementById('swiper').addEventListener('touchmove', (e) => {
+  touchMoveX = e.touches[0].clientX;
+  const diffX = Math.abs(touchMoveX - touchStartX);
+  const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+  if (diffX > diffY && diffX > 10) {
+    isSwiping = true;
+  }
+  if (isSwiping) {
+    e.preventDefault();
+    const offset = -(currentSlide * window.innerWidth) + (touchMoveX - touchStartX);
+    swiperTrack.style.transition = 'none';
+    swiperTrack.style.transform = `translateX(${offset}px)`;
+  }
+}, { passive: false });
+
+document.getElementById('swiper').addEventListener('touchend', () => {
+  swiperTrack.style.transition = '';
+  if (isSwiping) {
+    const diff = touchMoveX - touchStartX;
+    if (Math.abs(diff) > 50) {
+      goToSlide(currentSlide + (diff < 0 ? 1 : -1));
+    } else {
+      goToSlide(currentSlide);
+    }
+  }
+  isSwiping = false;
+  startAutoPlay();
+});
+
+// 点击预览大图
+document.getElementById('swiper').addEventListener('click', (e) => {
+  if (isSwiping || Math.abs(touchMoveX - touchStartX) > 10) return;
+  openPreview(currentSlide);
+});
+
+// ==================== 图片预览 ====================
+const previewOverlay = document.getElementById('previewOverlay');
+const previewImg = document.getElementById('previewImg');
+const previewCurrentEl = document.getElementById('previewCurrent');
+const previewTotalEl = document.getElementById('previewTotal');
+
+function openPreview(index) {
+  previewTotalEl.textContent = productData.images.length;
+  previewCurrentEl.textContent = index + 1;
+  previewImg.src = productData.images[index].url;
+  previewOverlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('previewClose').addEventListener('click', () => {
+  previewOverlay.classList.remove('visible');
+  document.body.style.overflow = '';
+});
+
+previewOverlay.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+previewOverlay.addEventListener('touchend', (e) => {
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 60) {
+    const newIndex = currentSlide + (diff < 0 ? 1 : -1);
+    if (newIndex >= 0 && newIndex < productData.images.length) {
+      currentSlide = newIndex;
+    }
+    goToSlide(currentSlide);
+    previewCurrentEl.textContent = currentSlide + 1;
+    previewImg.src = productData.images[currentSlide].url;
+  }
+});
+
+// ==================== SKU 弹窗 ====================
+function getSkuInfo() {
+  const { color, size } = selectedSpecs;
+  if (!color || !size) {
+    // 默认返回第一个有库存的SKU
+    const first = productData.skuList.find(s => s.stock > 0);
+    return first || { price: 299, stock: 0 };
+  }
+  const sku = productData.skuList.find(s => s.color === color && s.size === size);
+  return sku || { price: 299, stock: 0 };
+}
+
+function openSkuPanel(action) {
+  skuAction = action || 'cart';
+  renderSkuPanel();
+  const btn = document.getElementById('skuPanelBtn');
+  if (skuAction === 'cart') {
+    btn.textContent = '加入购物车';
+    btn.className = 'sku-panel-btn cart-btn';
+  } else {
+    btn.textContent = '立即购买';
+    btn.className = 'sku-panel-btn buy-btn';
+  }
+  document.getElementById('skuMask').classList.add('visible');
+  document.getElementById('skuPanel').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSkuPanel() {
+  document.getElementById('skuMask').classList.remove('visible');
+  document.getElementById('skuPanel').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function renderSkuPanel() {
+  const body = document.getElementById('skuPanelBody');
+  const sku = getSkuInfo();
+
+  // 更新面板头部
+  const { color } = selectedSpecs;
+  const img = color
+    ? productData.images.find(img => img.color === color) || productData.images[0]
+    : productData.images[0];
+  document.querySelector('#skuPanelImg img').src = img.url;
+  document.getElementById('skuPanelPrice').textContent = sku.price;
+  document.getElementById('skuPanelStock').textContent = sku.stock;
+
+  const selectedTexts = Object.values(selectedSpecs);
+  document.getElementById('skuPanelSelected').textContent =
+    selectedTexts.length ? selectedTexts.join('，') : '请选择规格';
+
+  // 渲染规格选项
+  body.innerHTML = productData.specs.map(spec => `
+    <div class="sku-group">
+      <div class="sku-group-title">${spec.name}</div>
+      <div class="sku-options">
+        ${spec.options.map(opt => {
+          const key = spec.key;
+          const selected = selectedSpecs[key] === opt;
+          const disabled = getStockForOption(key, opt) === 0;
+          return `<div class="sku-option${selected ? ' selected' : ''}${disabled ? ' disabled' : ''}"
+                      data-key="${key}" data-value="${opt}">${opt}</div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="sku-group">
+      <div class="sku-quantity-label">数量</div>
+      <div class="sku-quantity">
+        <div class="quantity-stepper">
+          <div class="quantity-btn${quantity <= 1 ? ' disabled' : ''}" id="qtyMinus">−</div>
+          <div class="quantity-stepper">
+            <input class="quantity-input" type="text" value="${quantity}" id="qtyInput" readonly>
+          </div>
+          <div class="quantity-btn${quantity >= sku.stock ? ' disabled' : ''}" id="qtyPlus">+</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // 绑定规格选项事件
+  body.querySelectorAll('.sku-option:not(.disabled)').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.dataset.key;
+      const value = el.dataset.value;
+      if (selectedSpecs[key] === value) {
+        delete selectedSpecs[key];
+      } else {
+        selectedSpecs[key] = value;
+      }
+      renderSkuPanel();
+      updateMainPage();
+    });
+  });
+
+  // 绑定数量事件
+  const qtyMinus = document.getElementById('qtyMinus');
+  const qtyPlus = document.getElementById('qtyPlus');
+  if (qtyMinus) qtyMinus.addEventListener('click', () => { if (quantity > 1) { quantity--; renderSkuPanel(); } });
+  if (qtyPlus) qtyPlus.addEventListener('click', () => { if (quantity < sku.stock) { quantity++; renderSkuPanel(); } });
+}
+
+function getStockForOption(specKey, specValue) {
+  const tempSpecs = { ...selectedSpecs, [specKey]: specValue };
+  const sku = productData.skuList.find(s => {
+    return Object.keys(tempSpecs).every(key => s[key] === tempSpecs[key]);
+  });
+  return sku ? sku.stock : 0;
+}
+
+function updateMainPage() {
+  const sku = getSkuInfo();
+  document.getElementById('displayPrice').textContent = sku.price;
+
+  const selectedTexts = Object.values(selectedSpecs);
+  if (selectedTexts.length) {
+    document.getElementById('skuSelectedText').textContent =
+      selectedTexts.join('，') + ' × ' + quantity;
+  } else {
+    document.getElementById('skuSelectedText').textContent = '请选择 颜色、尺码';
+  }
+}
+
+// 打开/关闭弹窗
+document.getElementById('skuSection').addEventListener('click', () => openSkuPanel('cart'));
+document.getElementById('skuMask').addEventListener('click', closeSkuPanel);
+document.getElementById('skuPanelClose').addEventListener('click', closeSkuPanel);
+
+// 弹窗确认
+document.getElementById('skuPanelBtn').addEventListener('click', () => {
+  const { color, size } = selectedSpecs;
+  if (!color || !size) {
+    showToast('请选择商品规格');
+    return;
+  }
+  const sku = getSkuInfo();
+  if (sku.stock === 0) {
+    showToast('该规格暂时缺货');
+    return;
+  }
+  if (quantity > sku.stock) {
+    showToast(`库存不足，最多可购买 ${sku.stock} 件`);
+    return;
+  }
+
+  if (skuAction === 'cart') {
+    addToCart();
+  } else {
+    showToast('即将跳转到结算页面');
+  }
+  closeSkuPanel();
+});
+
+// ==================== 购物车 ====================
+function addToCart() {
+  const { color, size } = selectedSpecs;
+  const sku = getSkuInfo();
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  const existItem = cart.find(item => item.color === color && item.size === size);
+  if (existItem) {
+    existItem.quantity += quantity;
+  } else {
+    cart.push({
+      id: Date.now(),
+      name: '2024新款冬季加厚羽绒服女',
+      color, size,
+      price: sku.price,
+      quantity,
+      image: productData.images.find(img => img.color === color)?.url || productData.images[0].url
+    });
+  }
+  localStorage.setItem('cart', JSON.stringify(cart));
+  cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // 飞入动画
+  flyToCart();
+
+  setTimeout(() => {
+    showToast(`已加入购物车`);
+  }, 400);
+}
+
+function flyToCart() {
+  const btnRect = document.getElementById('btnCart').getBoundingClientRect();
+  const cartIcon = document.getElementById('btnCollect').querySelector('.icon');
+  const targetRect = cartIcon.getBoundingClientRect();
+
+  const dot = document.createElement('div');
+  dot.className = 'fly-dot';
+  dot.style.left = btnRect.left + btnRect.width / 2 + 'px';
+  dot.style.top = btnRect.top + 'px';
+  document.body.appendChild(dot);
+
+  const dx = targetRect.left + targetRect.width / 2 - (btnRect.left + btnRect.width / 2);
+  const dy = targetRect.top + targetRect.height / 2 - btnRect.top;
+
+  dot.animate([
+    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+    { transform: `translate(${dx * 0.5}px, ${dy - 80}px) scale(0.8)`, opacity: 0.9, offset: 0.4 },
+    { transform: `translate(${dx}px, ${dy}px) scale(0.3)`, opacity: 0.3 }
+  ], { duration: 600, easing: 'ease-in' }).onfinish = () => {
+    dot.remove();
+    cartIcon.style.transform = 'scale(1.3)';
+    setTimeout(() => cartIcon.style.transform = '', 200);
+  };
+}
+
+// ==================== 底部按钮 ====================
+document.getElementById('btnCart').addEventListener('click', () => openSkuPanel('cart'));
+document.getElementById('btnBuy').addEventListener('click', () => openSkuPanel('buy'));
+
+document.getElementById('btnCollect').addEventListener('click', function() {
+  collected = !collected;
+  const icon = this.querySelector('.icon');
+  const label = this.querySelector('span:last-child');
+  if (collected) {
+    icon.textContent = '❤️';
+    this.classList.add('collected');
+    this.classList.add('animating');
+    label.textContent = '已收藏';
+    showToast('收藏成功');
+  } else {
+    icon.textContent = '🤍';
+    this.classList.remove('collected');
+    this.classList.add('animating');
+    label.textContent = '收藏';
+    showToast('已取消收藏');
+  }
+  setTimeout(() => this.classList.remove('animating'), 300);
+});
+
+document.getElementById('btnService').addEventListener('click', () => showToast('客服正在连接中...'));
+
+document.getElementById('btnShop').addEventListener('click', () => showToast('即将跳转到店铺'));
+
+// ==================== 评价标签 ====================
+document.getElementById('reviewTags').addEventListener('click', (e) => {
+  const tag = e.target.closest('.review-tag');
+  if (!tag) return;
+  document.querySelectorAll('.review-tag').forEach(t => t.classList.remove('active'));
+  tag.classList.add('active');
+  showToast(`查看${tag.textContent}`);
+});
+
+// ==================== 详情 Tab ====================
+document.querySelectorAll('.detail-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.detail-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+  });
+});
+
+// ==================== Toast ====================
+let toastTimer = null;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2000);
+}
+
+// ==================== 初始化 ====================
+initSwiper();
+updateMainPage();
+</script>
+</body>
+</html>
