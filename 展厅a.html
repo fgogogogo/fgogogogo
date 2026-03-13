@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沉浸式VR艺术展厅</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Georgia',serif}
+canvas#c3d{display:block;position:fixed;inset:0;z-index:0}
+
+#startOverlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .8s}
+#startOverlay.hidden{opacity:0;pointer-events:none}
+#startOverlay h1{font-size:3rem;color:#d4af37;text-shadow:0 0 30px rgba(212,175,55,.5);margin-bottom:1rem;letter-spacing:.3em}
+#startOverlay p{color:#bbb;font-size:1.1rem;margin-bottom:2rem;text-align:center;line-height:1.8}
+.enter-btn{padding:16px 48px;font-size:1.2rem;background:linear-gradient(135deg,#d4af37,#b8860b);color:#1a1a1a;border:none;border-radius:50px;cursor:pointer;letter-spacing:.2em;transition:transform .3s,box-shadow .3s}
+.enter-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(212,175,55,.4)}
+.controls-hint{margin-top:2rem;color:#888;font-size:.9rem;text-align:center;line-height:2}
+
+#topBar{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,transparent 100%);display:flex;align-items:center;gap:16px;pointer-events:none}
+#topBar h2{color:#d4af37;font-size:1.3rem;letter-spacing:.2em;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+#topBar .sub{color:#aaa;font-size:.85rem;font-style:italic}
+
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;z-index:90;pointer-events:none;opacity:0;transition:opacity .3s}
+#crosshair.vis{opacity:.7}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(212,175,55,.8)}
+#crosshair::before{width:2px;height:100%;left:50%;transform:translateX(-50%)}
+#crosshair::after{height:2px;width:100%;top:50%;transform:translateY(-50%)}
+
+#hint{position:fixed;top:55%;left:50%;transform:translateX(-50%);z-index:95;padding:8px 20px;background:rgba(0,0,0,.8);color:#d4af37;border-radius:20px;font-size:.85rem;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+#hint.vis{opacity:1}
+
+#infoPanel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:200;width:520px;max-width:90vw;background:rgba(15,15,20,.96);border:1px solid rgba(212,175,55,.4);border-radius:16px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;box-shadow:0 20px 60px rgba(0,0,0,.8)}
+#infoPanel.vis{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#infoPanel .hdr{padding:24px 28px 16px;border-bottom:1px solid rgba(212,175,55,.2);display:flex;justify-content:space-between;align-items:flex-start}
+#infoPanel .hdr h3{color:#d4af37;font-size:1.5rem;line-height:1.3}
+.close-btn{background:none;border:none;color:#888;font-size:1.5rem;cursor:pointer;padding:4px 8px;transition:color .3s}
+.close-btn:hover{color:#d4af37}
+#infoPanel .body{padding:20px 28px 28px}
+#infoPanel .artist{color:#d4af37;font-size:1rem;margin-bottom:4px}
+#infoPanel .year{color:#888;font-size:.85rem;margin-bottom:16px;font-style:italic}
+#infoPanel .desc{color:#ccc;font-size:.95rem;line-height:1.8}
+
+#bottomControls{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:16px 24px;background:linear-gradient(0deg,rgba(0,0,0,.65) 0%,transparent 100%);display:flex;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.lbtn{pointer-events:auto;padding:10px 24px;font-size:.9rem;background:rgba(255,255,255,.1);color:#d4af37;border:1px solid rgba(212,175,55,.4);border-radius:25px;cursor:pointer;transition:all .3s;font-family:inherit;letter-spacing:.1em}
+.lbtn:hover,.lbtn.act{background:rgba(212,175,55,.25);border-color:#d4af37;box-shadow:0 0 15px rgba(212,175,55,.3)}
+
+#minimapBox{position:fixed;top:16px;right:16px;z-index:100;pointer-events:none}
+#minimap{width:150px;height:150px;border:2px solid rgba(212,175,55,.5);border-radius:50%;box-shadow:0 0 20px rgba(0,0,0,.6)}
+
+#musicBtn{position:fixed;bottom:70px;right:16px;z-index:100;pointer-events:auto;width:44px;height:44px;background:rgba(255,255,255,.08);border:1px solid rgba(212,175,55,.3);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:1.2rem;transition:all .3s}
+#musicBtn:hover{background:rgba(212,175,55,.2);border-color:#d4af37}
+
+#moveHint{position:fixed;bottom:70px;left:16px;z-index:100;color:#666;font-size:.8rem;line-height:1.8;pointer-events:none;transition:opacity .3s}
+</style>
+</head>
+<body>
+
+<div id="startOverlay">
+  <h1>ART GALLERY</h1>
+  <p>欢迎进入沉浸式VR艺术展厅<br>探索经典艺术作品的无穷魅力</p>
+  <button class="enter-btn" id="enterBtn">进 入 展 厅</button>
+  <div class="controls-hint">
+    WASD — 移动 &nbsp;|&nbsp; 鼠标 — 环顾四周 &nbsp;|&nbsp; 点击画作 — 查看详情<br>
+    ESC — 解锁鼠标 &nbsp;|&nbsp; 1/2/3 — 切换灯光 &nbsp;|&nbsp; M — 音乐
+  </div>
+</div>
+
+<div id="topBar">
+  <h2>IMMERSIVE GALLERY</h2>
+  <span class="sub">沉浸式艺术体验空间</span>
+</div>
+<div id="crosshair"></div>
+<div id="hint">点击查看画作详情</div>
+<div id="minimapBox"><canvas id="minimap" width="150" height="150"></canvas></div>
+<div id="bottomControls">
+  <button class="lbtn act" id="btnD" onclick="setLight('day')">日间模式</button>
+  <button class="lbtn" id="btnN" onclick="setLight('night')">夜间模式</button>
+  <button class="lbtn" id="btnS" onclick="setLight('spot')">聚光灯</button>
+</div>
+<button id="musicBtn" onclick="toggleMusic()">&#9835;</button>
+<div id="moveHint">WASD 移动 | 鼠标视角<br>点击画作查看</div>
+
+<div id="infoPanel">
+  <div class="hdr"><h3 id="pTitle">-</h3><button class="close-btn" onclick="closePanel()">&times;</button></div>
+  <div class="body">
+    <div class="artist" id="pArtist">-</div>
+    <div class="year" id="pYear">-</div>
+    <div class="desc" id="pDesc">-</div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ============ DATA ============
+const ARTS = [
+  { title:'星夜', artist:'文森特·梵高', year:'1889年', desc:'《星夜》是梵高于1889年在法国圣雷米的精神病院中创作的一幅油画。画面描绘了一个充满运动感和变幻色彩的夜空，旋涡状的星云与明亮的星辰交相辉映，展现出艺术家内心深沉的情感世界。现藏于纽约现代艺术博物馆。', w:4, h:3, wall:'back', pos:-6, seed:'starrynight' },
+  { title:'蒙娜丽莎', artist:'列奥纳多·达·芬奇', year:'约1503-1519年', desc:'《蒙娜丽莎》是达·芬奇最著名的杰作之一，画中女子的神秘微笑令无数观众为之倾倒。以其精湛的晕涂法技巧著称，柔和的色彩过渡使人物的面部表情显得生动而神秘。现藏于巴黎卢浮宫。', w:2.5, h:3.5, wall:'back', pos:0, seed:'monalisa' },
+  { title:'日出·印象', artist:'克劳德·莫奈', year:'1872年', desc:'《日出·印象》是印象派运动的奠基之作。莫奈以松散的笔触和朦胧的色彩捕捉了勒阿弗尔港口日出时分的瞬间景象，这幅画的名字也因此成为了整个印象派运动的名称。', w:5, h:3, wall:'back', pos:6, seed:'impression' },
+  { title:'戴珍珠耳环的少女', artist:'约翰内斯·维米尔', year:'约1665年', desc:'这幅画作被誉为"北方的蒙娜丽莎"。画中少女回眸凝望的神态，配合深色背景中的明亮珍珠耳环，创造出一种神秘而动人的氛围。维米尔对光影的精妙掌控使这幅作品成为荷兰黄金时代的杰作。', w:3, h:3.5, wall:'front', pos:-4, seed:'pearlearring' },
+  { title:'神奈川冲浪里', artist:'葛饰北斋', year:'约1831年', desc:'《神奈川冲浪里》是日本浮世绘大师葛饰北斋最著名的一幅。巨大的海浪翻腾咆哮，远处的富士山在浪花中若隐若现，展现出人与自然之间壮丽的对比。', w:5, h:3, wall:'front', pos:3, seed:'greatwave' },
+  { title:'呐喊', artist:'爱德华·蒙克', year:'1893年', desc:'《呐喊》表现了人类面对存在恐惧时的深层焦虑。画面中扭曲的人物形象与血红色的天空形成强烈的视觉冲击，传达出一种无法言喻的恐惧与绝望。', w:3, h:4, wall:'left', pos:-5, seed:'thescream' },
+  { title:'睡莲', artist:'克劳德·莫奈', year:'1906年', desc:'《睡莲》系列是莫奈晚年在吉维尼花园创作的杰作。画面中光影在水面和睡莲间流动变幻，色彩柔和而丰富，呈现出一种宁静而梦幻的意境。', w:3.5, h:3, wall:'left', pos:2, seed:'waterlilies' },
+  { title:'向日葵', artist:'文森特·梵高', year:'1888年', desc:'《向日葵》系列展现了梵高对色彩的极致热情。画面中灿烂的黄色调与厚重的笔触赋予花瓶中的向日葵以蓬勃的生命力。', w:3, h:3.5, wall:'right', pos:-3, seed:'sunflowers' }
+];
+
+const RW = 28, RD = 22, RH = 6.5;
+const WALL_OFFSET = 0.15;
+const ART_Y = 3.2;
+
+// ============ GLOBALS ============
+let scene, camera, renderer, clock;
+let ambLight, hemiLight, spotlights = [], pointlights = [];
+let paintingGroups = [], sculptGroups = [];
+let particles;
+let locked = false;
+let mF=false, mB=false, mL=false, mR=false;
+let vel = new THREE.Vector3();
+let euler = new THREE.Euler(0,0,0,'YXZ');
+let lightMode = 'day';
+let audioCtx=null, musicOn=false, musicGain=null;
+let panelOpen = false;
+
+init();
+
+function init(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x222228);
+
+  camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 100);
+  camera.position.set(0, 1.7, 8);
+
+  renderer = new THREE.WebGLRenderer({ antialias:true, canvas: document.createElement('canvas') });
+  renderer.domElement.id = 'c3d';
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.8;
+  document.body.prepend(renderer.domElement);
+
+  clock = new THREE.Clock();
+
+  buildRoom();
+  buildPaintings();
+  buildSculptures();
+  setupLights();
+  buildParticles();
+  setupControls();
+
+  animate();
+}
+
+// ============ ROOM ============
+function buildRoom(){
+  // Floor
+  const fCan = makeCanvas(512, c=>{
+    const ts=64;
+    for(let x=0;x<512;x+=ts) for(let y=0;y<512;y+=ts){
+      c.fillStyle=((x/ts+y/ts)%2===0) ? '#5a5045' : '#4a4238';
+      c.fillRect(x,y,ts,ts);
+    }
+    for(let i=0;i<3000;i++){
+      c.fillStyle=`rgba(255,255,255,${Math.random()*0.02})`;
+      c.fillRect(Math.random()*512,Math.random()*512,1,1);
+    }
+  });
+  const fTex = new THREE.CanvasTexture(fCan);
+  fTex.wrapS=fTex.wrapT=THREE.RepeatWrapping;
+  fTex.repeat.set(4,3);
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(RW, RD),
+    new THREE.MeshStandardMaterial({map:fTex, roughness:0.7, metalness:0.1})
+  );
+  floor.rotation.x=-Math.PI/2;
+  floor.receiveShadow=true;
+  scene.add(floor);
+
+  // Ceiling
+  const cCan = makeCanvas(256, c=>{
+    c.fillStyle='#3a3840';
+    c.fillRect(0,0,256,256);
+    for(let x=0;x<256;x+=32) for(let y=0;y<256;y+=32){
+      c.fillStyle='rgba(255,255,255,0.02)';
+      c.fillRect(x,y,31,31);
+    }
+  });
+  const cTex = new THREE.CanvasTexture(cCan);
+  cTex.wrapS=cTex.wrapT=THREE.RepeatWrapping;
+  cTex.repeat.set(4,3);
+  const ceil = new THREE.Mesh(
+    new THREE.PlaneGeometry(RW, RD),
+    new THREE.MeshStandardMaterial({map:cTex, roughness:0.9})
+  );
+  ceil.rotation.x=Math.PI/2;
+  ceil.position.y=RH;
+  scene.add(ceil);
+
+  // Walls
+  function makeWallTex(){
+    const wc = makeCanvas(512, c=>{
+      c.fillStyle='#55504a';
+      c.fillRect(0,0,512,512);
+      for(let i=0;i<300;i++){
+        c.strokeStyle=`rgba(${Math.random()>0.5?200:80},${Math.random()>0.5?180:80},${Math.random()>0.5?160:80},${Math.random()*0.03})`;
+        c.beginPath();
+        c.moveTo(Math.random()*512,0);
+        c.lineTo(Math.random()*512,512);
+        c.stroke();
+      }
+    });
+    const t=new THREE.CanvasTexture(wc);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.repeat.set(3,1);
+    return t;
+  }
+
+  const wallMat = ()=> new THREE.MeshStandardMaterial({map:makeWallTex(), roughness:0.85});
+
+  // Back
+  addWall(RW, RH, 0, RH/2, -RD/2, 0, wallMat);
+  // Front (rotated)
+  addWall(RW, RH, 0, RH/2, RD/2, Math.PI, wallMat);
+  // Left
+  addWall(RD, RH, -RW/2, RH/2, 0, Math.PI/2, wallMat);
+  // Right
+  addWall(RD, RH, RW/2, RH/2, 0, -Math.PI/2, wallMat);
+
+  // Baseboards
+  const bbMat = new THREE.MeshStandardMaterial({color:0xb8960b, roughness:0.35, metalness:0.65});
+  addBar(RW, 0, 0.08, -RD/2+0.03, 0, bbMat);
+  addBar(RW, 0, 0.08, RD/2-0.03, 0, bbMat);
+  addBar(RD, -RW/2+0.03, 0.08, 0, Math.PI/2, bbMat);
+  addBar(RD, RW/2-0.03, 0.08, 0, Math.PI/2, bbMat);
+
+  // Crown molding
+  addBar(RW, 0, RH-0.06, -RD/2+0.05, 0, bbMat, 0.12, 0.1);
+  addBar(RW, 0, RH-0.06, RD/2-0.05, 0, bbMat, 0.12, 0.1);
+  addBar(RD, -RW/2+0.05, RH-0.06, 0, Math.PI/2, bbMat, 0.12, 0.1);
+  addBar(RD, RW/2-0.05, RH-0.06, 0, Math.PI/2, bbMat, 0.12, 0.1);
+}
+
+function addWall(w,h,x,y,z,ry,matFn){
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), matFn());
+  m.position.set(x,y,z);
+  m.rotation.y=ry;
+  m.receiveShadow=true;
+  scene.add(m);
+}
+
+function addBar(len,x,y,z,ry,mat,bh=0.15,bd=0.06){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(len,bh,bd),mat);
+  m.position.set(x,y,z);
+  m.rotation.y=ry||0;
+  scene.add(m);
+}
+
+// ============ PAINTINGS ============
+function buildPaintings(){
+  const loader = new THREE.TextureLoader();
+
+  ARTS.forEach((art,i)=>{
+    const g = new THREE.Group();
+
+    // Procedural painting as initial texture
+    const pc = makeCanvas(Math.round(art.w*100), Math.round(art.h*100), c=>genArt(c, c.canvas.width, c.canvas.height, i));
+    let paintTex = new THREE.CanvasTexture(pc);
+
+    const paintMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(art.w, art.h),
+      new THREE.MeshStandardMaterial({map:paintTex, roughness:0.5, metalness:0.05})
+    );
+    g.add(paintMesh);
+
+    // Try load picsum
+    const url = `https://picsum.photos/seed/${art.seed}/${Math.round(art.w*200)}/${Math.round(art.h*200)}`;
+    loader.load(url, tex=>{
+      paintTex = tex;
+      paintMesh.material.map = tex;
+      paintMesh.material.needsUpdate = true;
+    }, undefined, ()=>{});
+
+    // Gold frame
+    const fw=0.15, fd=0.12;
+    const fMat = new THREE.MeshStandardMaterial({color:0xc9a82c, roughness:0.25, metalness:0.75});
+    const dir=[
+      [art.w+fw*2, fw, fd, 0, art.h/2+fw/2, fd/2],
+      [art.w+fw*2, fw, fd, 0, -art.h/2-fw/2, fd/2],
+      [fw, art.h+fw*2, fd, -art.w/2-fw/2, 0, fd/2],
+      [fw, art.h+fw*2, fd, art.w/2+fw/2, 0, fd/2]
+    ];
+    dir.forEach(d=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(d[0],d[1],d[2]),fMat);
+      m.position.set(d[3],d[4],d[5]);
+      m.castShadow=true;
+      g.add(m);
+    });
+
+    // Inner frame
+    const iMat = new THREE.MeshStandardMaterial({color:0x8b7014, roughness:0.35, metalness:0.6});
+    const iw=0.04;
+    [[art.w,iw,0.05, 0, art.h/2, 0.07],
+     [art.w,iw,0.05, 0,-art.h/2, 0.07],
+     [iw,art.h,0.05,-art.w/2, 0, 0.07],
+     [iw,art.h,0.05, art.w/2, 0, 0.07]].forEach(d=>{
+      const m=new THREE.Mesh(new THREE.BoxGeometry(d[0],d[1],d[2]),iMat);
+      m.position.set(d[3],d[4],d[5]);
+      g.add(m);
+    });
+
+    // Position
+    const hw=RW/2, hd=RD/2;
+    switch(art.wall){
+      case 'back':  g.position.set(art.pos, ART_Y, -hd+WALL_OFFSET); break;
+      case 'front': g.position.set(art.pos, ART_Y, hd-WALL_OFFSET); g.rotation.y=Math.PI; break;
+      case 'left':  g.position.set(-hw+WALL_OFFSET, ART_Y, art.pos); g.rotation.y=Math.PI/2; break;
+      case 'right': g.position.set(hw-WALL_OFFSET, ART_Y, art.pos); g.rotation.y=-Math.PI/2; break;
+    }
+
+    g.userData={type:'painting', idx:i, data:art};
+    scene.add(g);
+    paintingGroups.push(g);
+
+    // Spotlight per painting
+    const sp = new THREE.SpotLight(0xfff0d0, 3.0, 12, Math.PI/7, 0.6, 1);
+    sp.position.set(g.position.x, RH-0.5, g.position.z);
+    const tgt = new THREE.Object3D();
+    tgt.position.copy(g.position);
+    scene.add(tgt);
+    sp.target = tgt;
+    sp.castShadow = true;
+    sp.shadow.mapSize.set(512,512);
+    scene.add(sp);
+    spotlights.push(sp);
+
+    // Fixture decoration
+    const fix = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08,0.13,0.18,8),
+      new THREE.MeshStandardMaterial({color:0x444444, metalness:0.85, roughness:0.2})
+    );
+    fix.position.set(g.position.x, RH-0.1, g.position.z);
+    scene.add(fix);
+  });
+}
+
+function genArt(ctx, w, h, idx){
+  const pals=[
+    ['#1a237e','#283593','#3949ab','#5c6bc0','#1a1a2e','#16213e'],
+    ['#b71c1c','#c62828','#d32f2f','#e53935','#4a0000','#2c0000'],
+    ['#1b5e20','#2e7d32','#388e3c','#43a047','#004d00','#002200'],
+    ['#e65100','#ef6c00','#f57c00','#fb8c00','#bf360c','#8d2600'],
+    ['#4a148c','#6a1b9a','#7b1fa2','#8e24aa','#311b92','#1a0a2e'],
+    ['#006064','#00838f','#0097a7','#00acc1','#004d40','#002a2b'],
+    ['#f57f17','#f9a825','#fbc02d','#fdd835','#e65100','#bf360c'],
+    ['#263238','#37474f','#455a64','#546e7a','#1565c0','#0d47a1']
+  ];
+  const p=pals[idx%pals.length];
+  ctx.fillStyle=p[0]; ctx.fillRect(0,0,w,h);
+  const style=idx%4;
+  for(let i=0;i<25;i++){
+    ctx.fillStyle=p[Math.floor(Math.random()*p.length)];
+    ctx.globalAlpha=0.3+Math.random()*0.5;
+    const x=Math.random()*w, y=Math.random()*h, s=20+Math.random()*80;
+    if(style===0){ctx.beginPath();ctx.arc(x,y,s,0,Math.PI*2);ctx.fill();}
+    else if(style===1){ctx.save();ctx.translate(x,y);ctx.rotate(Math.random()*Math.PI);ctx.fillRect(-s/2,-s/2,s,s*(.5+Math.random()));ctx.restore();}
+    else if(style===2){ctx.strokeStyle=p[Math.floor(Math.random()*p.length)];ctx.lineWidth=2+Math.random()*8;ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x+(Math.random()-.5)*200,y+(Math.random()-.5)*200,x+(Math.random()-.5)*200,y+(Math.random()-.5)*200,x+(Math.random()-.5)*200,y+(Math.random()-.5)*200);ctx.stroke();}
+    else{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+s,y+s*.5);ctx.lineTo(x-s*.5,y+s);ctx.closePath();ctx.fill();}
+  }
+  ctx.globalAlpha=1;
+}
+
+// ============ SCULPTURES ============
+function buildSculptures(){
+  const pedMat = new THREE.MeshStandardMaterial({color:0x3a3a3e, roughness:0.4, metalness:0.3});
+
+  // Sculpture 1
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(1.2,1,1.2), pedMat);
+  p1.position.set(-4,0.5,0); p1.castShadow=true; p1.receiveShadow=true;
+  scene.add(p1);
+
+  const s1 = new THREE.Group();
+  const tk = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.35,0.12,100,16),
+    new THREE.MeshStandardMaterial({color:0xd4af37,roughness:0.25,metalness:0.8})
+  );
+  tk.position.y=0.6; tk.castShadow=true; s1.add(tk);
+  for(let i=0;i<3;i++){
+    const r=new THREE.Mesh(
+      new THREE.TorusGeometry(0.5+i*0.1,0.02,8,32),
+      new THREE.MeshStandardMaterial({color:0xd4af37,roughness:0.3,metalness:0.7})
+    );
+    r.position.y=0.5; r.rotation.x=Math.PI/2+i*0.3; r.rotation.z=i*0.5;
+    s1.add(r);
+  }
+  s1.position.set(-4,1,0);
+  s1.userData={type:'sculpture',name:'永恒之结',artist:'当代雕塑',year:'2024年',desc:'这件几何雕塑以扭结的形态象征着时间的无限循环与宇宙的永恒之美。金色的环状结构层层环绕，展现出数学之美与艺术表达的完美融合。'};
+  scene.add(s1); sculptGroups.push(s1);
+  addLabel(-4, 1.7, 0, '永恒之结');
+
+  // Sculpture 2
+  const p2 = new THREE.Mesh(new THREE.BoxGeometry(1.2,1,1.2), pedMat);
+  p2.position.set(4,0.5,0); p2.castShadow=true; p2.receiveShadow=true;
+  scene.add(p2);
+
+  const s2 = new THREE.Group();
+  const ico = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.4,0),
+    new THREE.MeshStandardMaterial({color:0xc0c0c0,roughness:0.15,metalness:0.9})
+  );
+  ico.position.y=0.55; ico.castShadow=true; s2.add(ico);
+  for(let i=0;i<8;i++){
+    const sp=new THREE.Mesh(
+      new THREE.SphereGeometry(0.06,16,16),
+      new THREE.MeshStandardMaterial({color:0xd4af37,roughness:0.3,metalness:0.7})
+    );
+    const a=(i/8)*Math.PI*2;
+    sp.position.set(Math.cos(a)*0.6, 0.55+Math.sin(a)*0.2, Math.sin(a)*0.6);
+    s2.add(sp);
+  }
+  s2.position.set(4,1,0);
+  s2.userData={type:'sculpture',name:'星际漫游',artist:'当代雕塑',year:'2024年',desc:'以多面体为核心的雕塑创作，银色主体象征宇宙的纯粹与秩序，环绕的金色球体代表着星辰运行轨道。表达了人类对宇宙浩瀚之美的敬畏与向往。'};
+  scene.add(s2); sculptGroups.push(s2);
+  addLabel(4, 1.7, 0, '星际漫游');
+}
+
+function addLabel(x, y, z, name){
+  const lc = makeCanvas(256, 64, c=>{
+    c.fillStyle='#1a1a1f'; c.fillRect(0,0,256,64);
+    c.fillStyle='#d4af37'; c.font='bold 20px Georgia'; c.textAlign='center';
+    c.fillText(name,128,28);
+    c.fillStyle='#888'; c.font='14px Georgia'; c.fillText('2024',128,50);
+  });
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.2), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc)}));
+  m.position.set(x,y,z);
+  scene.add(m);
+}
+
+// ============ LIGHTS ============
+function setupLights(){
+  ambLight = new THREE.AmbientLight(0xfff5e6, 1.0);
+  scene.add(ambLight);
+
+  hemiLight = new THREE.HemisphereLight(0xfff8ee, 0x303040, 0.6);
+  scene.add(hemiLight);
+
+  // Corner point lights
+  const corners = [
+    [-RW/2+2, RH-0.5, -RD/2+2],
+    [RW/2-2,  RH-0.5, -RD/2+2],
+    [-RW/2+2, RH-0.5, RD/2-2],
+    [RW/2-2,  RH-0.5, RD/2-2]
+  ];
+  corners.forEach(p=>{
+    const pl=new THREE.PointLight(0xfff5e0, 1.0, 25, 1);
+    pl.position.set(...p);
+    scene.add(pl);
+    pointlights.push(pl);
+  });
+
+  // Center overhead
+  const cl=new THREE.PointLight(0xfff5e0, 1.2, 28, 1);
+  cl.position.set(0, RH-0.5, 0);
+  scene.add(cl);
+  pointlights.push(cl);
+
+  setLight('day');
+}
+
+window.setLight = function(mode){
+  lightMode = mode;
+  document.querySelectorAll('.lbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(mode==='day'?'btnD':mode==='night'?'btnN':'btnS').classList.add('act');
+
+  switch(mode){
+    case 'day':
+      ambLight.intensity=1.0; ambLight.color.set(0xfff5e6);
+      hemiLight.intensity=0.6;
+      pointlights.forEach(p=>p.intensity=1.0);
+      spotlights.forEach(s=>s.intensity=3.0);
+      scene.background.set(0x222228);
+      renderer.toneMappingExposure=1.8;
+      break;
+    case 'night':
+      ambLight.intensity=0.2; ambLight.color.set(0x8080c0);
+      hemiLight.intensity=0.15;
+      pointlights.forEach(p=>p.intensity=0.15);
+      spotlights.forEach(s=>s.intensity=5.0);
+      scene.background.set(0x0a0a12);
+      renderer.toneMappingExposure=1.2;
+      break;
+    case 'spot':
+      ambLight.intensity=0.08; ambLight.color.set(0x404060);
+      hemiLight.intensity=0.05;
+      pointlights.forEach(p=>p.intensity=0.0);
+      spotlights.forEach(s=>s.intensity=7.0);
+      scene.background.set(0x050508);
+      renderer.toneMappingExposure=1.0;
+      break;
+  }
+};
+
+// ============ PARTICLES ============
+function buildParticles(){
+  const N=400;
+  const pos=new Float32Array(N*3);
+  const vels=[];
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-0.5)*RW*0.9;
+    pos[i*3+1]=Math.random()*RH;
+    pos[i*3+2]=(Math.random()-0.5)*RD*0.9;
+    vels.push({x:(Math.random()-0.5)*0.003, y:0.001+Math.random()*0.004, z:(Math.random()-0.5)*0.003});
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+
+  const pc=makeCanvas(32,32,c=>{
+    const g=c.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0,'rgba(255,245,220,1)');
+    g.addColorStop(0.4,'rgba(255,240,200,0.5)');
+    g.addColorStop(1,'rgba(255,230,180,0)');
+    c.fillStyle=g; c.fillRect(0,0,32,32);
+  });
+
+  particles = new THREE.Points(geo, new THREE.PointsMaterial({
+    map:new THREE.CanvasTexture(pc), size:0.1,
+    transparent:true, opacity:0.5,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false, sizeAttenuation:true
+  }));
+  particles.userData.vels=vels;
+  scene.add(particles);
+}
+
+function updateParticles(){
+  const p=particles.geometry.attributes.position;
+  const hw=RW*0.44, hd=RD*0.44;
+  const t=performance.now()*0.001;
+  for(let i=0;i<p.count;i++){
+    const v=particles.userData.vels[i];
+    p.array[i*3]+=v.x;
+    p.array[i*3+1]+=v.y+Math.sin(t+i)*0.001;
+    p.array[i*3+2]+=v.z;
+    if(p.array[i*3]>hw||p.array[i*3]<-hw) v.x*=-1;
+    if(p.array[i*3+1]>RH) p.array[i*3+1]=0.1;
+    if(p.array[i*3+2]>hd||p.array[i*3+2]<-hd) v.z*=-1;
+  }
+  p.needsUpdate=true;
+}
+
+// ============ CONTROLS ============
+function setupControls(){
+  document.getElementById('enterBtn').addEventListener('click', ()=>{
+    document.getElementById('startOverlay').classList.add('hidden');
+    renderer.domElement.requestPointerLock();
+  });
+
+  document.addEventListener('pointerlockchange', ()=>{
+    locked = document.pointerLockElement === renderer.domElement;
+    document.getElementById('crosshair').classList.toggle('vis', locked);
+    document.getElementById('moveHint').style.opacity = locked ? '0.5' : '0';
+  });
+
+  document.addEventListener('mousemove', e=>{
+    if(!locked) return;
+    const s=0.002;
+    euler.setFromQuaternion(camera.quaternion);
+    euler.y -= e.movementX*s;
+    euler.x -= e.movementY*s;
+    euler.x = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, euler.x));
+    camera.quaternion.setFromEuler(euler);
+  });
+
+  document.addEventListener('keydown', e=>{
+    if(panelOpen && e.code==='Escape'){closePanel();return;}
+    switch(e.code){
+      case 'KeyW':case 'ArrowUp':mF=true;break;
+      case 'KeyS':case 'ArrowDown':mB=true;break;
+      case 'KeyA':case 'ArrowLeft':mL=true;break;
+      case 'KeyD':case 'ArrowRight':mR=true;break;
+      case 'Digit1':setLight('day');break;
+      case 'Digit2':setLight('night');break;
+      case 'Digit3':setLight('spot');break;
+      case 'KeyM':toggleMusic();break;
+    }
+  });
+  document.addEventListener('keyup', e=>{
+    switch(e.code){
+      case 'KeyW':case 'ArrowUp':mF=false;break;
+      case 'KeyS':case 'ArrowDown':mB=false;break;
+      case 'KeyA':case 'ArrowLeft':mL=false;break;
+      case 'KeyD':case 'ArrowRight':mR=false;break;
+    }
+  });
+
+  document.addEventListener('mousedown', e=>{
+    if(!locked||e.button!==0) return;
+    handleClick();
+  });
+
+  renderer.domElement.addEventListener('click', ()=>{
+    if(!locked && document.getElementById('startOverlay').classList.contains('hidden')){
+      renderer.domElement.requestPointerLock();
+    }
+  });
+
+  window.addEventListener('resize', ()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+  });
+}
+
+function updateMovement(dt){
+  if(!locked) return;
+  vel.x -= vel.x*8*dt;
+  vel.z -= vel.z*8*dt;
+
+  const spd = 5;
+  const dz = Number(mF)-Number(mB);
+  const dx = Number(mR)-Number(mL);
+  if(dz||dx){
+    const fwd=new THREE.Vector3();
+    camera.getWorldDirection(fwd);
+    fwd.y=0; fwd.normalize();
+    const rt=new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0,1,0)).normalize();
+
+    vel.z -= dz*spd*dt*10;
+    vel.x += dx*spd*dt*10;
+
+    const mv = new THREE.Vector3();
+    mv.addScaledVector(fwd, -vel.z*dt);
+    mv.addScaledVector(rt, vel.x*dt);
+
+    const np = camera.position.clone().add(mv);
+    const margin=0.5;
+    np.x = Math.max(-RW/2+margin, Math.min(RW/2-margin, np.x));
+    np.z = Math.max(-RD/2+margin, Math.min(RD/2-margin, np.z));
+    np.y = 1.7;
+    camera.position.copy(np);
+  }
+}
+
+// ============ RAYCAST ============
+const rc = new THREE.Raycaster();
+const sc = new THREE.Vector2(0,0);
+
+function handleClick(){
+  rc.setFromCamera(sc, camera);
+  const meshes=[];
+  [...paintingGroups,...sculptGroups].forEach(g=>{
+    g.traverse(ch=>{if(ch.isMesh){ch.userData._pg=g;meshes.push(ch);}});
+  });
+  const hits=rc.intersectObjects(meshes);
+  if(hits.length>0){
+    const g=hits[0].object.userData._pg;
+    if(g){
+      if(g.userData.type==='painting') showPanel(g.userData.data.title,g.userData.data.artist,g.userData.data.year,g.userData.data.desc);
+      else if(g.userData.type==='sculpture') showPanel(g.userData.name,g.userData.artist,g.userData.year,g.userData.desc);
+    }
+  }
+}
+
+function checkHover(){
+  if(!locked) return;
+  rc.setFromCamera(sc,camera);
+  const meshes=[];
+  paintingGroups.forEach(g=>g.traverse(ch=>{if(ch.isMesh){ch.userData._pg=g;meshes.push(ch);}}));
+  sculptGroups.forEach(g=>g.traverse(ch=>{if(ch.isMesh){ch.userData._pg=g;meshes.push(ch);}}));
+  const hits=rc.intersectObjects(meshes);
+  const hint=document.getElementById('hint');
+  if(hits.length>0){
+    const g=hits[0].object.userData._pg;
+    if(g&&(g.userData.type==='painting'||g.userData.type==='sculpture')){
+      hint.textContent=g.userData.type==='painting'?'点击查看画作详情':'点击查看展品详情';
+      hint.classList.add('vis');
+      return;
+    }
+  }
+  hint.classList.remove('vis');
+}
+
+function showPanel(title,artist,year,desc){
+  document.getElementById('pTitle').textContent=title;
+  document.getElementById('pArtist').textContent=artist;
+  document.getElementById('pYear').textContent=year;
+  document.getElementById('pDesc').textContent=desc;
+  document.getElementById('infoPanel').classList.add('vis');
+  panelOpen=true;
+  document.exitPointerLock();
+}
+
+window.closePanel = function(){
+  document.getElementById('infoPanel').classList.remove('vis');
+  panelOpen=false;
+  setTimeout(()=>renderer.domElement.requestPointerLock(), 300);
+};
+
+// ============ MINIMAP ============
+const mmCtx = document.getElementById('minimap').getContext('2d');
+function drawMinimap(){
+  const w=150,h=150;
+  mmCtx.clearRect(0,0,w,h);
+  mmCtx.fillStyle='rgba(10,10,15,0.85)';
+  mmCtx.beginPath();mmCtx.arc(75,75,74,0,Math.PI*2);mmCtx.fill();
+
+  const sx=(w-30)/RW, sz=(h-30)/RD;
+  const mx=wx=>75+wx*sx, mz=wz=>75+wz*sz;
+
+  mmCtx.strokeStyle='rgba(212,175,55,0.3)';
+  mmCtx.lineWidth=1;
+  mmCtx.strokeRect(mx(-RW/2),mz(-RD/2),RW*sx,RD*sz);
+
+  // Paintings
+  mmCtx.fillStyle='rgba(212,175,55,0.6)';
+  ARTS.forEach(a=>{
+    let px,py;
+    switch(a.wall){
+      case 'back':px=a.pos;py=-RD/2;break;
+      case 'front':px=a.pos;py=RD/2;break;
+      case 'left':px=-RW/2;py=a.pos;break;
+      case 'right':px=RW/2;py=a.pos;break;
+    }
+    mmCtx.beginPath();mmCtx.arc(mx(px),mz(py),3,0,Math.PI*2);mmCtx.fill();
+  });
+
+  // Sculptures
+  sculptGroups.forEach(s=>{
+    const sx2=mx(s.position.x), sy2=mz(s.position.z);
+    mmCtx.save();mmCtx.translate(sx2,sy2);mmCtx.rotate(Math.PI/4);
+    mmCtx.fillStyle='rgba(200,200,200,0.5)';mmCtx.fillRect(-3,-3,6,6);
+    mmCtx.restore();
+  });
+
+  // Player
+  const px=mx(camera.position.x), py=mz(camera.position.z);
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const ang=Math.atan2(dir.x,dir.z);
+
+  mmCtx.save();mmCtx.translate(px,py);mmCtx.rotate(-ang);
+  mmCtx.fillStyle='#d4af37';
+  mmCtx.beginPath();mmCtx.moveTo(0,-7);mmCtx.lineTo(-4,5);mmCtx.lineTo(4,5);mmCtx.closePath();mmCtx.fill();
+  mmCtx.strokeStyle='rgba(212,175,55,0.5)';mmCtx.lineWidth=1;
+  mmCtx.beginPath();mmCtx.moveTo(0,-7);mmCtx.lineTo(0,-16);mmCtx.stroke();
+  mmCtx.restore();
+
+  const glow=mmCtx.createRadialGradient(px,py,0,px,py,10);
+  glow.addColorStop(0,'rgba(212,175,55,0.3)');
+  glow.addColorStop(1,'rgba(212,175,55,0)');
+  mmCtx.fillStyle=glow;
+  mmCtx.beginPath();mmCtx.arc(px,py,10,0,Math.PI*2);mmCtx.fill();
+}
+
+// ============ AMBIENT MUSIC ============
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+  musicGain=audioCtx.createGain();
+  musicGain.gain.value=0.12;
+  musicGain.connect(audioCtx.destination);
+
+  const delay=audioCtx.createDelay(1);
+  delay.delayTime.value=0.4;
+  const fb=audioCtx.createGain();fb.gain.value=0.3;
+  delay.connect(fb);fb.connect(delay);
+  delay.connect(musicGain);
+
+  const delay2=audioCtx.createDelay(1);
+  delay2.delayTime.value=0.7;
+  const fb2=audioCtx.createGain();fb2.gain.value=0.2;
+  delay2.connect(fb2);fb2.connect(delay2);
+  delay2.connect(musicGain);
+
+  const filt=audioCtx.createBiquadFilter();
+  filt.type='lowpass'; filt.frequency.value=800;
+  filt.connect(delay); filt.connect(delay2); filt.connect(musicGain);
+
+  [130.81,196.00,261.63,329.63,392.00].forEach((freq,i)=>{
+    const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=freq;
+    const o2=audioCtx.createOscillator(); o2.type='sine'; o2.frequency.value=freq*1.003;
+    const g=audioCtx.createGain(); g.gain.value=0;
+    const g2=audioCtx.createGain(); g2.gain.value=0;
+    const lfo=audioCtx.createOscillator(); lfo.frequency.value=0.1+i*0.03;
+    const lg=audioCtx.createGain(); lg.gain.value=0.04;
+    lfo.connect(lg); lg.connect(g.gain);
+    o.connect(g); o2.connect(g2); g.connect(filt); g2.connect(filt);
+    o.start(); o2.start(); lfo.start();
+    g.gain.setTargetAtTime(0.05,audioCtx.currentTime,2);
+    g2.gain.setTargetAtTime(0.03,audioCtx.currentTime,2);
+  });
+
+  musicOn=true;
+}
+
+window.toggleMusic = function(){
+  if(!audioCtx) initAudio();
+  const btn=document.getElementById('musicBtn');
+  if(musicOn){
+    audioCtx.suspend(); musicOn=false; btn.style.opacity='0.4';
+  } else {
+    audioCtx.resume(); musicOn=true; btn.style.opacity='1';
+  }
+};
+
+// ============ HELPERS ============
+function makeCanvas(size, drawFn){
+  const c=document.createElement('canvas');
+  c.width=c.height=size;
+  const ctx=c.getContext('2d');
+  drawFn(ctx);
+  return c;
+}
+
+// ============ RENDER LOOP ============
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(), 0.1);
+  const t=clock.getElapsedTime();
+
+  updateMovement(dt);
+  updateParticles();
+  checkHover();
+
+  // Animate sculptures
+  if(sculptGroups[0]){
+    sculptGroups[0].children[0].rotation.y=t*0.5;
+    sculptGroups[0].children[0].rotation.x=Math.sin(t*0.3)*0.2;
+    for(let i=1;i<4;i++) sculptGroups[0].children[i].rotation.z=t*(0.2+i*0.1)+i;
+  }
+  if(sculptGroups[1]){
+    sculptGroups[1].children[0].rotation.y=-t*0.3;
+    sculptGroups[1].children[0].rotation.x=Math.cos(t*0.4)*0.15;
+    for(let i=1;i<=8;i++){
+      const a=t*0.5+(i/8)*Math.PI*2;
+      sculptGroups[1].children[i].position.set(Math.cos(a)*0.6, 0.55+Math.sin(t+i)*0.1, Math.sin(a)*0.6);
+    }
+  }
+
+  // Particle opacity by mode
+  if(particles){
+    const target=lightMode==='night'?0.9:lightMode==='spot'?1:0.5;
+    particles.material.opacity+=(target-particles.material.opacity)*0.05;
+  }
+
+  drawMinimap();
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
