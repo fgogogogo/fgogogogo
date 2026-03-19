@@ -1,0 +1,261 @@
+/* 通知容器 - 固定在屏幕右上角 */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+/* 通知基础样式 */
+.notification {
+  position: relative;
+  min-width: 320px;
+  max-width: 450px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+              opacity 0.3s ease,
+              margin-top 0.3s ease;
+  overflow: hidden;
+}
+
+/* 滑入动画状态 */
+.notification.slide-in {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* 滑出动画状态 */
+.notification.slide-out {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+/* 进度条容器 */
+.notification-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 0 0 12px;
+  transform-origin: left;
+}
+
+/* 图标样式 */
+.notification-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.notification-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 内容区域 */
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 关闭按钮 */
+.notification-close {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.notification-close:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.notification-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 左侧边框指示器 */
+.notification::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+}
+
+/* ===== 不同类型通知样式 ===== */
+
+/* 成功通知 - 绿色 */
+.notification.success {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid #86efac;
+}
+
+.notification.success::before {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+}
+
+.notification.success .notification-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.notification.success .notification-progress {
+  background: #86efac;
+}
+
+/* 错误通知 - 红色 */
+.notification.error {
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+  border: 1px solid #fca5a5;
+}
+
+.notification.error::before {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+
+.notification.error .notification-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.notification.error .notification-progress {
+  background: #fca5a5;
+}
+
+/* 警告通知 - 橙色 */
+.notification.warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+  border: 1px solid #fcd34d;
+}
+
+.notification.warning::before {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+}
+
+.notification.warning .notification-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.notification.warning .notification-progress {
+  background: #fcd34d;
+}
+
+/* 信息通知 - 蓝色 */
+.notification.info {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  border: 1px solid #93c5fd;
+}
+
+.notification.info::before {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.notification.info .notification-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.notification.info .notification-progress {
+  background: #93c5fd;
+}
+
+/* 高优先级通知 - 更强的视觉效果 */
+.notification.high-priority {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2),
+              0 0 0 2px rgba(255, 255, 255, 0.5) inset;
+}
+
+.notification.high-priority .notification-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* 悬停效果 */
+.notification:hover {
+  transform: translateX(0) scale(1.02);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .notification-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .notification {
+    min-width: auto;
+    max-width: none;
+    width: 100%;
+  }
+}
+
+/* 进入动画关键帧 */
+@keyframes notification-bounce {
+  0% {
+    transform: translateX(120%) scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-10px) scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.notification.bounce-in {
+  animation: notification-bounce 0.5s ease forwards;
+}
