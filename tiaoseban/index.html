@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调色板生成工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>🎨 调色板生成工具</h1>
+            <div class="history-controls">
+                <button id="undoBtn" class="btn btn-icon" title="撤销 (Ctrl+Z)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7v6h6"></path>
+                        <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                    </svg>
+                </button>
+                <button id="redoBtn" class="btn btn-icon" title="重做 (Ctrl+Y)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 7v6h-6"></path>
+                        <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <!-- 左侧控制面板 -->
+            <aside class="sidebar">
+                <!-- 基础颜色选择 -->
+                <section class="panel">
+                    <h3>基础颜色</h3>
+                    <div class="color-input-group">
+                        <input type="color" id="baseColorPicker" value="#6366f1">
+                        <input type="text" id="baseColorText" value="#6366f1" placeholder="#RRGGBB">
+                    </div>
+                </section>
+
+                <!-- 色彩理论生成 -->
+                <section class="panel">
+                    <h3>色彩理论</h3>
+                    <div class="harmony-buttons">
+                        <button class="harmony-btn active" data-harmony="complementary">互补色</button>
+                        <button class="harmony-btn" data-harmony="analogous">邻近色</button>
+                        <button class="harmony-btn" data-harmony="triadic">三元色</button>
+                        <button class="harmony-btn" data-harmony="split-complementary">分裂互补</button>
+                        <button class="harmony-btn" data-harmony="tetradic">四元色</button>
+                        <button class="harmony-btn" data-harmony="monochromatic">单色</button>
+                    </div>
+                    <button id="generateBtn" class="btn btn-primary">生成调色板</button>
+                </section>
+
+                <!-- 图片提取 -->
+                <section class="panel">
+                    <h3>从图片提取</h3>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                            <polyline points="17,8 12,3 7,8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>点击上传或拖拽图片</p>
+                        <span class="upload-hint">支持 JPG, PNG, WebP</span>
+                    </div>
+                    <canvas id="imageCanvas" hidden></canvas>
+                    <div class="extraction-options">
+                        <label>提取颜色数:</label>
+                        <input type="range" id="colorCount" min="3" max="10" value="5">
+                        <span id="colorCountValue">5</span>
+                    </div>
+                </section>
+
+                <!-- 色盲模拟 -->
+                <section class="panel">
+                    <h3>色盲模拟</h3>
+                    <select id="colorBlindnessSelect" class="select-input">
+                        <option value="normal">正常视觉</option>
+                        <option value="protanopia">红色盲 (Protanopia)</option>
+                        <option value="deuteranopia">绿色盲 (Deuteranopia)</option>
+                        <option value="tritanopia">蓝色盲 (Tritanopia)</option>
+                        <option value="achromatopsia">全色盲 (Achromatopsia)</option>
+                    </select>
+                </section>
+            </aside>
+
+            <!-- 主内容区 -->
+            <div class="main-content">
+                <!-- 调色板展示 -->
+                <section class="palette-section">
+                    <h2>调色板</h2>
+                    <div id="paletteContainer" class="palette-container">
+                        <!-- 动态生成的调色板颜色 -->
+                    </div>
+                    <div id="emptyState" class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 2a10 10 0 0110 10"></path>
+                            <path d="M12 12l4-4"></path>
+                            <path d="M12 12l-4 4"></path>
+                        </svg>
+                        <p>选择基础颜色或上传图片开始</p>
+                    </div>
+                </section>
+
+                <!-- 预览区 -->
+                <section class="preview-section">
+                    <h2>网站预览</h2>
+                    <div class="preview-tabs">
+                        <button class="preview-tab active" data-preview="landing">落地页</button>
+                        <button class="preview-tab" data-preview="dashboard">仪表盘</button>
+                        <button class="preview-tab" data-preview="card">卡片</button>
+                    </div>
+                    <div class="preview-container" id="previewContainer">
+                        <!-- 动态生成的预览内容 -->
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- 导出面板 -->
+        <div class="export-panel">
+            <button id="exportToggle" class="btn btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                    <polyline points="7,10 12,15 17,10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                导出
+            </button>
+            <div class="export-dropdown" id="exportDropdown">
+                <button class="export-option" data-format="css">导出 CSS</button>
+                <button class="export-option" data-format="scss">导出 SCSS</button>
+                <button class="export-option" data-format="svg">导出 SVG</button>
+                <button class="export-option" data-format="json">导出 JSON</button>
+            </div>
+        </div>
+
+        <!-- 导出模态框 -->
+        <div class="modal" id="exportModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="exportTitle">导出调色板</h3>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <pre id="exportCode"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button id="copyBtn" class="btn btn-primary">复制到剪贴板</button>
+                    <button id="downloadBtn" class="btn btn-secondary">下载文件</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="color-utils.js"></script>
+    <script src="color-blindness.js"></script>
+    <script src="history-manager.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
