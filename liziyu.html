@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子雨背景动效</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Canvas 背景层 */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 控制面板 */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 280px;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls h3::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .control-group .value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        /* 滑块样式 */
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* 页面内容 */
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 100px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 150px 0;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .section {
+            padding: 100px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .section p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 15px;
+        }
+
+        /* 滚动提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+            animation: bounce 2s infinite;
+            pointer-events: none;
+        }
+
+        .scroll-hint span {
+            display: block;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .scroll-hint svg {
+            width: 24px;
+            height: 24px;
+            fill: rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* 隐藏滚动提示 */
+        .scroll-hint.hidden {
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* 性能监控 */
+        .fps-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            color: #00ff88;
+        }
+
+        .fps-counter span {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .controls {
+                width: calc(100% - 40px);
+                max-width: 300px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .section h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas 背景 -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <h3>粒子雨控制</h3>
+
+        <div class="control-group">
+            <label>
+                下落速度
+                <span class="value" id="speed-value">5</span>
+            </label>
+            <input type="range" id="speed" min="1" max="20" value="5" step="0.5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                基础密度
+                <span class="value" id="density-value">100</span>
+            </label>
+            <input type="range" id="density" min="50" max="300" value="100" step="10">
+        </div>
+
+        <div class="control-group">
+            <label>
+                粒子大小
+                <span class="value" id="size-value">2</span>
+            </label>
+            <input type="range" id="size" min="1" max="5" value="2" step="0.5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                颜色切换间隔 (秒)
+                <span class="value" id="color-interval-value">3</span>
+            </label>
+            <input type="range" id="color-interval" min="1" max="10" value="3" step="1">
+        </div>
+
+        <div class="control-group">
+            <button class="btn" id="toggle-color">暂停颜色切换</button>
+        </div>
+    </div>
+
+    <!-- FPS 监控 -->
+    <div class="fps-counter">
+        <span>FPS:</span> <span id="fps">60</span> | <span>粒子数:</span> <span id="particle-count">0</span>
+    </div>
+
+    <!-- 滚动提示 -->
+    <div class="scroll-hint" id="scroll-hint">
+        <span>向下滚动查看密度变化</span>
+        <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+    </div>
+
+    <!-- 页面内容 -->
+    <div class="content">
+        <section class="hero">
+            <h1>粒子雨动效</h1>
+            <p>高性能 Canvas 粒子系统，支持颜色随机切换、速度调节、滚动密度变化</p>
+        </section>
+
+        <section class="section">
+            <h2>特性介绍</h2>
+            <p>这是一个基于 HTML5 Canvas 实现的高性能粒子雨背景动效。粒子系统采用对象池技术，避免频繁的内存分配和垃圾回收，确保动画流畅无卡顿。</p>
+            <p>粒子颜色会按照设定的时间间隔随机切换，呈现出梦幻般的视觉效果。你可以通过右侧面板调节下落速度、基础密度和粒子大小。</p>
+        </section>
+
+        <section class="section">
+            <h2>滚动交互</h2>
+            <p>当你滚动页面时，粒子密度会根据滚动距离动态变化。滚动得越远，粒子密度越高，营造出一种深入雨幕的感觉。</p>
+            <p>这种效果是通过监听 scroll 事件并动态调整粒子数量实现的，同时使用了节流技术避免过度计算。</p>
+        </section>
+
+        <section class="section">
+            <h2>性能优化</h2>
+            <p>粒子系统采用多项优化技术确保流畅运行：</p>
+            <p>1. 对象池复用粒子对象，避免频繁的创建和销毁</p>
+            <p>2. 使用 requestAnimationFrame 确保与显示器刷新率同步</p>
+            <p>3. 粒子使用简单的几何图形（圆形）渲染，避免复杂计算</p>
+            <p>4. 滚动事件节流处理，减少不必要的重计算</p>
+            <p>5. 离屏检测，只渲染可见区域的粒子</p>
+        </section>
+
+        <section class="section">
+            <h2>自定义配置</h2>
+            <p>你可以通过右侧面板实时调整各项参数：</p>
+            <p>• 下落速度：控制粒子下落的速度（1-20）</p>
+            <p>• 基础密度：页面顶部的基础粒子数量（50-300）</p>
+            <p>• 粒子大小：单个粒子的半径（1-5像素）</p>
+            <p>• 颜色切换间隔：自动切换颜色的时间间隔（1-10秒）</p>
+        </section>
+
+        <section class="section">
+            <h2>技术实现</h2>
+            <p>粒子系统核心使用 JavaScript 类封装，包含 Particle 类表示单个粒子，ParticleRain 类管理整个系统。颜色切换使用 HSL 色彩空间，实现平滑的色相过渡。</p>
+            <p>滚动密度变化通过计算滚动距离与页面高度的比例，动态调整目标粒子数量，然后平滑过渡到新密度。</p>
+        </section>
+
+        <section class="section">
+            <h2>继续滚动...</h2>
+            <p>继续向下滚动，观察粒子密度如何随滚动距离增加。页面越长，粒子越多，营造出沉浸式的视觉体验。</p>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </section>
+
+        <section class="section">
+            <h2>视觉效果</h2>
+            <p>粒子雨效果模拟了雨滴下落的自然规律，每个粒子都有随机的速度偏移和大小变化，让整体效果更加自然生动。</p>
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </section>
+
+        <section class="section">
+            <h2>应用场景</h2>
+            <p>这种粒子雨效果非常适合用作科技类网站、个人主页、登录页面等的背景动效，能够增加页面的视觉层次感和动态美感。</p>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        </section>
+
+        <section class="section" style="border-bottom: none;">
+            <h2>感谢使用</h2>
+            <p>你已经滚动到了页面底部。注意观察粒子密度是如何随着你的滚动逐渐增加的。希望这个粒子雨效果能为你的项目增添光彩！</p>
+            <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </section>
+    </div>
+
+    <script>
+        /**
+         * 粒子雨系统 - 高性能 Canvas 动画
+         */
+        class ParticleRain {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+
+                // 配置参数
+                this.config = {
+                    speed: 5,
+                    baseDensity: 100,
+                    particleSize: 2,
+                    colorInterval: 3000, // 毫秒
+                    colors: [
+                        { h: 180, s: 100, l: 50 }, // 青色
+                        { h: 280, s: 100, l: 60 }, // 紫色
+                        { h: 340, s: 100, l: 60 }, // 粉色
+                        { h: 60, s: 100, l: 60 },  // 黄色
+                        { h: 120, s: 100, l: 50 }, // 绿色
+                        { h: 200, s: 100, l: 60 }, // 蓝色
+                        { h: 20, s: 100, l: 60 },  // 橙色
+                    ]
+                };
+
+                // 状态
+                this.particles = [];
+                this.particlePool = [];
+                this.currentColorIndex = 0;
+                this.nextColorIndex = 1;
+                this.colorTransition = 0;
+                this.lastColorChange = Date.now();
+                this.colorPaused = false;
+                this.scrollProgress = 0;
+                this.targetParticleCount = this.config.baseDensity;
+
+                // FPS 计算
+                this.lastTime = performance.now();
+                this.frameCount = 0;
+                this.fps = 60;
+
+                // 初始化
+                this.resize();
+                this.initParticles();
+                this.bindEvents();
+                this.animate();
+            }
+
+            // 调整画布大小
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            // 获取当前颜色（支持过渡）
+            getCurrentColor() {
+                const current = this.config.colors[this.currentColorIndex];
+                const next = this.config.colors[this.nextColorIndex];
+
+                const h = this.lerp(current.h, next.h, this.colorTransition);
+                const s = this.lerp(current.s, next.s, this.colorTransition);
+                const l = this.lerp(current.l, next.l, this.colorTransition);
+
+                return `hsl(${h}, ${s}%, ${l}%)`;
+            }
+
+            // 线性插值
+            lerp(start, end, t) {
+                // 处理色相的环形插值
+                if (Math.abs(end - start) > 180) {
+                    if (end > start) start += 360;
+                    else end += 360;
+                }
+                const result = start + (end - start) * t;
+                return result % 360;
+            }
+
+            // 从对象池获取粒子
+            getParticle() {
+                if (this.particlePool.length > 0) {
+                    return this.particlePool.pop();
+                }
+                return new Particle(this);
+            }
+
+            // 回收粒子到对象池
+            recycleParticle(particle) {
+                particle.reset();
+                this.particlePool.push(particle);
+            }
+
+            // 初始化粒子
+            initParticles() {
+                // 清空现有粒子
+                this.particles = [];
+
+                // 创建初始粒子
+                for (let i = 0; i < this.targetParticleCount; i++) {
+                    const particle = this.getParticle();
+                    particle.y = Math.random() * this.canvas.height;
+                    this.particles.push(particle);
+                }
+            }
+
+            // 更新粒子数量
+            updateParticleCount() {
+                const currentCount = this.particles.length;
+                const diff = this.targetParticleCount - currentCount;
+
+                if (diff > 0) {
+                    // 需要增加粒子
+                    for (let i = 0; i < diff; i++) {
+                        const particle = this.getParticle();
+                        particle.y = -Math.random() * 100; // 从屏幕上方进入
+                        this.particles.push(particle);
+                    }
+                } else if (diff < 0) {
+                    // 需要减少粒子
+                    const removeCount = Math.abs(diff);
+                    for (let i = 0; i < removeCount && this.particles.length > 0; i++) {
+                        const particle = this.particles.pop();
+                        this.recycleParticle(particle);
+                    }
+                }
+            }
+
+            // 更新颜色
+            updateColor() {
+                if (this.colorPaused) return;
+
+                const now = Date.now();
+                const elapsed = now - this.lastColorChange;
+                const duration = this.config.colorInterval;
+
+                if (elapsed >= duration) {
+                    // 切换到下一个颜色
+                    this.currentColorIndex = this.nextColorIndex;
+                    this.nextColorIndex = (this.nextColorIndex + 1) % this.config.colors.length;
+                    this.lastColorChange = now;
+                    this.colorTransition = 0;
+                } else {
+                    // 计算过渡进度
+                    this.colorTransition = elapsed / duration;
+                }
+            }
+
+            // 更新滚动进度
+            updateScrollProgress() {
+                const scrollTop = window.scrollY || window.pageYOffset;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                this.scrollProgress = Math.min(1, Math.max(0, scrollTop / docHeight));
+
+                // 根据滚动进度调整粒子密度
+                const minDensity = this.config.baseDensity;
+                const maxDensity = this.config.baseDensity * 3;
+                this.targetParticleCount = Math.floor(minDensity + (maxDensity - minDensity) * this.scrollProgress);
+            }
+
+            // 动画循环
+            animate() {
+                // 计算 FPS
+                const now = performance.now();
+                this.frameCount++;
+                if (now - this.lastTime >= 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastTime = now;
+                    this.updateFPSDisplay();
+                }
+
+                // 清空画布
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 更新状态
+                this.updateColor();
+                this.updateScrollProgress();
+                this.updateParticleCount();
+
+                // 获取当前颜色
+                const color = this.getCurrentColor();
+
+                // 绘制和更新粒子
+                this.ctx.fillStyle = color;
+                for (let i = 0; i < this.particles.length; i++) {
+                    const particle = this.particles[i];
+                    particle.update();
+                    particle.draw(this.ctx);
+
+                    // 检查是否需要重置粒子
+                    if (particle.y > this.canvas.height + particle.size) {
+                        particle.reset();
+                    }
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
+
+            // 更新 FPS 显示
+            updateFPSDisplay() {
+                const fpsEl = document.getElementById('fps');
+                const countEl = document.getElementById('particle-count');
+                if (fpsEl) fpsEl.textContent = this.fps;
+                if (countEl) countEl.textContent = this.particles.length;
+            }
+
+            // 绑定事件
+            bindEvents() {
+                window.addEventListener('resize', () => this.resize());
+
+                // 滚动节流
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    if (scrollTimeout) return;
+                    scrollTimeout = setTimeout(() => {
+                        scrollTimeout = null;
+                    }, 16);
+                }, { passive: true });
+            }
+
+            // 设置速度
+            setSpeed(value) {
+                this.config.speed = parseFloat(value);
+            }
+
+            // 设置基础密度
+            setBaseDensity(value) {
+                this.config.baseDensity = parseInt(value);
+            }
+
+            // 设置粒子大小
+            setParticleSize(value) {
+                this.config.particleSize = parseFloat(value);
+            }
+
+            // 设置颜色切换间隔
+            setColorInterval(value) {
+                this.config.colorInterval = parseInt(value) * 1000;
+            }
+
+            // 切换颜色暂停状态
+            toggleColorPause() {
+                this.colorPaused = !this.colorPaused;
+                return this.colorPaused;
+            }
+        }
+
+        /**
+         * 单个粒子类
+         */
+        class Particle {
+            constructor(system) {
+                this.system = system;
+                this.reset();
+            }
+
+            // 重置粒子状态
+            reset() {
+                this.x = Math.random() * this.system.canvas.width;
+                this.y = -Math.random() * 100;
+                this.size = (Math.random() * 0.5 + 0.5) * this.system.config.particleSize;
+                this.speed = (Math.random() * 0.5 + 0.5) * this.system.config.speed;
+                this.opacity = Math.random() * 0.5 + 0.3;
+                this.sway = Math.random() * 2 - 1; // 摇摆幅度
+                this.swaySpeed = Math.random() * 0.02 + 0.01;
+                this.swayOffset = Math.random() * Math.PI * 2;
+            }
+
+            // 更新粒子位置
+            update() {
+                // 垂直移动
+                this.y += this.speed * (this.system.config.speed / 5);
+
+                // 水平摇摆
+                this.x += Math.sin(this.y * this.swaySpeed + this.swayOffset) * this.sway * 0.5;
+
+                // 保持粒子在画布范围内
+                if (this.x < -this.size) this.x = this.system.canvas.width + this.size;
+                if (this.x > this.system.canvas.width + this.size) this.x = -this.size;
+
+                // 根据全局速度调整
+                this.speed = (Math.random() * 0.5 + 0.5) * this.system.config.speed;
+            }
+
+            // 绘制粒子
+            draw(ctx) {
+                ctx.globalAlpha = this.opacity;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            const particleRain = new ParticleRain('particle-canvas');
+
+            // 控制面板事件绑定
+            const speedInput = document.getElementById('speed');
+            const speedValue = document.getElementById('speed-value');
+            speedInput.addEventListener('input', (e) => {
+                speedValue.textContent = e.target.value;
+                particleRain.setSpeed(e.target.value);
+            });
+
+            const densityInput = document.getElementById('density');
+            const densityValue = document.getElementById('density-value');
+            densityInput.addEventListener('input', (e) => {
+                densityValue.textContent = e.target.value;
+                particleRain.setBaseDensity(e.target.value);
+            });
+
+            const sizeInput = document.getElementById('size');
+            const sizeValue = document.getElementById('size-value');
+            sizeInput.addEventListener('input', (e) => {
+                sizeValue.textContent = e.target.value;
+                particleRain.setParticleSize(e.target.value);
+            });
+
+            const colorIntervalInput = document.getElementById('color-interval');
+            const colorIntervalValue = document.getElementById('color-interval-value');
+            colorIntervalInput.addEventListener('input', (e) => {
+                colorIntervalValue.textContent = e.target.value;
+                particleRain.setColorInterval(e.target.value);
+            });
+
+            const toggleColorBtn = document.getElementById('toggle-color');
+            toggleColorBtn.addEventListener('click', () => {
+                const isPaused = particleRain.toggleColorPause();
+                toggleColorBtn.textContent = isPaused ? '恢复颜色切换' : '暂停颜色切换';
+            });
+
+            // 滚动提示隐藏
+            const scrollHint = document.getElementById('scroll-hint');
+            let hintHidden = false;
+            window.addEventListener('scroll', () => {
+                if (!hintHidden && window.scrollY > 100) {
+                    scrollHint.classList.add('hidden');
+                    hintHidden = true;
+                }
+            }, { passive: true });
+        });
+    </script>
+</body>
+</html>
