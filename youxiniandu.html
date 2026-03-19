@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏年度对战数据 - 电竞数据中心</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0d0d15 100%);
+            min-height: 100vh;
+            color: #e0e0ff;
+            overflow-x: hidden;
+        }
+
+        /* 背景网格动画 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 扫描线效果 */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 50%,
+                rgba(0, 255, 255, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffff, #ff00ff, transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            position: relative;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 200% center; }
+        }
+
+        .subtitle {
+            color: #8899aa;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            color: #00ffff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .filter-select {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #e0e0ff;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            min-width: 150px;
+        }
+
+        .filter-select:hover {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+
+        .filter-select option {
+            background: #1a1a2e;
+            color: #e0e0ff;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(255, 0, 255, 0.05) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #8899aa;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 图表容器 */
+        .charts-container {
+            display: grid;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .chart-wrapper {
+            background: linear-gradient(135deg, rgba(20, 20, 35, 0.8) 0%, rgba(15, 15, 30, 0.9) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+            animation: borderGlow 2s ease infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            color: #00ffff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #00ffff, #ff00ff);
+            border-radius: 2px;
+        }
+
+        .chart-canvas {
+            position: relative;
+            height: 350px;
+        }
+
+        /* 图表切换动画 */
+        .chart-fade-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .chart-fade-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-fade-exit {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .chart-fade-exit-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+        }
+
+        /* 数据表格 */
+        .data-table-container {
+            background: linear-gradient(135deg, rgba(20, 20, 35, 0.8) 0%, rgba(15, 15, 30, 0.9) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 30px 0;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease 0.2s forwards;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        .data-table th {
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .data-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .data-table tr:hover {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .data-table td {
+            color: #ccddee;
+        }
+
+        .win { color: #00ff88; font-weight: bold; }
+        .loss { color: #ff4757; font-weight: bold; }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 255, 255, 0.1);
+            border-top-color: #00ffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .control-panel { flex-direction: column; gap: 20px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-value { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loader">
+        <div class="loader"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>游戏年度对战数据</h1>
+            <p class="subtitle">GAME ANNUAL BATTLE STATISTICS</p>
+        </header>
+
+        <div class="control-panel">
+            <div class="filter-group">
+                <label class="filter-label">选择赛季</label>
+                <select class="filter-select" id="seasonFilter">
+                    <option value="all">全部赛季</option>
+                    <option value="s1">第一赛季</option>
+                    <option value="s2">第二赛季</option>
+                    <option value="s3">第三赛季</option>
+                    <option value="s4">第四赛季</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">游戏模式</label>
+                <select class="filter-select" id="modeFilter">
+                    <option value="all">全部模式</option>
+                    <option value="rank">排位赛</option>
+                    <option value="casual">休闲模式</option>
+                    <option value="comp">竞技模式</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalWins">0</div>
+                <div class="stat-label">总胜场</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalLosses">0</div>
+                <div class="stat-label">总败场</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="winRate">0%</div>
+                <div class="stat-label">胜率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgKD">0.00</div>
+                <div class="stat-label">平均 K/D</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgTime">0m</div>
+                <div class="stat-label">场均时长</div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <h3 class="chart-title">胜败场数统计</h3>
+                <div class="chart-canvas">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <h3 class="chart-title">K/D 比率与场均时长趋势</h3>
+                <div class="chart-canvas">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-table-container">
+            <h3 class="chart-title">近期对战详情</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>模式</th>
+                        <th>结果</th>
+                        <th>K/D</th>
+                        <th>击杀</th>
+                        <th>死亡</th>
+                        <th>时长</th>
+                        <th>评分</th>
+                    </tr>
+                </thead>
+                <tbody id="matchTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 生成随机对战数据
+        function generateMatchData() {
+            const seasons = ['s1', 's2', 's3', 's4'];
+            const modes = ['rank', 'casual', 'comp'];
+            const modeNames = { rank: '排位赛', casual: '休闲模式', comp: '竞技模式' };
+            const data = [];
+
+            seasons.forEach((season, seasonIndex) => {
+                const daysInSeason = 90;
+                for (let day = 0; day < daysInSeason; day++) {
+                    const date = new Date(2024, seasonIndex * 3, day + 1);
+                    const dailyMatches = Math.floor(Math.random() * 5) + 3; // 每天3-7场
+
+                    for (let match = 0; match < dailyMatches; match++) {
+                        const mode = modes[Math.floor(Math.random() * modes.length)];
+                        const isWin = Math.random() > 0.45; // 55%胜率
+                        const kills = Math.floor(Math.random() * 20) + 5;
+                        const deaths = Math.floor(Math.random() * 15) + 2;
+                        const kd = (kills / deaths).toFixed(2);
+                        const duration = Math.floor(Math.random() * 25) + 15; // 15-40分钟
+                        const score = Math.floor(Math.random() * 3000) + 2000;
+
+                        data.push({
+                            id: `${season}-${day}-${match}`,
+                            season,
+                            seasonName: `第${['一', '二', '三', '四'][seasonIndex]}赛季`,
+                            mode,
+                            modeName: modeNames[mode],
+                            date: date.toISOString().split('T')[0],
+                            result: isWin ? 'win' : 'loss',
+                            kills,
+                            deaths,
+                            kd: parseFloat(kd),
+                            duration,
+                            score,
+                            mvp: Math.random() > 0.8
+                        });
+                    }
+                }
+            });
+
+            return data.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        let allData = generateMatchData();
+        let barChart, lineChart;
+
+        // Chart.js 默认配置
+        Chart.defaults.color = '#8899aa';
+        Chart.defaults.borderColor = 'rgba(0, 255, 255, 0.1)';
+        Chart.defaults.font.family = "'Orbitron', 'Microsoft YaHei', sans-serif";
+
+        // 初始化柱状图
+        function initBarChart(data) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+
+            // 按月统计
+            const monthlyStats = {};
+            data.forEach(match => {
+                const month = match.date.substring(0, 7);
+                if (!monthlyStats[month]) {
+                    monthlyStats[month] = { wins: 0, losses: 0 };
+                }
+                if (match.result === 'win') {
+                    monthlyStats[month].wins++;
+                } else {
+                    monthlyStats[month].losses++;
+                }
+            });
+
+            const labels = Object.keys(monthlyStats).sort();
+            const wins = labels.map(m => monthlyStats[m].wins);
+            const losses = labels.map(m => monthlyStats[m].losses);
+
+            if (barChart) {
+                barChart.destroy();
+            }
+
+            barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => l.replace('-', '年') + '月'),
+                    datasets: [
+                        {
+                            label: '胜场',
+                            data: wins,
+                            backgroundColor: 'rgba(0, 255, 136, 0.6)',
+                            borderColor: '#00ff88',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            hoverBackgroundColor: 'rgba(0, 255, 136, 0.9)',
+                            hoverBorderColor: '#00ff88',
+                            hoverBorderWidth: 3
+                        },
+                        {
+                            label: '败场',
+                            data: losses,
+                            backgroundColor: 'rgba(255, 71, 87, 0.6)',
+                            borderColor: '#ff4757',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            hoverBackgroundColor: 'rgba(255, 71, 87, 0.9)',
+                            hoverBorderColor: '#ff4757',
+                            hoverBorderWidth: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0ff',
+                                padding: 20,
+                                font: { size: 14 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                            titleColor: '#00ffff',
+                            bodyColor: '#e0e0ff',
+                            borderColor: 'rgba(0, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const total = context.datasetIndex === 0
+                                        ? wins[context.dataIndex] + losses[context.dataIndex]
+                                        : wins[context.dataIndex] + losses[context.dataIndex];
+                                    const winRate = ((wins[context.dataIndex] / total) * 100).toFixed(1);
+                                    return `胜率: ${winRate}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#8899aa'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#8899aa'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化双折线图
+        function initLineChart(data) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+
+            // 按周统计
+            const weeklyStats = {};
+            data.forEach(match => {
+                const date = new Date(match.date);
+                const week = `${date.getFullYear()}-W${Math.ceil(date.getDate() / 7)}`;
+                if (!weeklyStats[week]) {
+                    weeklyStats[week] = { kd: [], duration: [] };
+                }
+                weeklyStats[week].kd.push(match.kd);
+                weeklyStats[week].duration.push(match.duration);
+            });
+
+            const labels = Object.keys(weeklyStats).sort().slice(-12); // 最近12周
+            const avgKD = labels.map(w => {
+                const kds = weeklyStats[w].kd;
+                return (kds.reduce((a, b) => a + b, 0) / kds.length).toFixed(2);
+            });
+            const avgDuration = labels.map(w => {
+                const durs = weeklyStats[w].duration;
+                return (durs.reduce((a, b) => a + b, 0) / durs.length).toFixed(0);
+            });
+
+            if (lineChart) {
+                lineChart.destroy();
+            }
+
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.map((l, i) => `第${i + 1}周`),
+                    datasets: [
+                        {
+                            label: '平均 K/D',
+                            data: avgKD,
+                            borderColor: '#00ffff',
+                            backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointBackgroundColor: '#00ffff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '场均时长(分钟)',
+                            data: avgDuration,
+                            borderColor: '#ff00ff',
+                            backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ff00ff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart'
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0ff',
+                                padding: 20,
+                                font: { size: 14 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                            titleColor: '#00ffff',
+                            bodyColor: '#e0e0ff',
+                            borderColor: 'rgba(0, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: 'rgba(0, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#00ffff'
+                            },
+                            title: {
+                                display: true,
+                                text: 'K/D 比率',
+                                color: '#00ffff'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                color: '#ff00ff'
+                            },
+                            title: {
+                                display: true,
+                                text: '时长(分钟)',
+                                color: '#ff00ff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#8899aa'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新统计数据
+        function updateStats(data) {
+            const wins = data.filter(m => m.result === 'win').length;
+            const losses = data.filter(m => m.result === 'loss').length;
+            const winRate = data.length > 0 ? ((wins / data.length) * 100).toFixed(1) : 0;
+            const avgKD = data.length > 0 ? (data.reduce((sum, m) => sum + m.kd, 0) / data.length).toFixed(2) : 0;
+            const avgTime = data.length > 0 ? Math.round(data.reduce((sum, m) => sum + m.duration, 0) / data.length) : 0;
+
+            animateNumber('totalWins', wins);
+            animateNumber('totalLosses', losses);
+            document.getElementById('winRate').textContent = winRate + '%';
+            document.getElementById('avgKD').textContent = avgKD;
+            document.getElementById('avgTime').textContent = avgTime + 'm';
+        }
+
+        // 数字动画
+        function animateNumber(elementId, target) {
+            const element = document.getElementById(elementId);
+            const duration = 1000;
+            const start = 0;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(start + (target - start) * easeProgress);
+                element.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // 更新表格
+        function updateTable(data) {
+            const tbody = document.getElementById('matchTableBody');
+            const recentMatches = data.slice(0, 10);
+
+            tbody.innerHTML = recentMatches.map(match => `
+                <tr>
+                    <td>${match.date}</td>
+                    <td>${match.modeName}</td>
+                    <td class="${match.result}">${match.result === 'win' ? '✓ 胜利' : '✗ 失败'}</td>
+                    <td>${match.kd}</td>
+                    <td>${match.kills}</td>
+                    <td>${match.deaths}</td>
+                    <td>${match.duration}分钟</td>
+                    <td>${match.score}${match.mvp ? ' ⭐' : ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 筛选数据
+        function filterData() {
+            const season = document.getElementById('seasonFilter').value;
+            const mode = document.getElementById('modeFilter').value;
+
+            let filtered = allData;
+
+            if (season !== 'all') {
+                filtered = filtered.filter(m => m.season === season);
+            }
+
+            if (mode !== 'all') {
+                filtered = filtered.filter(m => m.mode === mode);
+            }
+
+            // 添加过渡动画
+            document.querySelectorAll('.chart-wrapper').forEach(el => {
+                el.style.opacity = '0.5';
+                el.style.transform = 'scale(0.98)';
+            });
+
+            setTimeout(() => {
+                updateStats(filtered);
+                initBarChart(filtered);
+                initLineChart(filtered);
+                updateTable(filtered);
+
+                document.querySelectorAll('.chart-wrapper').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'scale(1)';
+                });
+            }, 200);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 500);
+
+            updateStats(allData);
+            initBarChart(allData);
+            initLineChart(allData);
+            updateTable(allData);
+
+            document.getElementById('seasonFilter').addEventListener('change', filterData);
+            document.getElementById('modeFilter').addEventListener('change', filterData);
+        });
+    </script>
+</body>
+</html>
