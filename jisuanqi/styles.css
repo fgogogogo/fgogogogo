@@ -1,0 +1,573 @@
+/* 基础样式和变量 */
+:root {
+    --bg-primary: #f5f5f5;
+    --bg-secondary: #ffffff;
+    --bg-display: #f8f9fa;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --accent-color: #4a90d9;
+    --accent-hover: #357abd;
+    --btn-number-bg: #e8e8e8;
+    --btn-operator-bg: #ff9500;
+    --btn-function-bg: #d4edda;
+    --btn-clear-bg: #f8d7da;
+    --btn-delete-bg: #fff3cd;
+    --btn-equals-bg: #28a745;
+    --border-color: #dddddd;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --history-bg: #f0f0f0;
+    --canvas-bg: #ffffff;
+}
+
+/* 深色主题 */
+[data-theme="dark"] {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-display: #0f3460;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --accent-color: #e94560;
+    --accent-hover: #ff6b6b;
+    --btn-number-bg: #2d3a4a;
+    --btn-operator-bg: #e94560;
+    --btn-function-bg: #3d5a80;
+    --btn-clear-bg: #c0392b;
+    --btn-delete-bg: #f39c12;
+    --btn-equals-bg: #27ae60;
+    --border-color: #3d5a80;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --history-bg: #1a1a2e;
+    --canvas-bg: #16213e;
+}
+
+/* 复古主题 */
+[data-theme="retro"] {
+    --bg-primary: #2c241b;
+    --bg-secondary: #3d3226;
+    --bg-display: #4a6741;
+    --text-primary: #8fbc8f;
+    --text-secondary: #6b8e6b;
+    --accent-color: #cd853f;
+    --accent-hover: #d2691e;
+    --btn-number-bg: #5c4d3c;
+    --btn-operator-bg: #8b4513;
+    --btn-function-bg: #556b2f;
+    --btn-clear-bg: #8b0000;
+    --btn-delete-bg: #daa520;
+    --btn-equals-bg: #228b22;
+    --border-color: #6b5b4f;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --history-bg: #3d3226;
+    --canvas-bg: #2f4f2f;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 头部样式 */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: var(--accent-color);
+}
+
+.theme-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.theme-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.theme-btn:hover {
+    transform: scale(1.1);
+    border-color: var(--accent-color);
+}
+
+.theme-btn.active {
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+}
+
+/* 主内容区域 */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+}
+
+/* 计算器区域 */
+.calculator-section {
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+/* 显示屏 */
+.display {
+    background: var(--bg-display);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.expression {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    min-height: 24px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.result {
+    font-size: 2.5rem;
+    color: var(--text-primary);
+    font-weight: bold;
+    margin-top: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.result.error {
+    color: #e74c3c;
+    font-size: 1.2rem;
+}
+
+/* 键盘 */
+.keypad {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    height: 50px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--btn-number-bg);
+    color: var(--text-primary);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn.zero {
+    flex: 2.1;
+}
+
+.btn.number {
+    background: var(--btn-number-bg);
+}
+
+.btn.operator {
+    background: var(--btn-operator-bg);
+    color: white;
+}
+
+.btn.function {
+    background: var(--btn-function-bg);
+    font-size: 0.9rem;
+}
+
+.btn.clear {
+    background: var(--btn-clear-bg);
+    color: #721c24;
+}
+
+.btn.delete {
+    background: var(--btn-delete-bg);
+    color: #856404;
+}
+
+.btn.equals {
+    background: var(--btn-equals-bg);
+    color: white;
+    font-size: 1.3rem;
+}
+
+/* 侧边面板 */
+.side-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.history-section {
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    height: 100%;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-section h3 {
+    margin-bottom: 15px;
+    color: var(--accent-color);
+    font-size: 1.2rem;
+}
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--history-bg);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.history-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid var(--accent-color);
+}
+
+.history-item:hover {
+    transform: translateX(5px);
+    background: var(--bg-display);
+}
+
+.history-expression {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.history-result {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.clear-history {
+    margin-top: 15px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: var(--btn-clear-bg);
+    color: #721c24;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-history:hover {
+    background: #f5c6cb;
+}
+
+/* 图形模态框 */
+.graph-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.graph-modal.active {
+    display: flex;
+}
+
+.graph-container {
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 20px;
+    max-width: 900px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.graph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.graph-header h3 {
+    color: var(--accent-color);
+    font-size: 1.3rem;
+}
+
+.close-graph {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 50%;
+    background: var(--btn-clear-bg);
+    color: #721c24;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-graph:hover {
+    background: #f5c6cb;
+}
+
+.graph-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.graph-input label {
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.graph-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-display);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.graph-input input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.graph-input button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent-color);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.graph-input button:hover {
+    background: var(--accent-hover);
+}
+
+#graphCanvas {
+    width: 100%;
+    height: 400px;
+    background: var(--canvas-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: crosshair;
+}
+
+.graph-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    align-items: center;
+}
+
+.graph-controls button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--btn-number-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.graph-controls button:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+.range-info {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 900px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+        order: -1;
+    }
+
+    .history-section {
+        max-height: 200px;
+    }
+
+    .btn {
+        height: 45px;
+        font-size: 1rem;
+    }
+
+    .result {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .calculator-section {
+        padding: 15px;
+    }
+
+    .display {
+        padding: 15px;
+    }
+
+    .result {
+        font-size: 1.8rem;
+    }
+
+    .btn {
+        height: 40px;
+        font-size: 0.9rem;
+    }
+
+    .btn.function {
+        font-size: 0.8rem;
+    }
+
+    .row {
+        gap: 6px;
+    }
+
+    .graph-container {
+        padding: 15px;
+        width: 95%;
+    }
+
+    #graphCanvas {
+        height: 250px;
+    }
+}
+
+/* 动画效果 */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.calculating {
+    animation: pulse 1s infinite;
+}
+
+/* 错误提示 */
+.error-message {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* 键盘按键提示 */
+.keyboard-shortcut {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+.btn {
+    position: relative;
+}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科学函数计算器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>科学函数计算器</h1>
+            <div class="theme-selector">
+                <button class="theme-btn" data-theme="light" title="浅色主题">☀️</button>
+                <button class="theme-btn" data-theme="dark" title="深色主题">🌙</button>
+                <button class="theme-btn" data-theme="retro" title="复古主题">📟</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="calculator-section">
+                <div class="display">
+                    <div class="expression" id="expression"></div>
+                    <div class="result" id="result">0</div>
+                </div>
+
+                <div class="keypad">
+                    <div class="row">
+                        <button class="btn function" data-action="sin">sin</button>
+                        <button class="btn function" data-action="cos">cos</button>
+                        <button class="btn function" data-action="tan">tan</button>
+                        <button class="btn function" data-action="log">log</button>
+                        <button class="btn function" data-action="ln">ln</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn function" data-action="sqrt">√</button>
+                        <button class="btn function" data-action="pow">x^y</button>
+                        <button class="btn function" data-action="pi">π</button>
+                        <button class="btn function" data-action="e">e</button>
+                        <button class="btn function" data-action="factorial">n!</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn function" data-action="asin">asin</button>
+                        <button class="btn function" data-action="acos">acos</button>
+                        <button class="btn function" data-action="atan">atan</button>
+                        <button class="btn function" data-action="abs">|x|</button>
+                        <button class="btn function" data-action="reciprocal">1/x</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn operator" data-action="open">(</button>
+                        <button class="btn operator" data-action="close">)</button>
+                        <button class="btn clear" data-action="clear">C</button>
+                        <button class="btn delete" data-action="delete">⌫</button>
+                        <button class="btn operator" data-action="divide">÷</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn number" data-action="7">7</button>
+                        <button class="btn number" data-action="8">8</button>
+                        <button class="btn number" data-action="9">9</button>
+                        <button class="btn operator" data-action="multiply">×</button>
+                        <button class="btn function" data-action="deg">DEG</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn number" data-action="4">4</button>
+                        <button class="btn number" data-action="5">5</button>
+                        <button class="btn number" data-action="6">6</button>
+                        <button class="btn operator" data-action="subtract">−</button>
+                        <button class="btn function" data-action="rad">RAD</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn number" data-action="1">1</button>
+                        <button class="btn number" data-action="2">2</button>
+                        <button class="btn number" data-action="3">3</button>
+                        <button class="btn operator" data-action="add">+</button>
+                        <button class="btn equals" data-action="equals">=</button>
+                    </div>
+                    <div class="row">
+                        <button class="btn number zero" data-action="0">0</button>
+                        <button class="btn number" data-action="decimal">.</button>
+                        <button class="btn function" data-action="graph">📊</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="history-section">
+                    <h3>历史记录</h3>
+                    <div class="history-list" id="history"></div>
+                    <button class="clear-history" id="clearHistory">清空历史</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="graph-modal" id="graphModal">
+            <div class="graph-container">
+                <div class="graph-header">
+                    <h3>函数图像绘制</h3>
+                    <button class="close-graph" id="closeGraph">×</button>
+                </div>
+                <div class="graph-input">
+                    <label>y =</label>
+                    <input type="text" id="functionInput" placeholder="输入函数表达式，如: x^2, sin(x), log(x)" value="x^2">
+                    <button id="plotBtn">绘制</button>
+                </div>
+                <canvas id="graphCanvas" width="800" height="400"></canvas>
+                <div class="graph-controls">
+                    <button id="zoomIn">放大</button>
+                    <button id="zoomOut">缩小</button>
+                    <button id="resetView">重置视图</button>
+                    <span class="range-info" id="rangeInfo">范围: -10 ~ 10</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
