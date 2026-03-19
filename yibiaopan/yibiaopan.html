@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人学习数据统计仪表盘</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>学习仪表盘</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>总览</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>学习时长</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    <span>任务完成</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <span>科目分析</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>学习小组</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <span>切换主题</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="top-bar">
+                <div class="page-title">
+                    <h1>学习数据概览</h1>
+                    <p class="subtitle">追踪你的学习进度与成就</p>
+                </div>
+                <div class="top-actions">
+                    <div class="date-filter">
+                        <button class="filter-btn active" data-range="7">近7天</button>
+                        <button class="filter-btn" data-range="30">近30天</button>
+                        <button class="filter-btn" data-range="90">近3个月</button>
+                        <button class="filter-btn" data-range="365">近一年</button>
+                    </div>
+                    <button class="export-btn" id="exportBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        导出报告
+                    </button>
+                </div>
+            </header>
+
+            <!-- 加载骨架屏 -->
+            <div class="skeleton-container" id="skeleton">
+                <div class="skeleton-stats">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+                <div class="skeleton-charts">
+                    <div class="skeleton-chart-large"></div>
+                    <div class="skeleton-chart-small"></div>
+                </div>
+            </div>
+
+            <!-- 实际内容 -->
+            <div class="content-wrapper" id="content" style="display: none;">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">今日学习时长</span>
+                            <div class="stat-value">
+                                <span class="number" id="todayHours">0</span>
+                                <span class="unit">小时</span>
+                            </div>
+                            <span class="stat-trend up" id="hoursTrend">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                    <polyline points="17 6 23 6 23 12"/>
+                                </svg>
+                                较昨日 +12%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">任务完成率</span>
+                            <div class="stat-value">
+                                <span class="number" id="taskRate">0</span>
+                                <span class="unit">%</span>
+                            </div>
+                            <span class="stat-trend up" id="taskTrend">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                    <polyline points="17 6 23 6 23 12"/>
+                                </svg>
+                                较昨日 +5%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">连续打卡</span>
+                            <div class="stat-value">
+                                <span class="number" id="streakDays">0</span>
+                                <span class="unit">天</span>
+                            </div>
+                            <span class="stat-trend" id="streakStatus">
+                                保持中 🔥
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">累计学习天数</span>
+                            <div class="stat-value">
+                                <span class="number" id="totalDays">0</span>
+                                <span class="unit">天</span>
+                            </div>
+                            <span class="stat-trend" id="totalStatus">
+                                目标: 365天
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="charts-grid">
+                    <!-- 学习时长趋势 -->
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h3>学习时长趋势</h3>
+                            <div class="chart-actions">
+                                <button class="chart-type-btn active" data-chart="line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                    </svg>
+                                </button>
+                                <button class="chart-type-btn" data-chart="bar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="20" x2="18" y2="10"/>
+                                        <line x1="12" y1="20" x2="12" y2="4"/>
+                                        <line x1="6" y1="20" x2="6" y2="14"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="studyTimeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 科目分布 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>科目分布</h3>
+                        </div>
+                        <div class="chart-container pie-chart">
+                            <canvas id="subjectChart"></canvas>
+                        </div>
+                        <div class="subject-legend" id="subjectLegend"></div>
+                    </div>
+
+                    <!-- 任务完成进度 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>本周任务进度</h3>
+                        </div>
+                        <div class="progress-container">
+                            <div class="circular-progress" id="circularProgress">
+                                <svg viewBox="0 0 120 120">
+                                    <circle class="progress-bg" cx="60" cy="60" r="54"/>
+                                    <circle class="progress-fill" cx="60" cy="60" r="54" id="progressCircle"/>
+                                </svg>
+                                <div class="progress-text">
+                                    <span class="progress-value" id="progressValue">0%</span>
+                                    <span class="progress-label">已完成</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-stats">
+                            <div class="task-stat">
+                                <span class="dot completed"></span>
+                                <span class="label">已完成</span>
+                                <span class="value" id="completedTasks">0</span>
+                            </div>
+                            <div class="task-stat">
+                                <span class="dot pending"></span>
+                                <span class="label">待完成</span>
+                                <span class="value" id="pendingTasks">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 每日任务完成对比 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>每日任务完成对比</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="taskCompareChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详细数据表格 -->
+                <div class="data-table-card">
+                    <div class="table-header">
+                        <h3>近期学习记录</h3>
+                        <button class="view-all-btn">查看全部</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="studyTable">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>学习时长</th>
+                                    <th>完成任务</th>
+                                    <th>主要科目</th>
+                                    <th>效率评分</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- 动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 导出提示 -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>报告导出成功！</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
