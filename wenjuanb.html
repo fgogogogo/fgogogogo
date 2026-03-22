@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问卷构建器</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+/* ========== CSS Reset & Variables ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#4f46e5;--primary-light:#818cf8;--primary-dark:#3730a3;
+  --success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+  --bg:#f1f5f9;--bg-card:#fff;--text:#1e293b;--text-light:#64748b;
+  --border:#e2e8f0;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,.08);
+  --transition:all .25s ease;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+button{cursor:pointer;font:inherit;border:none;outline:none}
+input,select,textarea{font:inherit;outline:none}
+a{text-decoration:none;color:var(--primary)}
+
+/* ========== Layout ========== */
+.app-header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(79,70,229,.25);
+}
+.app-header h1{font-size:1.2rem;font-weight:700;letter-spacing:.5px}
+.app-header-actions{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.875rem;font-weight:600;transition:var(--transition)}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#059669}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-ghost{background:rgba(255,255,255,.15);color:#fff}.btn-ghost:hover{background:rgba(255,255,255,.25)}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-icon{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:transparent;color:var(--text-light);transition:var(--transition)}
+.btn-icon:hover{background:var(--bg);color:var(--text)}
+
+/* ========== Navigation Tabs ========== */
+.nav-tabs{display:flex;background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+.nav-tab{padding:14px 20px;font-size:.9rem;font-weight:600;color:var(--text-light);border-bottom:3px solid transparent;transition:var(--transition);white-space:nowrap}
+.nav-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.nav-tab:hover{color:var(--primary)}
+.nav-tab .badge{background:var(--primary);color:#fff;font-size:.7rem;padding:1px 7px;border-radius:10px;margin-left:6px}
+
+/* ========== Main Container ========== */
+.main-container{max-width:1100px;margin:0 auto;padding:24px}
+
+/* ========== Card ========== */
+.card{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:20px;transition:var(--transition)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:1.1rem;font-weight:700}
+
+/* ========== Forms ========== */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:8px;
+  font-size:.9rem;transition:var(--transition);background:var(--bg-card);
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-hint{font-size:.78rem;color:var(--text-light);margin-top:4px}
+
+/* ========== Question Builder ========== */
+.question-item{
+  border:2px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;
+  background:var(--bg-card);transition:var(--transition);position:relative
+}
+.question-item:hover{border-color:var(--primary-light)}
+.question-item.active{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.question-number{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;font-size:.8rem;font-weight:700;margin-right:10px}
+.question-type-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;background:#ede9fe;color:var(--primary)}
+.option-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.option-row .form-input{flex:1}
+.branch-select{min-width:130px}
+.question-actions{display:flex;gap:4px;position:absolute;top:12px;right:12px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-light)}
+.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.4}
+.empty-state h3{font-size:1.1rem;margin-bottom:8px;color:var(--text)}
+
+/* ========== Survey Fill Mode ========== */
+.survey-container{max-width:680px;margin:0 auto}
+.progress-bar-wrap{background:var(--border);height:8px;border-radius:4px;overflow:hidden;margin-bottom:24px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:4px;transition:width .4s ease}
+.survey-question{margin-bottom:32px}
+.survey-question label.q-title{display:block;font-size:1.1rem;font-weight:700;margin-bottom:16px;line-height:1.5}
+.survey-options{display:flex;flex-direction:column;gap:10px}
+.radio-option,.checkbox-option{
+  display:flex;align-items:center;gap:12px;padding:14px 18px;border:2px solid var(--border);
+  border-radius:10px;cursor:pointer;transition:var(--transition);user-select:none
+}
+.radio-option:hover,.checkbox-option:hover{border-color:var(--primary-light);background:#f8f7ff}
+.radio-option.selected,.checkbox-option.selected{border-color:var(--primary);background:#f0eeff}
+.radio-option input,.checkbox-option input{width:18px;height:18px;accent-color:var(--primary)}
+.slider-container{padding:10px 0}
+.slider-container input[type=range]{width:100%;accent-color:var(--primary);height:6px}
+.slider-value{font-size:1.5rem;font-weight:700;color:var(--primary);text-align:center;margin-top:8px}
+.survey-nav{display:flex;justify-content:space-between;margin-top:32px;gap:12px}
+.survey-nav .btn{flex:1;justify-content:center;padding:14px}
+.timer-display{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;font-size:.9rem;font-weight:700;animation:pulse 2s infinite}
+.timer-warning{color:var(--danger);animation:pulse-warn 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes pulse-warn{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(1.03)}}
+.time-up-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:999}
+.time-up-box{background:#fff;border-radius:var(--radius);padding:40px;text-align:center;max-width:400px;margin:20px}
+
+/* ========== Results / Charts ========== */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.chart-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.chart-card h4{margin-bottom:12px;font-size:.95rem}
+.response-summary{text-align:center;padding:24px}
+.response-summary .big-num{font-size:2.5rem;font-weight:800;color:var(--primary)}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg-card);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow)}
+.stat-card .stat-value{font-size:1.5rem;font-weight:800;color:var(--primary)}
+.stat-card .stat-label{font-size:.8rem;color:var(--text-light);margin-top:4px}
+
+/* ========== Toast ========== */
+.toast-container{position:fixed;top:80px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:8px;color:#fff;font-size:.875rem;font-weight:600;animation:slideIn .3s ease;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.toast-success{background:var(--success)}.toast-error{background:var(--danger)}.toast-info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ========== Modal ========== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;animation:fadeIn .2s}
+.modal{background:#fff;border-radius:var(--radius);padding:28px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;animation:scaleIn .25s}
+.modal h3{margin-bottom:16px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ========== Share ========== */
+.share-url-box{display:flex;gap:8px;margin-top:12px}
+.share-url-box input{flex:1;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg)}
+
+/* ========== Responsive ========== */
+@media(max-width:768px){
+  .main-container{padding:16px}
+  .form-row{grid-template-columns:1fr}
+  .card{padding:16px}
+  .question-item{padding:14px}
+  .survey-nav .btn{padding:12px}
+  .charts-grid{grid-template-columns:1fr}
+  .app-header h1{font-size:1rem}
+  .nav-tab{padding:12px 14px;font-size:.82rem}
+  .stat-cards{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .app-header{padding:12px 16px}
+  .app-header-actions .btn-ghost span{display:none}
+  .stat-cards{grid-template-columns:1fr}
+  .question-actions{position:static;margin-top:10px}
+}
+
+/* ========== Utility ========== */
+.hidden{display:none!important}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.gap-8{gap:8px}.gap-16{gap:16px}
+.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}
+.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}
+.text-center{text-align:center}
+.text-sm{font-size:.85rem}.text-xs{font-size:.75rem}
+.text-muted{color:var(--text-light)}
+.d-flex{display:flex}.align-center{align-items:center}
+
+/* ========== Saved Progress Banner ========== */
+.saved-banner{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(79,70,229,.95);color:#fff;padding:10px 20px;border-radius:24px;
+  font-size:.85rem;box-shadow:0 4px 20px rgba(79,70,229,.3);z-index:200;
+  display:flex;align-items:center;gap:8px;animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(100%);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+/* ========== Drag Handle ========== */
+.drag-handle{cursor:grab;color:var(--text-light);padding:4px;font-size:1.1rem;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.question-item.dragging{opacity:.5;border-style:dashed}
+</style>
+</head>
+<body>
+
+<!-- ========== Header ========== -->
+<header class="app-header">
+  <h1>📋 问卷构建器</h1>
+  <div class="app-header-actions">
+    <button class="btn btn-ghost" onclick="showPreview()" id="btnPreview"><span>预览问卷</span></button>
+    <button class="btn btn-ghost" id="btnBackToEdit" style="display:none" onclick="backToEdit()"><span>返回编辑</span></button>
+    <button class="btn btn-ghost" id="btnPublish" onclick="publishSurvey()"><span>发布分享</span></button>
+  </div>
+</header>
+
+<!-- ========== Tabs ========== -->
+<nav class="nav-tabs" id="navTabs">
+  <button class="nav-tab active" data-tab="builder">构建器</button>
+  <button class="nav-tab" data-tab="results" id="tabResults">结果<span class="badge hidden" id="responseCount">0</span></button>
+</nav>
+
+<!-- ========== Main ========== -->
+<main class="main-container">
+
+  <!-- BUILDER TAB -->
+  <section id="secBuilder">
+    <!-- Survey Settings -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">⚙️ 问卷设置</h2>
+      </div>
+      <div class="form-group">
+        <label class="form-label">问卷标题</label>
+        <input class="form-input" id="surveyTitle" placeholder="请输入问卷标题…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">问卷描述</label>
+        <textarea class="form-textarea" id="surveyDesc" placeholder="简要描述问卷目的…" rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">时间限制（分钟，0 = 不限时）</label>
+          <input class="form-input" type="number" id="surveyTimeLimit" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">每次保存自动存草稿</label>
+          <select class="form-select" id="autoSave">
+            <option value="1">开启</option>
+            <option value="0">关闭</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Question -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">📝 题目列表</h2>
+        <button class="btn btn-primary btn-sm" onclick="addQuestion('radio')">+ 添加题目</button>
+      </div>
+      <div id="questionsList"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h.01M15 12h.01M12 16c1.5 0 3-1 3-3s-1.5-3-3-3-3 1-3 3 1.5 3 3 3z"/><circle cx="12" cy="12" r="10"/></svg>
+        <h3>还没有题目</h3>
+        <p class="text-muted text-sm">点击上方按钮添加第一道题目</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SURVEY FILL TAB -->
+  <section id="secFill" class="hidden">
+    <div class="survey-container">
+      <div id="surveyHeader" class="card mb-16">
+        <h2 id="fillTitle" class="card-title"></h2>
+        <p id="fillDesc" class="text-muted text-sm mt-12"></p>
+        <div id="timerArea" class="mt-16 hidden">
+          <span class="timer-display" id="timerDisplay">⏱️ 00:00</span>
+        </div>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillProgress" style="width:0%"></div></div>
+      <div id="fillBody"></div>
+      <div class="survey-nav" id="fillNav">
+        <button class="btn btn-outline" id="btnPrev" onclick="fillPrev()">← 上一题</button>
+        <button class="btn btn-primary" id="btnNext" onclick="fillNext()">下一题 →</button>
+        <button class="btn btn-success hidden" id="btnSubmit" onclick="submitSurvey()">✓ 提交问卷</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS TAB -->
+  <section id="secResults" class="hidden">
+    <div class="response-summary card">
+      <h2 class="card-title">📊 问卷结果统计</h2>
+      <div class="stat-cards mt-16" id="statCards"></div>
+    </div>
+    <div class="charts-grid" id="chartsGrid"></div>
+  </section>
+
+  <!-- PREVIEW MODAL -->
+  <div class="modal-overlay hidden" id="previewModal">
+    <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto">
+      <div class="card-header">
+        <h3>👁️ 问卷预览</h3>
+        <button class="btn-icon" onclick="closePreview()">✕</button>
+      </div>
+      <div id="previewContent"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Saved Progress Banner -->
+<div class="saved-banner hidden" id="savedBanner">
+  📥 检测到未完成的填写，是否恢复？
+  <button class="btn btn-sm" style="background:#fff;color:var(--primary);margin-left:8px" onclick="resumeProgress()">恢复</button>
+  <button class="btn btn-sm" style="background:rgba(255,255,255,.3);color:#fff" onclick="dismissBanner()">忽略</button>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay hidden" id="shareModal">
+  <div class="modal">
+    <div class="card-header">
+      <h3>🔗 分享问卷</h3>
+      <button class="btn-icon" onclick="closeShare()">✕</button>
+    </div>
+    <p class="text-sm text-muted">复制下方链接发送给受访者：</p>
+    <div class="share-url-box">
+      <input id="shareUrl" readonly>
+      <button class="btn btn-primary btn-sm" onclick="copyShareUrl()">复制</button>
+    </div>
+    <p class="text-xs text-muted mt-12">提示：问卷数据编码在 URL 哈希中，可直接分享。</p>
+  </div>
+</div>
+
+<!-- Time-up Overlay -->
+<div class="time-up-overlay hidden" id="timeUpOverlay">
+  <div class="time-up-box">
+    <h2 style="font-size:2rem;margin-bottom:12px">⏰ 时间到！</h2>
+    <p class="text-muted">答题时间已结束，问卷将自动提交你已作答的内容。</p>
+    <button class="btn btn-primary mt-24" onclick="submitSurvey()">提交已答内容</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   STATE
+   =================================================================== */
+let survey = loadSurveyFromHash() || {
+  id: generateId(),
+  title: '',
+  description: '',
+  timeLimit: 0,
+  questions: [],
+  responses: [],
+  autoSave: true
+};
+
+let fillState = { currentQ: 0, answers: {}, startTime: null, timerInterval: null, remainingSeconds: 0 };
+let currentTab = 'builder';
+
+const TYPE_LABELS = { radio: '单选题', checkbox: '多选题', text: '文本题', slider: '滑块题' };
+const TYPE_ICONS = { radio: '🔘', checkbox: '☑️', text: '✏️', slider: '🎚️' };
+
+/* ===================================================================
+   INIT
+   =================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  fillSettings();
+  renderQuestions();
+  loadFromLocalStorage();
+  bindTabEvents();
+  checkForSavedProgress();
+  window.addEventListener('hashchange', onHashChange);
+  window.addEventListener('beforeunload', autoSaveProgress);
+});
+
+function onHashChange() {
+  const loaded = loadSurveyFromHash();
+  if (loaded) { survey = loaded; fillSettings(); renderQuestions(); }
+}
+
+/* ===================================================================
+   TABS
+   =================================================================== */
+function bindTabEvents() {
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+}
+
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('secBuilder').classList.toggle('hidden', name !== 'builder');
+  document.getElementById('secFill').classList.toggle('hidden', name !== 'fill');
+  document.getElementById('secResults').classList.toggle('hidden', name !== 'results');
+  document.getElementById('btnPreview').style.display = name === 'builder' ? '' : 'none';
+  document.getElementById('btnPublish').style.display = name === 'builder' ? '' : 'none';
+  document.getElementById('btnBackToEdit').style.display = name === 'fill' ? '' : 'none';
+
+  if (name === 'results') renderResults();
+  if (name === 'fill') startFill();
+}
+
+/* ===================================================================
+   SURVEY SETTINGS
+   =================================================================== */
+function fillSettings() {
+  document.getElementById('surveyTitle').value = survey.title || '';
+  document.getElementById('surveyDesc').value = survey.description || '';
+  document.getElementById('surveyTimeLimit').value = survey.timeLimit || 0;
+  document.getElementById('autoSave').value = survey.autoSave ? '1' : '0';
+}
+
+document.getElementById('surveyTitle').addEventListener('input', e => { survey.title = e.target.value; saveDraft(); });
+document.getElementById('surveyDesc').addEventListener('input', e => { survey.description = e.target.value; saveDraft(); });
+document.getElementById('surveyTimeLimit').addEventListener('input', e => { survey.timeLimit = parseInt(e.target.value) || 0; saveDraft(); });
+document.getElementById('autoSave').addEventListener('change', e => { survey.autoSave = e.target.value === '1'; saveDraft(); });
+
+/* ===================================================================
+   ADD / RENDER QUESTIONS
+   =================================================================== */
+function addQuestion(type) {
+  const q = {
+    id: generateId(),
+    type: type,
+    title: '',
+    required: true,
+    options: type === 'radio' || type === 'checkbox' ? ['选项 1', '选项 2'] : [],
+    min: type === 'slider' ? 0 : undefined,
+    max: type === 'slider' ? 100 : undefined,
+    step: type === 'slider' ? 1 : undefined,
+    branchLogic: {} // { optionValue: targetQuestionId }
+  };
+  survey.questions.push(q);
+  renderQuestions();
+  saveDraft();
+}
+
+function removeQuestion(id) {
+  survey.questions = survey.questions.filter(q => q.id !== id);
+  // Clean up branch logic referencing this question
+  survey.questions.forEach(q => {
+    Object.keys(q.branchLogic).forEach(key => {
+      if (q.branchLogic[key] === id) delete q.branchLogic[key];
+    });
+  });
+  renderQuestions();
+  saveDraft();
+}
+
+function duplicateQuestion(id) {
+  const idx = survey.questions.findIndex(q => q.id === id);
+  if (idx < 0) return;
+  const clone = JSON.parse(JSON.stringify(survey.questions[idx]));
+  clone.id = generateId();
+  clone.title += ' (副本)';
+  survey.questions.splice(idx + 1, 0, clone);
+  renderQuestions();
+  saveDraft();
+}
+
+function moveQuestion(id, dir) {
+  const idx = survey.questions.findIndex(q => q.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= survey.questions.length) return;
+  [survey.questions[idx], survey.questions[newIdx]] = [survey.questions[newIdx], survey.questions[idx]];
+  renderQuestions();
+  saveDraft();
+}
+
+function renderQuestions() {
+  const container = document.getElementById('questionsList');
+  const empty = document.getElementById('emptyState');
+
+  if (survey.questions.length === 0) {
+    container.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  container.innerHTML = survey.questions.map((q, i) => {
+    const branchOptions = [/* index -1 = next */]
+      .concat(survey.questions.filter(qq => qq.id !== q.id).map(qq => ({ id: qq.id, label: `跳转至: ${qq.title || TYPE_ICONS[qq.type] + TYPE_LABELS[qq.type]} #${survey.questions.indexOf(qq) + 1}` })));
+
+    return `
+      <div class="question-item" data-id="${q.id}">
+        <div class="question-actions">
+          <button class="btn-icon" title="上移" onclick="moveQuestion('${q.id}',-1)">↑</button>
+          <button class="btn-icon" title="下移" onclick="moveQuestion('${q.id}',1)">↓</button>
+          <button class="btn-icon" title="复制" onclick="duplicateQuestion('${q.id}')">⧉</button>
+          <button class="btn-icon" title="删除" onclick="removeQuestion('${q.id}')" style="color:var(--danger)">🗑</button>
+        </div>
+
+        <div class="d-flex align-center gap-8 mb-12">
+          <span class="question-number">${i + 1}</span>
+          <span class="question-type-badge">${TYPE_ICONS[q.type]} ${TYPE_LABELS[q.type]}</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">题目内容</label>
+          <input class="form-input" value="${escHtml(q.title)}" placeholder="请输入题目…" oninput="updateQ('${q.id}','title',this.value)">
+        </div>
+
+        ${q.type === 'radio' || q.type === 'checkbox' ? `
+        <div class="form-group">
+          <label class="form-label">选项 <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="addOption('${q.id}')">+ 添加选项</button></label>
+          ${q.options.map((opt, oi) => `
+            <div class="option-row">
+              <input class="form-input" value="${escHtml(opt)}" oninput="updateOption('${q.id}',${oi},this.value)">
+              ${survey.questions.length > 1 ? `
+              <select class="form-select branch-select" onchange="updateBranch('${q.id}','${escAttr(opt)}',this.value)" style="max-width:200px">
+                <option value="" ${!q.branchLogic[opt] ? 'selected' : ''}>顺序下一题</option>
+                ${survey.questions.filter(qq => qq.id !== q.id).map(qq => `
+                  <option value="${qq.id}" ${q.branchLogic[opt] === qq.id ? 'selected' : ''}>跳转 → ${qq.title || TYPE_LABELS[qq.type]}</option>
+                `).join('')}
+              </select>` : ''}
+              <button class="btn-icon" onclick="removeOption('${q.id}',${oi})" ${q.options.length <= 2 ? 'disabled style="opacity:.3"' : ''}>✕</button>
+            </div>
+          `).join('')}
+          ${q.branchLogic && Object.keys(q.branchLogic).length > 0 ? '<p class="text-xs text-muted mt-8">💡 已设置分支逻辑：选择特定选项后将跳转到指定题目</p>' : ''}
+        </div>` : ''}
+
+        ${q.type === 'slider' ? `
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">最小值</label><input class="form-input" type="number" value="${q.min ?? 0}" oninput="updateQ('${q.id}','min',+this.value)"></div>
+          <div class="form-group"><label class="form-label">最大值</label><input class="form-input" type="number" value="${q.max ?? 100}" oninput="updateQ('${q.id}','max',+this.value)"></div>
+          <div class="form-group"><label class="form-label">步长</label><input class="form-input" type="number" min="1" value="${q.step ?? 1}" oninput="updateQ('${q.id}','step',+this.value)"></div>
+        </div>` : ''}
+
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" ${q.required ? 'checked' : ''} onchange="updateQ('${q.id}','required',this.checked)">
+            必答题
+          </label>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateQ(id, key, val) {
+  const q = survey.questions.find(q => q.id === id);
+  if (q) { q[key] = val; saveDraft(); }
+}
+
+function addOption(qId) {
+  const q = survey.questions.find(q => q.id === qId);
+  if (q) { q.options.push('选项 ' + (q.options.length + 1)); renderQuestions(); saveDraft(); }
+}
+
+function removeOption(qId, idx) {
+  const q = survey.questions.find(q => q.id === qId);
+  if (q && q.options.length > 2) {
+    const removedOpt = q.options.splice(idx, 1)[0];
+    delete q.branchLogic[removedOpt];
+    renderQuestions(); saveDraft();
+  }
+}
+
+function updateOption(qId, idx, val) {
+  const q = survey.questions.find(q => q.id === qId);
+  if (!q) return;
+  const oldVal = q.options[idx];
+  q.options[idx] = val;
+  if (oldVal !== val) {
+    if (q.branchLogic[oldVal] !== undefined) {
+      q.branchLogic[val] = q.branchLogic[oldVal];
+      delete q.branchLogic[oldVal];
+    }
+    saveDraft();
+  }
+}
+
+function updateBranch(qId, optionVal, targetId) {
+  const q = survey.questions.find(q => q.id === qId);
+  if (!q) return;
+  if (targetId) q.branchLogic[optionVal] = targetId;
+  else delete q.branchLogic[optionVal];
+  saveDraft();
+}
+
+/* ===================================================================
+   PREVIEW
+   =================================================================== */
+function showPreview() {
+  if (survey.questions.length === 0) return toast('请先添加题目', 'error');
+  const modal = document.getElementById('previewModal');
+  const content = document.getElementById('previewContent');
+  content.innerHTML = survey.questions.map((q, i) => `
+    <div class="card mb-12">
+      <p><strong>${i + 1}. ${escHtml(q.title) || '(未填写题目)'}</strong> <span class="question-type-badge" style="margin-left:8px">${TYPE_ICONS[q.type]} ${TYPE_LABELS[q.type]}</span></p>
+      ${q.required ? '<span class="text-xs text-muted">* 必答</span>' : ''}
+      ${buildPreviewOptions(q)}
+    </div>
+  `).join('');
+  modal.classList.remove('hidden');
+}
+
+function buildPreviewOptions(q) {
+  if (q.type === 'radio' || q.type === 'checkbox') {
+    return `<ul style="margin-top:8px;padding-left:20px;color:var(--text-light)">${q.options.map(o => `<li>${escHtml(o)}</li>`).join('')}</ul>`;
+  }
+  if (q.type === 'slider') return `<p class="text-muted text-sm mt-8">滑块范围: ${q.min ?? 0} — ${q.max ?? 100}（步长 ${q.step ?? 1}）</p>`;
+  if (q.type === 'text') return `<p class="text-muted text-sm mt-8">文本输入框</p>`;
+  return '';
+}
+
+function closePreview() { document.getElementById('previewModal').classList.add('hidden'); }
+
+/* ===================================================================
+   SURVEY FILL
+   =================================================================== */
+function startFill() {
+  if (survey.questions.length === 0) return toast('问卷为空', 'error');
+
+  document.getElementById('fillTitle').textContent = survey.title || '未命名问卷';
+  document.getElementById('fillDesc').textContent = survey.description || '';
+
+  // Timer
+  const timerArea = document.getElementById('timerArea');
+  if (survey.timeLimit > 0) {
+    timerArea.classList.remove('hidden');
+    fillState.remainingSeconds = survey.timeLimit * 60;
+    startTimer();
+  } else {
+    timerArea.classList.add('hidden');
+  }
+
+  fillState.currentQ = 0;
+  fillState.startTime = Date.now();
+  if (Object.keys(fillState.answers).length === 0) {
+    fillState.answers = {};
+    survey.questions.forEach(q => { fillState.answers[q.id] = q.type === 'checkbox' ? [] : q.type === 'slider' ? ((q.min || 0) + (q.max || 100)) / 2 : ''; });
+  }
+  renderFillQuestion();
+}
+
+function startTimer() {
+  clearInterval(fillState.timerInterval);
+  updateTimerDisplay();
+  fillState.timerInterval = setInterval(() => {
+    fillState.remainingSeconds--;
+    updateTimerDisplay();
+    if (fillState.remainingSeconds <= 0) {
+      clearInterval(fillState.timerInterval);
+      document.getElementById('timeUpOverlay').classList.remove('hidden');
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(fillState.remainingSeconds / 60);
+  const s = fillState.remainingSeconds % 60;
+  const el = document.getElementById('timerDisplay');
+  el.textContent = `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  el.classList.toggle('timer-warning', fillState.remainingSeconds <= 60);
+}
+
+function getNextQuestionIndex(currentIdx) {
+  const q = survey.questions[currentIdx];
+  const answer = fillState.answers[q.id];
+
+  if (q.branchLogic && answer !== undefined && answer !== '' && !(Array.isArray(answer) && answer.length === 0)) {
+    const val = Array.isArray(answer) ? answer[0] : answer;
+    if (q.branchLogic[val] !== undefined) {
+      const targetIdx = survey.questions.findIndex(qq => qq.id === q.branchLogic[val]);
+      if (targetIdx >= 0) return targetIdx;
+    }
+  }
+  return currentIdx + 1;
+}
+
+function renderFillQuestion() {
+  const idx = fillState.currentQ;
+  if (idx >= survey.questions.length) { submitSurvey(); return; }
+
+  const q = survey.questions[idx];
+  const body = document.getElementById('fillBody');
+
+  // Progress
+  const pct = Math.round(((idx + 1) / survey.questions.length) * 100);
+  document.getElementById('fillProgress').style.width = pct + '%';
+
+  const checked = fillState.answers[q.id];
+
+  let html = `<div class="survey-question" data-qid="${q.id}"><label class="q-title">${idx + 1}. ${escHtml(q.title) || '(未填写题目)'} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</label>`;
+
+  if (q.type === 'radio') {
+    html += `<div class="survey-options">${q.options.map((opt, oi) => `
+      <label class="radio-option ${checked === opt ? 'selected' : ''}" onclick="selectRadio('${q.id}','${escAttr(opt)}',this)">
+        <input type="radio" name="q_${q.id}" ${checked === opt ? 'checked' : ''}>
+        <span>${escHtml(opt)}</span>
+      </label>`).join('')}</div>`;
+  } else if (q.type === 'checkbox') {
+    html += `<div class="survey-options">${q.options.map((opt, oi) => {
+      const selected = Array.isArray(checked) && checked.includes(opt);
+      return `
+      <label class="checkbox-option ${selected ? 'selected' : ''}" onclick="toggleCheckbox('${q.id}','${escAttr(opt)}',this)">
+        <input type="checkbox" ${selected ? 'checked' : ''}>
+        <span>${escHtml(opt)}</span>
+      </label>`;
+    }).join('')}</div>`;
+  } else if (q.type === 'text') {
+    html += `<textarea class="form-textarea" placeholder="请输入您的回答…" oninput="fillState.answers['${q.id}']=this.value;autoSaveFillProgress()">${escHtml(checked)}</textarea>`;
+  } else if (q.type === 'slider') {
+    const min = q.min ?? 0, max = q.max ?? 100, step = q.step ?? 1;
+    const val = checked !== '' ? checked : (min + max) / 2;
+    fillState.answers[q.id] = val;
+    html += `
+      <div class="slider-container">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-light)"><span>${min}</span><span>${max}</span></div>
+        <input type="range" min="${min}" max="${max}" step="${step}" value="${val}" oninput="fillState.answers['${q.id}']=+this.value;document.getElementById('sv_${q.id}').textContent=this.value;autoSaveFillProgress()">
+        <div class="slider-value" id="sv_${q.id}">${val}</div>
+      </div>`;
+  }
+
+  html += '</div>';
+  body.innerHTML = html;
+
+  // Nav buttons
+  document.getElementById('btnPrev').classList.toggle('hidden', idx === 0);
+  document.getElementById('btnSubmit').classList.toggle('hidden', idx < survey.questions.length - 1);
+  document.getElementById('btnNext').classList.toggle('hidden', idx >= survey.questions.length - 1);
+}
+
+function selectRadio(qId, val, el) {
+  fillState.answers[qId] = val;
+  el.closest('.survey-options').querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  autoSaveFillProgress();
+}
+
+function toggleCheckbox(qId, val, el) {
+  if (!Array.isArray(fillState.answers[qId])) fillState.answers[qId] = [];
+  const arr = fillState.answers[qId];
+  const idx = arr.indexOf(val);
+  if (idx >= 0) arr.splice(idx, 1); else arr.push(val);
+  el.classList.toggle('selected');
+  autoSaveFillProgress();
+}
+
+function fillNext() {
+  const q = survey.questions[fillState.currentQ];
+  if (q.required) {
+    const a = fillState.answers[q.id];
+    if (a === '' || a === undefined || (Array.isArray(a) && a.length === 0)) {
+      return toast('此题为必答题', 'error');
+    }
+  }
+  fillState.currentQ = getNextQuestionIndex(fillState.currentQ);
+  renderFillQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function fillPrev() {
+  if (fillState.currentQ > 0) { fillState.currentQ--; renderFillQuestion(); }
+}
+
+/* ===================================================================
+   SUBMIT
+   =================================================================== */
+function submitSurvey() {
+  clearInterval(fillState.timerInterval);
+  document.getElementById('timeUpOverlay').classList.add('hidden');
+
+  // Validate required
+  for (const q of survey.questions) {
+    if (!q.required) continue;
+    const a = fillState.answers[q.id];
+    if (a === '' || a === undefined || (Array.isArray(a) && a.length === 0)) {
+      fillState.currentQ = survey.questions.indexOf(q);
+      renderFillQuestion();
+      return toast(`请完成必答题: ${q.title || '第' + (survey.questions.indexOf(q) + 1) + '题'}`, 'error');
+    }
+  }
+
+  const response = {
+    id: generateId(),
+    timestamp: new Date().toISOString(),
+    answers: { ...fillState.answers }
+  };
+  if (Array.isArray(response.answers)) {
+    // deep copy arrays
+    survey.questions.forEach(q => {
+      if (q.type === 'checkbox' && Array.isArray(fillState.answers[q.id])) {
+        response.answers[q.id] = [...fillState.answers[q.id]];
+      }
+    });
+  }
+  survey.responses.push(response);
+
+  // clear fill state & localStorage saved progress
+  clearFillProgress();
+  fillState.answers = {};
+
+  toast('问卷提交成功！感谢参与 🎉', 'success');
+  updateResponseBadge();
+  refreshResultsData();
+  switchTab('results');
+}
+
+/* ===================================================================
+   RESULTS
+   =================================================================== */
+function updateResponseBadge() {
+  const badge = document.getElementById('responseCount');
+  badge.textContent = survey.responses.length;
+  badge.classList.toggle('hidden', survey.responses.length === 0);
+}
+
+function renderResults() {
+  updateResponseBadge();
+
+  if (survey.responses.length === 0) {
+    document.getElementById('statCards').innerHTML = '';
+    document.getElementById('chartsGrid').innerHTML = '<div class="text-center text-muted" style="grid-column:1/-1;padding:40px"><p>暂无提交数据</p></div>';
+    return;
+  }
+
+  const total = survey.responses.length;
+  const requiredCount = survey.questions.filter(q => q.required).length;
+  const avgTime = total > 0 ? Math.round(total / 2) + ' 分钟' : '—';
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">总提交数</div></div>
+    <div class="stat-card"><div class="stat-value">${survey.questions.length}</div><div class="stat-label">题目数量</div></div>
+    <div class="stat-card"><div class="stat-value">${requiredCount}</div><div class="stat-label">必填题目</div></div>
+    <div class="stat-card"><div class="stat-value">100%</div><div class="stat-label">完成率</div></div>
+  `;
+
+  const grid = document.getElementById('chartsGrid');
+  grid.innerHTML = '';
+
+  survey.questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<h4>${qi + 1}. ${escHtml(q.title) || '未命名'}</h4><canvas id="chart_${qi}"></canvas>`;
+    grid.appendChild(card);
+  });
+
+  // Render charts after DOM update
+  requestAnimationFrame(() => {
+    survey.questions.forEach((q, qi) => {
+      const ctx = document.getElementById('chart_' + qi);
+      if (!ctx) return;
+
+      if (q.type === 'radio' || q.type === 'checkbox') {
+        const counts = {};
+        q.options.forEach(o => counts[o] = 0);
+        survey.responses.forEach(r => {
+          const a = r.answers[q.id];
+          if (Array.isArray(a)) a.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+          else if (counts[a] !== undefined) counts[a]++;
+        });
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(counts),
+            datasets: [{ label: '选择次数', data: Object.values(counts), backgroundColor: ['#4f46e5','#818cf8','#a5b4fc','#c7d2fe','#e0e7ff','#6366f1','#7c3aed','#8b5cf6','#a78bfa','#c4b5fd'] }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+      } else if (q.type === 'slider') {
+        const values = survey.responses.map(r => r.answers[q.id]).filter(v => v !== undefined && v !== '');
+        const min = q.min ?? 0, max = q.max ?? 100;
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: values.map((_, i) => '提交' + (i + 1)),
+            datasets: [{ label: '滑块值', data: values, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.1)', fill: true, tension: .3 }]
+          },
+          options: { responsive: true, scales: { y: { min, max } } }
+        });
+      } else if (q.type === 'text') {
+        const answers = survey.responses.map(r => r.answers[q.id]).filter(a => a && a.trim());
+        if (answers.length > 0) {
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: answers.map((_, i) => '回答 ' + (i + 1)),
+              datasets: [{ label: '字数', data: answers.map(a => a.length), backgroundColor: '#10b981' }]
+            },
+            options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+          });
+        }
+      }
+    });
+  });
+}
+
+function refreshResultsData() {
+  if (currentTab === 'results') renderResults();
+}
+
+/* ===================================================================
+   SHARE / URL ENCODE
+   =================================================================== */
+function publishSurvey() {
+  if (survey.questions.length === 0) return toast('请先添加题目', 'error');
+  survey.title = document.getElementById('surveyTitle').value || '未命名问卷';
+  const hash = encodeSurvey(survey);
+  const url = location.origin + location.pathname + '#' + hash;
+  document.getElementById('shareUrl').value = url;
+  document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShare() { document.getElementById('shareModal').classList.add('hidden'); }
+
+function copyShareUrl() {
+  const input = document.getElementById('shareUrl');
+  navigator.clipboard.writeText(input.value).then(() => toast('链接已复制', 'success')).catch(() => { input.select(); document.execCommand('copy'); toast('链接已复制', 'success'); });
+}
+
+function encodeSurvey(s) {
+  const data = { t: s.title, d: s.description, tl: s.timeLimit, q: s.questions.map(q => ({ id: q.id, ty: q.type, ti: q.title, rq: q.required, op: q.options, mn: q.min, mx: q.max, st: q.step, bl: q.branchLogic })) };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+function loadSurveyFromHash() {
+  const hash = location.hash.slice(1);
+  if (!hash) return null;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(hash))));
+    return {
+      id: generateId(),
+      title: data.t || '',
+      description: data.d || '',
+      timeLimit: data.tl || 0,
+      questions: (data.q || []).map(q => ({
+        id: q.id || generateId(),
+        type: q.ty || 'radio',
+        title: q.ti || '',
+        required: q.rq !== false,
+        options: q.op || [],
+        min: q.mn ?? (q.ty === 'slider' ? 0 : undefined),
+        max: q.mx ?? (q.ty === 'slider' ? 100 : undefined),
+        step: q.st ?? (q.ty === 'slider' ? 1 : undefined),
+        branchLogic: q.bl || {}
+      })),
+      responses: [],
+      autoSave: true
+    };
+  } catch { return null; }
+}
+
+/* ===================================================================
+   LOCALSTORAGE DRAFT
+   =================================================================== */
+function saveDraft() {
+  try {
+    localStorage.setItem('survey_draft', JSON.stringify(survey));
+  } catch {}
+}
+
+function loadFromLocalStorage() {
+  if (location.hash.slice(1)) return; // already loaded from hash
+  try {
+    const draft = localStorage.getItem('survey_draft');
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      if (parsed && parsed.questions && parsed.questions.length > 0) {
+        survey = parsed;
+        fillSettings();
+        renderQuestions();
+      }
+    }
+  } catch {}
+}
+
+/* ===================================================================
+   LOCALSTORAGE FILL PROGRESS
+   =================================================================== */
+const FILL_PROGRESS_KEY = 'survey_fill_progress';
+
+function autoSaveFillProgress() {
+  if (!survey.autoSave || currentTab !== 'fill') return;
+  try {
+    localStorage.setItem(FILL_PROGRESS_KEY, JSON.stringify({
+      surveyId: survey.id,
+      currentQ: fillState.currentQ,
+      answers: fillState.answers,
+      savedAt: Date.now()
+    }));
+  } catch {}
+}
+
+function autoSaveProgress() {
+  saveDraft();
+  if (currentTab === 'fill') autoSaveFillProgress();
+}
+
+function checkForSavedProgress() {
+  try {
+    const data = localStorage.getItem(FILL_PROGRESS_KEY);
+    if (!data) return;
+    const parsed = JSON.parse(data);
+    if (parsed && parsed.surveyId === survey.id && parsed.answers && Object.values(parsed.answers).some(a => a !== '' && a !== undefined && !(Array.isArray(a) && a.length === 0))) {
+      document.getElementById('savedBanner').classList.remove('hidden');
+    }
+  } catch {}
+}
+
+function resumeProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem(FILL_PROGRESS_KEY));
+    if (data) {
+      fillState.currentQ = data.currentQ || 0;
+      fillState.answers = data.answers || {};
+      document.getElementById('savedBanner').classList.add('hidden');
+      switchTab('fill');
+      toast('已恢复上次填写进度', 'info');
+    }
+  } catch {}
+}
+
+function dismissBanner() {
+  document.getElementById('savedBanner').classList.add('hidden');
+}
+
+function clearFillProgress() {
+  try { localStorage.removeItem(FILL_PROGRESS_KEY); } catch {}
+}
+
+/* ===================================================================
+   BACK TO EDIT FROM FILL
+   =================================================================== */
+function backToEdit() {
+  clearInterval(fillState.timerInterval);
+  switchTab('builder');
+}
+
+/* ===================================================================
+   UTILITIES
+   =================================================================== */
+function generateId() { return '_' + Math.random().toString(36).substring(2, 10); }
+
+function escHtml(s) { if (typeof s !== 'string') return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function escAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+function toast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(100%)'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+/* Close modals on overlay click */
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.add('hidden'); });
+});
+
+/* Keyboard shortcut */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+  }
+});
+</script>
+</body>
+</html>
