@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时区地图工具</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #242837;
+  --border: #2e3348;
+  --text: #e4e6f0;
+  --text2: #9399b2;
+  --accent: #6c72ff;
+  --accent2: #a78bfa;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.search-wrap {
+  position: relative;
+}
+.search-wrap i {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text2);
+  font-size: 13px;
+}
+.search-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 12px 7px 32px;
+  color: var(--text);
+  font-size: 13px;
+  width: 200px;
+  outline: none;
+  transition: border-color .2s, width .2s;
+}
+.search-input:focus {
+  border-color: var(--accent);
+  width: 280px;
+}
+.search-input::placeholder { color: var(--text2); }
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 300px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  z-index: 1000;
+  display: none;
+}
+.search-dropdown.show { display: block; }
+.search-item {
+  padding: 9px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  transition: background .15s;
+}
+.search-item:hover { background: var(--surface2); }
+.search-item .zh { color: var(--text); font-weight: 500; }
+.search-item .en { color: var(--text2); font-size: 11px; }
+.search-item .tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.search-item:hover .tag { opacity: 1; }
+
+.theme-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .2s;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* ── Main layout ── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.map-wrap {
+  flex: 1;
+  position: relative;
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Compare panel ── */
+.panel {
+  width: 340px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.panel-header i { color: var(--accent2); }
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.panel-body::-webkit-scrollbar { width: 5px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text2);
+  font-size: 13px;
+  gap: 10px;
+  text-align: center;
+  padding: 20px;
+}
+.panel-empty i { font-size: 36px; opacity: .3; }
+
+/* ── City card ── */
+.city-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  animation: cardIn .25s ease;
+  position: relative;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.city-card:hover { border-color: var(--accent); }
+.city-card.local {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, .06);
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.card-city {
+  font-size: 14px;
+  font-weight: 600;
+}
+.card-country {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 1px;
+}
+.card-remove {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all .15s;
+  line-height: 1;
+}
+.card-remove:hover { color: var(--red); background: rgba(239,68,68,.12); }
+
+.card-time {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.5px;
+  margin: 6px 0 4px;
+  background: linear-gradient(135deg, var(--text), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.card-date {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.card-timezone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+  flex-wrap: wrap;
+}
+.card-tz-badge {
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+}
+.card-diff {
+  font-weight: 600;
+}
+.card-diff.ahead { color: var(--green); }
+.card-diff.behind { color: var(--orange); }
+.card-diff.same { color: var(--text2); }
+
+.local-badge {
+  font-size: 10px;
+  background: var(--green);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+/* ── Leaflet custom marker ── */
+.city-marker {
+  background: var(--accent);
+  border: 2px solid rgba(255,255,255,.9);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.city-marker:hover {
+  transform: scale(1.6);
+  box-shadow: 0 0 12px var(--accent);
+}
+.city-marker.selected {
+  background: var(--green);
+  border-color: #fff;
+  transform: scale(1.5);
+  box-shadow: 0 0 10px var(--green);
+}
+
+.marker-label {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 10px;
+  font-weight: 500;
+  color: #ccc;
+  text-shadow: 0 0 4px rgba(0,0,0,.9), 0 0 8px rgba(0,0,0,.6);
+  white-space: nowrap;
+  padding: 0 !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  .panel {
+    width: 100%;
+    max-height: 45vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .search-input { width: 140px; }
+  .search-input:focus { width: 180px; }
+}
+
+/* ── Light theme ── */
+body.light {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --border: #e5e7eb;
+  --text: #111827;
+  --text2: #6b7280;
+}
+body.light .marker-label {
+  color: #555;
+  text-shadow: 0 0 4px rgba(255,255,255,.9), 0 0 8px rgba(255,255,255,.7);
+}
+body.light .card-time {
+  background: linear-gradient(135deg, #111, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+body.light .city-marker {
+  background: #4f46e5;
+  border-color: #fff;
+}
+body.light .city-marker.selected {
+  background: var(--green);
+}
+body.light .city-card.local {
+  background: rgba(34, 197, 94, .06);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1><i class="fas fa-globe-americas"></i> 时区地图工具</h1>
+  </div>
+  <div class="header-right">
+    <div class="search-wrap">
+      <i class="fas fa-search"></i>
+      <input class="search-input" id="searchInput" placeholder="搜索城市 / Search cities..." autocomplete="off">
+      <div class="search-dropdown" id="searchDropdown"></div>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="切换主题">
+      <i class="fas fa-moon"></i>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="map-wrap"><div id="map"></div></div>
+  <div class="panel">
+    <div class="panel-header">
+      <i class="fas fa-clock"></i> 时区对比面板
+      <span id="cityCount" style="color:var(--text2);font-weight:400;font-size:12px;"></span>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <div class="panel-empty" id="panelEmpty">
+        <i class="fas fa-map-marker-alt"></i>
+        <div>点击地图上的城市标记<br>添加到对比面板</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// City dataset — ~150 major world cities
+// ═══════════════════════════════════════════
+const CITIES = [
+  // East Asia
+  {name:"Beijing",nameZh:"北京",country:"China",countryZh:"中国",lat:39.90,lng:116.41,tz:"Asia/Shanghai"},
+  {name:"Shanghai",nameZh:"上海",country:"China",countryZh:"中国",lat:31.23,lng:121.47,tz:"Asia/Shanghai"},
+  {name:"Hong Kong",nameZh:"香港",country:"China",countryZh:"中国",lat:22.32,lng:114.17,tz:"Asia/Hong_Kong"},
+  {name:"Taipei",nameZh:"台北",country:"China",countryZh:"中国",lat:25.03,lng:121.57,tz:"Asia/Taipei"},
+  {name:"Macau",nameZh:"澳门",country:"China",countryZh:"中国",lat:22.20,lng:113.55,tz:"Asia/Macau"},
+  {name:"Tokyo",nameZh:"东京",country:"Japan",countryZh:"日本",lat:35.68,lng:139.69,tz:"Asia/Tokyo"},
+  {name:"Osaka",nameZh:"大阪",country:"Japan",countryZh:"日本",lat:34.69,lng:135.50,tz:"Asia/Tokyo"},
+  {name:"Seoul",nameZh:"首尔",country:"South Korea",countryZh:"韩国",lat:37.57,lng:126.98,tz:"Asia/Seoul"},
+  {name:"Pyongyang",nameZh:"平壤",country:"North Korea",countryZh:"朝鲜",lat:39.03,lng:125.75,tz:"Asia/Pyongyang"},
+  {name:"Ulaanbaatar",nameZh:"乌兰巴托",country:"Mongolia",countryZh:"蒙古",lat:47.92,lng:106.91,tz:"Asia/Ulaanbaatar"},
+  // Southeast Asia
+  {name:"Bangkok",nameZh:"曼谷",country:"Thailand",countryZh:"泰国",lat:13.76,lng:100.50,tz:"Asia/Bangkok"},
+  {name:"Singapore",nameZh:"新加坡",country:"Singapore",countryZh:"新加坡",lat:1.35,lng:103.82,tz:"Asia/Singapore"},
+  {name:"Kuala Lumpur",nameZh:"吉隆坡",country:"Malaysia",countryZh:"马来西亚",lat:3.14,lng:101.69,tz:"Asia/Kuala_Lumpur"},
+  {name:"Jakarta",nameZh:"雅加达",country:"Indonesia",countryZh:"印尼",lat:-6.21,lng:106.85,tz:"Asia/Jakarta"},
+  {name:"Hanoi",nameZh:"河内",country:"Vietnam",countryZh:"越南",lat:21.03,lng:105.85,tz:"Asia/Ho_Chi_Minh"},
+  {name:"Ho Chi Minh City",nameZh:"胡志明市",country:"Vietnam",countryZh:"越南",lat:10.82,lng:106.63,tz:"Asia/Ho_Chi_Minh"},
+  {name:"Manila",nameZh:"马尼拉",country:"Philippines",countryZh:"菲律宾",lat:14.60,lng:120.98,tz:"Asia/Manila"},
+  {name:"Phnom Penh",nameZh:"金边",country:"Cambodia",countryZh:"柬埔寨",lat:11.56,lng:104.92,tz:"Asia/Phnom_Penh"},
+  {name:"Vientiane",nameZh:"万象",country:"Laos",countryZh:"老挝",lat:17.97,lng:102.63,tz:"Asia/Vientiane"},
+  {name:"Naypyidaw",nameZh:"内比都",country:"Myanmar",countryZh:"缅甸",lat:19.76,lng:96.07,tz:"Asia/Yangon"},
+  {name:"Bandar Seri Begawan",nameZh:"斯里巴加湾",country:"Brunei",countryZh:"文莱",lat:4.94,lng:114.95,tz:"Asia/Brunei"},
+  {name:"Dili",nameZh:"帝力",country:"Timor-Leste",countryZh:"东帝汶",lat:-8.55,lng:125.58,tz:"Asia/Dili"},
+  // South Asia
+  {name:"New Delhi",nameZh:"新德里",country:"India",countryZh:"印度",lat:28.61,lng:77.21,tz:"Asia/Kolkata"},
+  {name:"Mumbai",nameZh:"孟买",country:"India",countryZh:"印度",lat:19.08,lng:72.88,tz:"Asia/Kolkata"},
+  {name:"Kolkata",nameZh:"加尔各答",country:"India",countryZh:"印度",lat:22.57,lng:88.36,tz:"Asia/Kolkata"},
+  {name:"Colombo",nameZh:"科伦坡",country:"Sri Lanka",countryZh:"斯里兰卡",lat:6.93,lng:79.85,tz:"Asia/Colombo"},
+  {name:"Dhaka",nameZh:"达卡",country:"Bangladesh",countryZh:"孟加拉",lat:23.81,lng:90.41,tz:"Asia/Dhaka"},
+  {name:"Kathmandu",nameZh:"加德满都",country:"Nepal",countryZh:"尼泊尔",lat:27.72,lng:85.32,tz:"Asia/Kathmandu"},
+  {name:"Islamabad",nameZh:"伊斯兰堡",country:"Pakistan",countryZh:"巴基斯坦",lat:33.69,lng:73.04,tz:"Asia/Karachi"},
+  {name:"Karachi",nameZh:"卡拉奇",country:"Pakistan",countryZh:"巴基斯坦",lat:24.86,lng:67.01,tz:"Asia/Karachi"},
+  {name:"Kabul",nameZh:"喀布尔",country:"Afghanistan",countryZh:"阿富汗",lat:34.53,lng:69.17,tz:"Asia/Kabul"},
+  {name:"Male",nameZh:"马累",country:"Maldives",countryZh:"马尔代夫",lat:4.18,lng:73.51,tz:"Indian/Maldives"},
+  // Central Asia
+  {name:"Astana",nameZh:"阿斯塔纳",country:"Kazakhstan",countryZh:"哈萨克斯坦",lat:51.17,lng:71.43,tz:"Asia/Almaty"},
+  {name:"Tashkent",nameZh:"塔什干",country:"Uzbekistan",countryZh:"乌兹别克斯坦",lat:41.30,lng:69.28,tz:"Asia/Tashkent"},
+  {name:"Bishkek",nameZh:"比什凯克",country:"Kyrgyzstan",countryZh:"吉尔吉斯斯坦",lat:42.87,lng:74.59,tz:"Asia/Bishkek"},
+  {name:"Dushanbe",nameZh:"杜尚别",country:"Tajikistan",countryZh:"塔吉克斯坦",lat:38.57,lng:68.77,tz:"Asia/Dushanbe"},
+  {name:"Ashgabat",nameZh:"阿什哈巴德",country:"Turkmenistan",countryZh:"土库曼斯坦",lat:37.96,lng:58.38,tz:"Asia/Ashgabat"},
+  // Middle East
+  {name:"Dubai",nameZh:"迪拜",country:"UAE",countryZh:"阿联酋",lat:25.20,lng:55.27,tz:"Asia/Dubai"},
+  {name:"Riyadh",nameZh:"利雅得",country:"Saudi Arabia",countryZh:"沙特阿拉伯",lat:24.71,lng:46.68,tz:"Asia/Riyadh"},
+  {name:"Tehran",nameZh:"德黑兰",country:"Iran",countryZh:"伊朗",lat:35.69,lng:51.39,tz:"Asia/Tehran"},
+  {name:"Baghdad",nameZh:"巴格达",country:"Iraq",countryZh:"伊拉克",lat:33.31,lng:44.37,tz:"Asia/Baghdad"},
+  {name:"Ankara",nameZh:"安卡拉",country:"Turkey",countryZh:"土耳其",lat:39.93,lng:32.86,tz:"Europe/Istanbul"},
+  {name:"Istanbul",nameZh:"伊斯坦布尔",country:"Turkey",countryZh:"土耳其",lat:41.01,lng:28.98,tz:"Europe/Istanbul"},
+  {name:"Jerusalem",nameZh:"耶路撒冷",country:"Israel",countryZh:"以色列",lat:31.77,lng:35.23,tz:"Asia/Jerusalem"},
+  {name:"Doha",nameZh:"多哈",country:"Qatar",countryZh:"卡塔尔",lat:25.29,lng:51.53,tz:"Asia/Qatar"},
+  {name:"Kuwait City",nameZh:"科威特城",country:"Kuwait",countryZh:"科威特",lat:29.38,lng:47.98,tz:"Asia/Kuwait"},
+  {name:"Muscat",nameZh:"马斯喀特",country:"Oman",countryZh:"阿曼",lat:23.59,lng:58.38,tz:"Asia/Muscat"},
+  {name:"Sana'a",nameZh:"萨那",country:"Yemen",countryZh:"也门",lat:15.37,lng:44.19,tz:"Asia/Aden"},
+  {name:"Amman",nameZh:"安曼",country:"Jordan",countryZh:"约旦",lat:31.95,lng:35.93,tz:"Asia/Amman"},
+  {name:"Beirut",nameZh:"贝鲁特",country:"Lebanon",countryZh:"黎巴嫩",lat:33.89,lng:35.50,tz:"Asia/Beirut"},
+  {name:"Damascus",nameZh:"大马士革",country:"Syria",countryZh:"叙利亚",lat:33.51,lng:36.29,tz:"Asia/Damascus"},
+  {name:"Manama",nameZh:"麦纳麦",country:"Bahrain",countryZh:"巴林",lat:26.23,lng:50.59,tz:"Asia/Bahrain"},
+  // Russia
+  {name:"Moscow",nameZh:"莫斯科",country:"Russia",countryZh:"俄罗斯",lat:55.76,lng:37.62,tz:"Europe/Moscow"},
+  {name:"St. Petersburg",nameZh:"圣彼得堡",country:"Russia",countryZh:"俄罗斯",lat:59.93,lng:30.32,tz:"Europe/Moscow"},
+  {name:"Novosibirsk",nameZh:"新西伯利亚",country:"Russia",countryZh:"俄罗斯",lat:55.01,lng:82.93,tz:"Asia/Novosibirsk"},
+  {name:"Yekaterinburg",nameZh:"叶卡捷琳堡",country:"Russia",countryZh:"俄罗斯",lat:56.84,lng:60.61,tz:"Asia/Yekaterinburg"},
+  {name:"Vladivostok",nameZh:"符拉迪沃斯托克",country:"Russia",countryZh:"俄罗斯",lat:43.12,lng:131.87,tz:"Asia/Vladivostok"},
+  {name:"Krasnoyarsk",nameZh:"克拉斯诺亚尔斯克",country:"Russia",countryZh:"俄罗斯",lat:56.01,lng:92.85,tz:"Asia/Krasnoyarsk"},
+  {name:"Irkutsk",nameZh:"伊尔库茨克",country:"Russia",countryZh:"俄罗斯",lat:52.29,lng:104.30,tz:"Asia/Irkutsk"},
+  {name:"Yakutsk",nameZh:"雅库茨克",country:"Russia",countryZh:"俄罗斯",lat:62.03,lng:129.73,tz:"Asia/Yakutsk"},
+  // Europe
+  {name:"London",nameZh:"伦敦",country:"UK",countryZh:"英国",lat:51.51,lng:-0.13,tz:"Europe/London"},
+  {name:"Paris",nameZh:"巴黎",country:"France",countryZh:"法国",lat:48.86,lng:2.35,tz:"Europe/Paris"},
+  {name:"Berlin",nameZh:"柏林",country:"Germany",countryZh:"德国",lat:52.52,lng:13.41,tz:"Europe/Berlin"},
+  {name:"Madrid",nameZh:"马德里",country:"Spain",countryZh:"西班牙",lat:40.42,lng:-3.70,tz:"Europe/Madrid"},
+  {name:"Rome",nameZh:"罗马",country:"Italy",countryZh:"意大利",lat:41.90,lng:12.50,tz:"Europe/Rome"},
+  {name:"Amsterdam",nameZh:"阿姆斯特丹",country:"Netherlands",countryZh:"荷兰",lat:52.37,lng:4.90,tz:"Europe/Amsterdam"},
+  {name:"Brussels",nameZh:"布鲁塞尔",country:"Belgium",countryZh:"比利时",lat:50.85,lng:4.35,tz:"Europe/Brussels"},
+  {name:"Vienna",nameZh:"维也纳",country:"Austria",countryZh:"奥地利",lat:48.21,lng:16.37,tz:"Europe/Vienna"},
+  {name:"Zurich",nameZh:"苏黎世",country:"Switzerland",countryZh:"瑞士",lat:47.38,lng:8.54,tz:"Europe/Zurich"},
+  {name:"Bern",nameZh:"伯尔尼",country:"Switzerland",countryZh:"瑞士",lat:46.95,lng:7.45,tz:"Europe/Zurich"},
+  {name:"Prague",nameZh:"布拉格",country:"Czech Republic",countryZh:"捷克",lat:50.08,lng:14.44,tz:"Europe/Prague"},
+  {name:"Warsaw",nameZh:"华沙",country:"Poland",countryZh:"波兰",lat:52.23,lng:21.01,tz:"Europe/Warsaw"},
+  {name:"Budapest",nameZh:"布达佩斯",country:"Hungary",countryZh:"匈牙利",lat:47.50,lng:19.04,tz:"Europe/Budapest"},
+  {name:"Athens",nameZh:"雅典",country:"Greece",countryZh:"希腊",lat:37.98,lng:23.73,tz:"Europe/Athens"},
+  {name:"Lisbon",nameZh:"里斯本",country:"Portugal",countryZh:"葡萄牙",lat:38.72,lng:-9.14,tz:"Europe/Lisbon"},
+  {name:"Dublin",nameZh:"都柏林",country:"Ireland",countryZh:"爱尔兰",lat:53.35,lng:-6.26,tz:"Europe/Dublin"},
+  {name:"Stockholm",nameZh:"斯德哥尔摩",country:"Sweden",countryZh:"瑞典",lat:59.33,lng:18.07,tz:"Europe/Stockholm"},
+  {name:"Oslo",nameZh:"奥斯陆",country:"Norway",countryZh:"挪威",lat:59.91,lng:10.75,tz:"Europe/Oslo"},
+  {name:"Copenhagen",nameZh:"哥本哈根",country:"Denmark",countryZh:"丹麦",lat:55.68,lng:12.57,tz:"Europe/Copenhagen"},
+  {name:"Helsinki",nameZh:"赫尔辛基",country:"Finland",countryZh:"芬兰",lat:60.17,lng:24.94,tz:"Europe/Helsinki"},
+  {name:"Reykjavik",nameZh:"雷克雅未克",country:"Iceland",countryZh:"冰岛",lat:64.13,lng:-21.90,tz:"Atlantic/Reykjavik"},
+  {name:"Bucharest",nameZh:"布加勒斯特",country:"Romania",countryZh:"罗马尼亚",lat:44.43,lng:26.10,tz:"Europe/Bucharest"},
+  {name:"Sofia",nameZh:"索菲亚",country:"Bulgaria",countryZh:"保加利亚",lat:42.70,lng:23.32,tz:"Europe/Sofia"},
+  {name:"Belgrade",nameZh:"贝尔格莱德",country:"Serbia",countryZh:"塞尔维亚",lat:44.79,lng:20.47,tz:"Europe/Belgrade"},
+  {name:"Zagreb",nameZh:"萨格勒布",country:"Croatia",countryZh:"克罗地亚",lat:45.81,lng:15.98,tz:"Europe/Zagreb"},
+  {name:"Kyiv",nameZh:"基辅",country:"Ukraine",countryZh:"乌克兰",lat:50.45,lng:30.52,tz:"Europe/Kyiv"},
+  {name:"Tallinn",nameZh:"塔林",country:"Estonia",countryZh:"爱沙尼亚",lat:59.44,lng:24.75,tz:"Europe/Tallinn"},
+  {name:"Riga",nameZh:"里加",country:"Latvia",countryZh:"拉脱维亚",lat:56.95,lng:24.11,tz:"Europe/Riga"},
+  {name:"Vilnius",nameZh:"维尔纽斯",country:"Lithuania",countryZh:"立陶宛",lat:54.69,lng:25.28,tz:"Europe/Vilnius"},
+  {name:"Luxembourg",nameZh:"卢森堡",country:"Luxembourg",countryZh:"卢森堡",lat:49.61,lng:6.13,tz:"Europe/Luxembourg"},
+  {name:"Bratislava",nameZh:"布拉迪斯拉发",country:"Slovakia",countryZh:"斯洛伐克",lat:48.15,lng:17.11,tz:"Europe/Bratislava"},
+  {name:"Ljubljana",nameZh:"卢布尔雅那",country:"Slovenia",countryZh:"斯洛文尼亚",lat:46.06,lng:14.51,tz:"Europe/Ljubljana"},
+  {name:"Valletta",nameZh:"瓦莱塔",country:"Malta",countryZh:"马耳他",lat:35.90,lng:14.51,tz:"Europe/Malta"},
+  {name:"Nicosia",nameZh:"尼科西亚",country:"Cyprus",countryZh:"塞浦路斯",lat:35.19,lng:33.39,tz:"Asia/Nicosia"},
+  // North America
+  {name:"New York",nameZh:"纽约",country:"USA",countryZh:"美国",lat:40.71,lng:-74.01,tz:"America/New_York"},
+  {name:"Los Angeles",nameZh:"洛杉矶",country:"USA",countryZh:"美国",lat:34.05,lng:-118.24,tz:"America/Los_Angeles"},
+  {name:"Chicago",nameZh:"芝加哥",country:"USA",countryZh:"美国",lat:41.88,lng:-87.63,tz:"America/Chicago"},
+  {name:"Houston",nameZh:"休斯顿",country:"USA",countryZh:"美国",lat:29.76,lng:-95.37,tz:"America/Chicago"},
+  {name:"San Francisco",nameZh:"旧金山",country:"USA",countryZh:"美国",lat:37.77,lng:-122.42,tz:"America/Los_Angeles"},
+  {name:"Washington D.C.",nameZh:"华盛顿",country:"USA",countryZh:"美国",lat:38.91,lng:-77.04,tz:"America/New_York"},
+  {name:"Seattle",nameZh:"西雅图",country:"USA",countryZh:"美国",lat:47.61,lng:-122.33,tz:"America/Los_Angeles"},
+  {name:"Denver",nameZh:"丹佛",country:"USA",countryZh:"美国",lat:39.74,lng:-104.99,tz:"America/Denver"},
+  {name:"Phoenix",nameZh:"凤凰城",country:"USA",countryZh:"美国",lat:33.45,lng:-112.07,tz:"America/Phoenix"},
+  {name:"Anchorage",nameZh:"安克雷奇",country:"USA",countryZh:"美国",lat:61.22,lng:-149.90,tz:"America/Anchorage"},
+  {name:"Honolulu",nameZh:"檀香山",country:"USA",countryZh:"美国",lat:21.31,lng:-157.86,tz:"Pacific/Honolulu"},
+  {name:"Toronto",nameZh:"多伦多",country:"Canada",countryZh:"加拿大",lat:43.65,lng:-79.38,tz:"America/Toronto"},
+  {name:"Vancouver",nameZh:"温哥华",country:"Canada",countryZh:"加拿大",lat:49.28,lng:-123.12,tz:"America/Vancouver"},
+  {name:"Montreal",nameZh:"蒙特利尔",country:"Canada",countryZh:"加拿大",lat:45.50,lng:-73.57,tz:"America/Montreal"},
+  {name:"Mexico City",nameZh:"墨西哥城",country:"Mexico",countryZh:"墨西哥",lat:19.43,lng:-99.13,tz:"America/Mexico_City"},
+  {name:"Havana",nameZh:"哈瓦那",country:"Cuba",countryZh:"古巴",lat:23.11,lng:-82.37,tz:"America/Havana"},
+  {name:"Nassau",nameZh:"拿骚",country:"Bahamas",countryZh:"巴哈马",lat:25.06,lng:-77.34,tz:"America/Nassau"},
+  {name:"Kingston",nameZh:"金斯敦",country:"Jamaica",countryZh:"牙买加",lat:18.00,lng:-76.79,tz:"America/Jamaica"},
+  // Central America
+  {name:"Guatemala City",nameZh:"危地马拉城",country:"Guatemala",countryZh:"危地马拉",lat:14.63,lng:-90.51,tz:"America/Guatemala"},
+  {name:"San José",nameZh:"圣何塞",country:"Costa Rica",countryZh:"哥斯达黎加",lat:9.93,lng:-84.08,tz:"America/Costa_Rica"},
+  {name:"Panama City",nameZh:"巴拿马城",country:"Panama",countryZh:"巴拿马",lat:8.98,lng:-79.52,tz:"America/Panama"},
+  {name:"Tegucigalpa",nameZh:"特古西加尔巴",country:"Honduras",countryZh:"洪都拉斯",lat:14.07,lng:-87.22,tz:"America/Tegucigalpa"},
+  {name:"Managua",nameZh:"马那瓜",country:"Nicaragua",countryZh:"尼加拉瓜",lat:12.11,lng:-86.25,tz:"America/Managua"},
+  {name:"San Salvador",nameZh:"圣萨尔瓦多",country:"El Salvador",countryZh:"萨尔瓦多",lat:13.70,lng:-89.23,tz:"America/El_Salvador"},
+  // South America
+  {name:"São Paulo",nameZh:"圣保罗",country:"Brazil",countryZh:"巴西",lat:-23.55,lng:-46.63,tz:"America/Sao_Paulo"},
+  {name:"Rio de Janeiro",nameZh:"里约热内卢",country:"Brazil",countryZh:"巴西",lat:-22.91,lng:-43.17,tz:"America/Sao_Paulo"},
+  {name:"Buenos Aires",nameZh:"布宜诺斯艾利斯",country:"Argentina",countryZh:"阿根廷",lat:-34.60,lng:-58.38,tz:"America/Argentina/Buenos_Aires"},
+  {name:"Santiago",nameZh:"圣地亚哥",country:"Chile",countryZh:"智利",lat:-33.45,lng:-70.67,tz:"America/Santiago"},
+  {name:"Lima",nameZh:"利马",country:"Peru",countryZh:"秘鲁",lat:-12.05,lng:-77.04,tz:"America/Lima"},
+  {name:"Bogotá",nameZh:"波哥大",country:"Colombia",countryZh:"哥伦比亚",lat:4.71,lng:-74.07,tz:"America/Bogota"},
+  {name:"Caracas",nameZh:"加拉加斯",country:"Venezuela",countryZh:"委内瑞拉",lat:10.49,lng:-66.88,tz:"America/Caracas"},
+  {name:"Quito",nameZh:"基多",country:"Ecuador",countryZh:"厄瓜多尔",lat:-0.18,lng:-78.47,tz:"America/Guayaquil"},
+  {name:"La Paz",nameZh:"拉巴斯",country:"Bolivia",countryZh:"玻利维亚",lat:-16.49,lng:-68.15,tz:"America/La_Paz"},
+  {name:"Montevideo",nameZh:"蒙得维的亚",country:"Uruguay",countryZh:"乌拉圭",lat:-34.88,lng:-56.17,tz:"America/Montevideo"},
+  {name:"Asunción",nameZh:"亚松森",country:"Paraguay",countryZh:"巴拉圭",lat:-25.26,lng:-57.58,tz:"America/Asuncion"},
+  {name:"Georgetown",nameZh:"乔治敦",country:"Guyana",countryZh:"圭亚那",lat:6.80,lng:-58.16,tz:"America/Guyana"},
+  {name:"Paramaribo",nameZh:"帕拉马里博",country:"Suriname",countryZh:"苏里南",lat:5.85,lng:-55.17,tz:"America/Paramaribo"},
+  {name:"Cayenne",nameZh:"卡宴",country:"French Guiana",countryZh:"法属圭亚那",lat:4.93,lng:-52.33,tz:"America/Cayenne"},
+  // Africa
+  {name:"Cairo",nameZh:"开罗",country:"Egypt",countryZh:"埃及",lat:30.04,lng:31.24,tz:"Africa/Cairo"},
+  {name:"Johannesburg",nameZh:"约翰内斯堡",country:"South Africa",countryZh:"南非",lat:-26.20,lng:28.05,tz:"Africa/Johannesburg"},
+  {name:"Cape Town",nameZh:"开普敦",country:"South Africa",countryZh:"南非",lat:-33.93,lng:18.42,tz:"Africa/Johannesburg"},
+  {name:"Lagos",nameZh:"拉各斯",country:"Nigeria",countryZh:"尼日利亚",lat:6.52,lng:3.38,tz:"Africa/Lagos"},
+  {name:"Nairobi",nameZh:"内罗毕",country:"Kenya",countryZh:"肯尼亚",lat:-1.29,lng:36.82,tz:"Africa/Nairobi"},
+  {name:"Casablanca",nameZh:"卡萨布兰卡",country:"Morocco",countryZh:"摩洛哥",lat:33.57,lng:-7.59,tz:"Africa/Casablanca"},
+  {name:"Addis Ababa",nameZh:"亚的斯亚贝巴",country:"Ethiopia",countryZh:"埃塞俄比亚",lat:9.02,lng:38.75,tz:"Africa/Addis_Ababa"},
+  {name:"Dar es Salaam",nameZh:"达累斯萨拉姆",country:"Tanzania",countryZh:"坦桑尼亚",lat:-6.79,lng:39.28,tz:"Africa/Dar_es_Salaam"},
+  {name:"Accra",nameZh:"阿克拉",country:"Ghana",countryZh:"加纳",lat:5.60,lng:-0.19,tz:"Africa/Accra"},
+  {name:"Algiers",nameZh:"阿尔及尔",country:"Algeria",countryZh:"阿尔及利亚",lat:36.75,lng:3.06,tz:"Africa/Algiers"},
+  {name:"Tunis",nameZh:"突尼斯",country:"Tunisia",countryZh:"突尼斯",lat:36.81,lng:10.17,tz:"Africa/Tunis"},
+  {name:"Rabat",nameZh:"拉巴特",country:"Morocco",countryZh:"摩洛哥",lat:34.02,lng:-6.83,tz:"Africa/Casablanca"},
+  {name:"Kampala",nameZh:"坎帕拉",country:"Uganda",countryZh:"乌干达",lat:0.35,lng:32.58,tz:"Africa/Kampala"},
+  {name:"Kigali",nameZh:"基加利",country:"Rwanda",countryZh:"卢旺达",lat:-1.94,lng:29.87,tz:"Africa/Kigali"},
+  {name:"Abuja",nameZh:"阿布贾",country:"Nigeria",countryZh:"尼日利亚",lat:9.06,lng:7.49,tz:"Africa/Lagos"},
+  {name:"Pretoria",nameZh:"比勒陀利亚",country:"South Africa",countryZh:"南非",lat:-25.75,lng:28.19,tz:"Africa/Johannesburg"},
+  // Oceania
+  {name:"Sydney",nameZh:"悉尼",country:"Australia",countryZh:"澳大利亚",lat:-33.87,lng:151.21,tz:"Australia/Sydney"},
+  {name:"Melbourne",nameZh:"墨尔本",country:"Australia",countryZh:"澳大利亚",lat:-37.81,lng:144.96,tz:"Australia/Melbourne"},
+  {name:"Brisbane",nameZh:"布里斯班",country:"Australia",countryZh:"澳大利亚",lat:-27.47,lng:153.03,tz:"Australia/Brisbane"},
+  {name:"Perth",nameZh:"珀斯",country:"Australia",countryZh:"澳大利亚",lat:-31.95,lng:115.86,tz:"Australia/Perth"},
+  {name:"Auckland",nameZh:"奥克兰",country:"New Zealand",countryZh:"新西兰",lat:-36.85,lng:174.76,tz:"Pacific/Auckland"},
+  {name:"Wellington",nameZh:"惠灵顿",country:"New Zealand",countryZh:"新西兰",lat:-41.29,lng:174.78,tz:"Pacific/Auckland"},
+  {name:"Suva",nameZh:"苏瓦",country:"Fiji",countryZh:"斐济",lat:-18.14,lng:178.44,tz:"Pacific/Fiji"},
+  // Baltic states already covered above
+  // Caribbean extra
+  {name:"Port-au-Prince",nameZh:"太子港",country:"Haiti",countryZh:"海地",lat:18.54,lng:-72.34,tz:"America/Port-au-Prince"},
+  {name:"Santo Domingo",nameZh:"圣多明各",country:"Dominican Republic",countryZh:"多米尼加",lat:18.49,lng:-69.89,tz:"America/Santo_Domingo"},
+  // Pacific
+  {name:"Port Moresby",nameZh:"莫尔兹比港",country:"Papua New Guinea",countryZh:"巴布亚新几内亚",lat:-6.31,lng:147.15,tz:"Pacific/Port_Moresby"},
+  {name:"Honolulu",nameZh:"火奴鲁鲁",country:"USA",countryZh:"美国",lat:21.31,lng:-157.86,tz:"Pacific/Honolulu"},
+  // Remove duplicate Honolulu — keep the earlier one
+  {name:"Adelaide",nameZh:"阿德莱德",country:"Australia",countryZh:"澳大利亚",lat:-34.93,lng:138.60,tz:"Australia/Adelaide"},
+  {name:"Darwin",nameZh:"达尔文",country:"Australia",countryZh:"澳大利亚",lat:-12.46,lng:130.85,tz:"Australia/Darwin"},
+  {name:"Hobart",nameZh:"霍巴特",country:"Australia",countryZh:"澳大利亚",lat:-42.88,lng:147.33,tz:"Australia/Hobart"},
+  {name:"Canberra",nameZh:"堪培拉",country:"Australia",countryZh:"澳大利亚",lat:-35.28,lng:149.13,tz:"Australia/Sydney"},
+];
+
+// Deduplicate by name+tz
+const seen = new Set();
+const CITIES_DEDUPED = CITIES.filter(c => {
+  const k = c.name + '|' + c.tz;
+  if (seen.has(k)) return false;
+  seen.add(k);
+  return true;
+});
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const selectedCities = [];   // array of city objects
+const markerMap = new Map(); // city index → L.marker
+const labelMap = new Map();  // city index → L.marker (label)
+let timerInterval;
+
+// ═══════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════
+function getTimeInTz(tz) {
+  const now = new Date();
+  return {
+    time: now.toLocaleTimeString('zh-CN', { timeZone: tz, hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit' }),
+    date: now.toLocaleDateString('zh-CN', { timeZone: tz, weekday:'short', month:'short', day:'numeric' }),
+    abbr: new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName:'short' }).formatToParts(now).find(p => p.type === 'timeZoneName')?.value || '',
+    offset: getUtcOffset(tz),
+  };
+}
+
+function getUtcOffset(tz) {
+  const now = new Date();
+  const utcStr = now.toLocaleString('en-US', { timeZone: 'UTC' });
+  const tzStr = now.toLocaleString('en-US', { timeZone: tz });
+  const diff = (new Date(tzStr) - new Date(utcStr)) / 3600000;
+  return diff;
+}
+
+function getDiffFromUser(tz) {
+  const target = getUtcOffset(tz);
+  const mine = getUtcOffset(userTz);
+  const diff = target - mine;
+  if (Math.abs(diff) < 0.01) return { text: '本地时间', cls: 'same', raw: 0 };
+  const sign = diff > 0 ? '+' : '';
+  const h = Math.floor(Math.abs(diff));
+  const m = Math.round((Math.abs(diff) - h) * 60);
+  const str = m > 0 ? `${sign}${diff > 0 ? h : -h}h${m > 0 ? m + 'm' : ''}` : `${sign}${diff > 0 ? h : -h}h`;
+  return { text: `UTC${str}`, cls: diff > 0 ? 'ahead' : 'behind', raw: diff };
+}
+
+function formatOffset(offset) {
+  const sign = offset >= 0 ? '+' : '-';
+  const h = Math.floor(Math.abs(offset));
+  const m = Math.round((Math.abs(offset) - h) * 60);
+  return `UTC${sign}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function buildCard(city, isLocal) {
+  const t = getTimeInTz(city.tz);
+  const diff = getDiffFromUser(city.tz);
+  const localClass = isLocal ? ' local' : '';
+  const badge = isLocal ? `<span class="local-badge">我的时区</span>` : '';
+  return `
+    <div class="city-card${localClass}" data-tz="${city.tz}">
+      <div class="card-header">
+        <div>
+          <div class="card-city">${city.nameZh}${badge}</div>
+          <div class="card-country">${city.countryZh} · ${city.name}</div>
+        </div>
+        ${isLocal ? '' : `<button class="card-remove" onclick="removeCity('${city.name}','${city.tz}')" title="移除"><i class="fas fa-times"></i></button>`}
+      </div>
+      <div class="card-time">${t.time}</div>
+      <div class="card-date">${t.date}</div>
+      <div class="card-timezone">
+        <span class="card-tz-badge">${t.abbr}</span>
+        <span>${formatOffset(t.offset)}</span>
+        <span>${city.tz}</span>
+        ${isLocal ? '' : `<span class="card-diff ${diff.cls}">${diff.raw > 0 ? '+' : ''}${diff.raw >= 0 ? diff.raw === 0 ? '0' : '' : ''}${diff.text.includes('本地') ? '' : ''}</span>`}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// Panel rendering
+// ═══════════════════════════════════════════
+function renderPanel() {
+  const panel = document.getElementById('panelBody');
+  const empty = document.getElementById('panelEmpty');
+  const count = document.getElementById('cityCount');
+
+  // Build combined list: user timezone first, then selected
+  const cards = [];
+  const userCity = CITIES_DEDUPED.find(c => c.tz === userTz);
+
+  if (userCity) {
+    cards.push({ city: userCity, isLocal: true, offset: getUtcOffset(userTz) });
+  } else {
+    // Create synthetic entry for user timezone
+    cards.push({
+      city: { name: '', nameZh: userTz.split('/').pop().replace(/_/g,' '), countryZh: '', country: '', tz: userTz, lat: 0, lng: 0 },
+      isLocal: true,
+      offset: getUtcOffset(userTz)
+    });
+  }
+
+  selectedCities.forEach(c => {
+    if (c.tz === userTz) return; // already shown
+    cards.push({ city: c, isLocal: false, offset: getUtcOffset(c.tz) });
+  });
+
+  // Sort by UTC offset
+  cards.sort((a, b) => a.offset - b.offset);
+
+  count.textContent = `(${cards.length} 个城市)`;
+
+  if (cards.length === 0) {
+    panel.innerHTML = `<div class="panel-empty"><i class="fas fa-map-marker-alt"></i><div>点击地图上的城市标记<br>添加到对比面板</div></div>`;
+    return;
+  }
+
+  panel.innerHTML = cards.map(c => buildCard(c.city, c.isLocal)).join('');
+
+  // Remove empty state
+  if (document.getElementById('panelEmpty')) {
+    // already replaced by innerHTML
+  }
+}
+
+function updateTimes() {
+  document.querySelectorAll('.city-card').forEach(card => {
+    const tz = card.dataset.tz;
+    if (!tz) return;
+    const t = getTimeInTz(tz);
+    const timeEl = card.querySelector('.card-time');
+    const dateEl = card.querySelector('.card-date');
+    if (timeEl) timeEl.textContent = t.time;
+    if (dateEl) dateEl.textContent = t.date;
+  });
+}
+
+// ═══════════════════════════════════════════
+// City management
+// ═══════════════════════════════════════════
+function addCity(city) {
+  const exists = selectedCities.some(c => c.name === city.name && c.tz === city.tz);
+  if (exists) return;
+  selectedCities.push(city);
+  renderPanel();
+  // Update marker
+  const idx = CITIES_DEDUPED.indexOf(city);
+  if (idx >= 0 && markerMap.has(idx)) {
+    markerMap.get(idx).getElement()?.classList.add('selected');
+  }
+}
+
+function removeCity(name, tz) {
+  const idx = selectedCities.findIndex(c => c.name === name && c.tz === tz);
+  if (idx < 0) return;
+  selectedCities.splice(idx, 1);
+  renderPanel();
+  // Update marker
+  const cityIdx = CITIES_DEDUPED.findIndex(c => c.name === name && c.tz === tz);
+  if (cityIdx >= 0 && markerMap.has(cityIdx)) {
+    markerMap.get(cityIdx).getElement()?.classList.remove('selected');
+  }
+}
+window.removeCity = removeCity;
+
+// ═══════════════════════════════════════════
+// Map
+// ═══════════════════════════════════════════
+function initMap() {
+  const map = L.map('map', {
+    center: [25, 0],
+    zoom: 2,
+    minZoom: 2,
+    maxZoom: 12,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  // Dark tile layer
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Store reference for theme switching
+  window._map = map;
+  window._darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  });
+  window._lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  });
+
+  // Add city markers
+  CITIES_DEDUPED.forEach((city, idx) => {
+    const marker = L.marker([city.lat, city.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="city-marker" data-idx="${idx}"></div>`,
+        iconSize: [8, 8],
+        iconAnchor: [4, 4]
+      })
+    }).addTo(map);
+
+    marker.on('click', () => addCity(city));
+    markerMap.set(idx, marker);
+
+    // City label (only for zoom >= 4)
+    const label = L.marker([city.lat, city.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="marker-label">${city.nameZh}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [6, -8]
+      }),
+      interactive: false
+    }).addTo(map);
+    labelMap.set(idx, label);
+  });
+
+  // Toggle labels on zoom
+  map.on('zoomend', () => {
+    const show = map.getZoom() >= 4;
+    labelMap.forEach(label => {
+      const el = label.getElement();
+      if (el) el.style.display = show ? '' : 'none';
+    });
+  });
+  // Hide labels initially (zoom 2)
+  labelMap.forEach(label => {
+    const el = label.getElement();
+    if (el) el.style.display = 'none';
+  });
+}
+
+// ═══════════════════════════════════════════
+// Search
+// ═══════════════════════════════════════════
+function initSearch() {
+  const input = document.getElementById('searchInput');
+  const dropdown = document.getElementById('searchDropdown');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) {
+      dropdown.classList.remove('show');
+      return;
+    }
+
+    const results = CITIES_DEDUPED.filter(c =>
+      c.nameZh.includes(q) ||
+      c.name.toLowerCase().includes(q) ||
+      c.countryZh.includes(q) ||
+      c.country.toLowerCase().includes(q) ||
+      c.tz.toLowerCase().includes(q)
+    ).slice(0, 12);
+
+    if (results.length === 0) {
+      dropdown.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:13px;text-align:center;">未找到匹配城市</div>';
+    } else {
+      dropdown.innerHTML = results.map(c => {
+        const isSelected = selectedCities.some(s => s.name === c.name && s.tz === c.tz);
+        return `<div class="search-item" data-name="${c.name}" data-tz="${c.tz}">
+          <span><span class="zh">${c.nameZh}</span> <span class="en">${c.name}, ${c.countryZh}</span></span>
+          <span class="tag" style="${isSelected ? 'opacity:1;background:var(--green)' : ''}">${isSelected ? '已添加' : '添加'}</span>
+        </div>`;
+      }).join('');
+    }
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('.search-item[data-name]').forEach(el => {
+      el.addEventListener('click', () => {
+        const city = CITIES_DEDUPED.find(c => c.name === el.dataset.name && c.tz === el.dataset.tz);
+        if (city) {
+          addCity(city);
+          // Fly to city
+          if (window._map) window._map.flyTo([city.lat, city.lng], 6, { duration: 1 });
+        }
+        input.value = '';
+        dropdown.classList.remove('show');
+      });
+    });
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrap')) dropdown.classList.remove('show');
+  });
+
+  // Keyboard
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      dropdown.classList.remove('show');
+      input.blur();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// Theme
+// ═══════════════════════════════════════════
+function initTheme() {
+  const btn = document.getElementById('themeBtn');
+  let isLight = false;
+
+  btn.addEventListener('click', () => {
+    isLight = !isLight;
+    document.body.classList.toggle('light', isLight);
+    btn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+    // Swap map tiles
+    if (window._map) {
+      if (isLight) {
+        window._map.removeLayer(window._darkTilesLayer || window._darkTiles);
+        // find current dark tile and replace
+        window._map.eachLayer(layer => {
+          if (layer instanceof L.TileLayer) {
+            window._map.removeLayer(layer);
+          }
+        });
+        window._lightTiles.addTo(window._map);
+      } else {
+        window._map.eachLayer(layer => {
+          if (layer instanceof L.TileLayer) {
+            window._map.removeLayer(layer);
+          }
+        });
+        window._darkTiles.addTo(window._map);
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initSearch();
+  initTheme();
+  renderPanel();
+
+  // Update every second
+  timerInterval = setInterval(updateTimes, 1000);
+
+  // Auto-add user's timezone city
+  const userCity = CITIES_DEDUPED.find(c => c.tz === userTz);
+  if (userCity) {
+    // Pre-select the user's local city marker
+    const idx = CITIES_DEDUPED.indexOf(userCity);
+    if (idx >= 0 && markerMap.has(idx)) {
+      setTimeout(() => {
+        markerMap.get(idx).getElement()?.classList.add('selected');
+      }, 100);
+    }
+  }
+});
+</script>
+</body>
+</html>
