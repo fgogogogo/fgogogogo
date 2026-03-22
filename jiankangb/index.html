@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 健康管理助手</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0f1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a2235;
+    --bg-card-hover: #1e2a42;
+    --border: #2a3550;
+    --text-primary: #f0f4f8;
+    --text-secondary: #8896ab;
+    --text-muted: #5a6a82;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-purple: #8b5cf6;
+    --accent-pink: #ec4899;
+    --gradient-1: linear-gradient(135deg, #3b82f6, #06b6d4);
+    --gradient-2: linear-gradient(135deg, #10b981, #06b6d4);
+    --gradient-3: linear-gradient(135deg, #8b5cf6, #ec4899);
+    --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === Animated Background === */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.08), transparent);
+  }
+  .bg-grid::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(42,53,80,0.3) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(42,53,80,0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* === Layout === */
+  .app { position: relative; z-index: 1; display: flex; min-height: 100vh; }
+
+  /* === Sidebar === */
+  .sidebar {
+    width: 260px; background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+    transition: transform 0.3s;
+  }
+  .sidebar-brand {
+    padding: 24px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--gradient-1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; box-shadow: 0 0 20px rgba(59,130,246,0.3);
+  }
+  .brand-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); padding: 12px 12px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--text-secondary);
+    transition: all 0.2s; font-size: 13.5px; font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+  .nav-item.active {
+    background: rgba(59,130,246,0.12); color: var(--accent-blue);
+    box-shadow: inset 0 0 0 1px rgba(59,130,246,0.2);
+  }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; }
+  .nav-badge {
+    margin-left: auto; background: var(--accent-red);
+    color: white; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--gradient-3); display: flex;
+    align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .user-info { flex: 1; }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-role { font-size: 11px; color: var(--text-muted); }
+
+  /* === Main Content === */
+  .main { flex: 1; margin-left: 260px; padding: 24px 28px; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .header-left h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-left p { color: var(--text-secondary); font-size: 13.5px; margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .header-btn {
+    padding: 9px 18px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg-card);
+    color: var(--text-secondary); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; display: flex;
+    align-items: center; gap: 8px;
+  }
+  .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--accent-blue); }
+  .header-btn.primary {
+    background: var(--gradient-1); border: none; color: white;
+    box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+  }
+  .header-btn.primary:hover { box-shadow: 0 6px 20px rgba(59,130,246,0.4); transform: translateY(-1px); }
+
+  /* === Dashboard Grid === */
+  .dashboard { display: grid; gap: 20px; }
+
+  /* === Metric Cards Row === */
+  .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .metric-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .metric-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .metric-card:nth-child(1)::before { background: var(--accent-blue); }
+  .metric-card:nth-child(2)::before { background: var(--accent-green); }
+  .metric-card:nth-child(3)::before { background: var(--accent-amber); }
+  .metric-card:nth-child(4)::before { background: var(--accent-purple); }
+
+  .metric-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); border-color: rgba(59,130,246,0.3); }
+
+  .metric-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .metric-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .metric-card:nth-child(1) .metric-icon { background: rgba(59,130,246,0.12); }
+  .metric-card:nth-child(2) .metric-icon { background: rgba(16,185,129,0.12); }
+  .metric-card:nth-child(3) .metric-icon { background: rgba(245,158,11,0.12); }
+  .metric-card:nth-child(4) .metric-icon { background: rgba(139,92,246,0.12); }
+
+  .metric-status {
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 6px; display: flex; align-items: center; gap: 4px;
+  }
+  .metric-status.normal { color: var(--accent-green); background: rgba(16,185,129,0.1); }
+  .metric-status.warning { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
+  .metric-status.danger { color: var(--accent-red); background: rgba(239,68,68,0.1); }
+
+  .metric-value { font-size: 32px; font-weight: 750; letter-spacing: -1px; line-height: 1; }
+  .metric-unit { font-size: 15px; font-weight: 400; color: var(--text-muted); margin-left: 4px; }
+  .metric-label { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; font-weight: 500; }
+  .metric-trend {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11.5px; margin-top: 10px; font-weight: 500;
+  }
+  .metric-trend.up { color: var(--accent-green); }
+  .metric-trend.down { color: var(--accent-red); }
+  .metric-trend span { color: var(--text-muted); }
+
+  .sparkline { margin-top: 12px; height: 40px; }
+  .sparkline svg { width: 100%; height: 100%; }
+
+  /* === Content Grid === */
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .content-grid.three-col { grid-template-columns: 2fr 1fr; }
+
+  /* === Card === */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .card-body { padding: 20px; }
+
+  .card-tabs {
+    display: flex; gap: 2px; background: var(--bg-primary);
+    padding: 3px; border-radius: 8px;
+  }
+  .card-tab {
+    padding: 6px 14px; border-radius: 6px; font-size: 12px;
+    font-weight: 500; cursor: pointer; color: var(--text-muted);
+    transition: all 0.2s; border: none; background: none;
+  }
+  .card-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .card-tab:hover:not(.active) { color: var(--text-secondary); }
+
+  /* === Vitals Chart === */
+  .chart-container { position: relative; height: 280px; }
+  .chart-container canvas { width: 100% !important; height: 100% !important; }
+
+  /* === Health Score Ring === */
+  .score-ring-container {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 20px;
+  }
+  .score-ring { position: relative; width: 180px; height: 180px; }
+  .score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .score-ring-bg { fill: none; stroke: var(--border); stroke-width: 10; }
+  .score-ring-fill {
+    fill: none; stroke-width: 10; stroke-linecap: round;
+    transition: stroke-dashoffset 1.5s ease;
+  }
+  .score-ring-value {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .score-number { font-size: 48px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+  .score-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+  .score-details { width: 100%; margin-top: 24px; }
+  .score-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(42,53,80,0.5);
+  }
+  .score-item:last-child { border-bottom: none; }
+  .score-item-left { display: flex; align-items: center; gap: 10px; }
+  .score-item-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .score-item-name { font-size: 13px; color: var(--text-secondary); }
+  .score-item-val { font-size: 13px; font-weight: 600; }
+  .score-item-bar {
+    width: 60px; height: 4px; background: var(--bg-primary);
+    border-radius: 2px; margin-left: 12px; overflow: hidden;
+  }
+  .score-item-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+  /* === AI Insight Panel === */
+  .ai-panel {
+    grid-column: 1 / -1;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .ai-header {
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .ai-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--gradient-1); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 18px; box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+    50% { box-shadow: 0 0 30px rgba(59,130,246,0.5); }
+  }
+  .ai-title { font-size: 14.5px; font-weight: 600; }
+  .ai-subtitle { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .ai-typing { display: flex; gap: 3px; margin-left: auto; align-items: center; }
+  .ai-typing span {
+    width: 6px; height: 6px; background: var(--accent-blue);
+    border-radius: 50%; animation: typing-dot 1.4s infinite;
+  }
+  .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  .ai-body { padding: 20px; }
+
+  .insight-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .insight-card {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 16px;
+    transition: all 0.3s; cursor: pointer;
+  }
+  .insight-card:hover { border-color: rgba(59,130,246,0.3); transform: translateY(-1px); }
+  .insight-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .insight-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .insight-type { font-size: 12px; font-weight: 600; }
+  .insight-title { font-size: 13.5px; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
+  .insight-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .insight-tag {
+    display: inline-block; margin-top: 10px; font-size: 10.5px;
+    font-weight: 600; padding: 3px 8px; border-radius: 5px;
+  }
+  .tag-exercise { color: var(--accent-green); background: rgba(16,185,129,0.1); }
+  .tag-diet { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
+  .tag-sleep { color: var(--accent-purple); background: rgba(139,92,246,0.1); }
+  .tag-alert { color: var(--accent-red); background: rgba(239,68,68,0.1); }
+  .tag-mental { color: var(--accent-cyan); background: rgba(6,182,212,0.1); }
+
+  /* === Health Plan === */
+  .plan-item {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid rgba(42,53,80,0.5);
+    transition: all 0.2s;
+  }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-time {
+    min-width: 52px; text-align: center; font-size: 12px;
+    font-weight: 700; color: var(--accent-cyan);
+    padding-top: 2px;
+  }
+  .plan-dot {
+    position: relative; width: 12px; padding-top: 4px;
+  }
+  .plan-dot::before {
+    content: ''; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid var(--accent-cyan);
+    background: var(--bg-card);
+  }
+  .plan-dot::after {
+    content: ''; position: absolute; top: 18px; left: 4px;
+    width: 2px; height: calc(100% + 10px); background: var(--border);
+  }
+  .plan-item:last-child .plan-dot::after { display: none; }
+  .plan-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .plan-content p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* === Activity List === */
+  .activity-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid rgba(42,53,80,0.5);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    flex-shrink: 0;
+  }
+  .activity-text { flex: 1; }
+  .activity-text strong { font-size: 13px; font-weight: 600; }
+  .activity-text p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .activity-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+  /* === Body Data Table === */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 12px 0; font-size: 13px;
+    border-bottom: 1px solid rgba(42,53,80,0.3);
+  }
+  .data-val { font-weight: 600; }
+  .data-unit { color: var(--text-muted); font-size: 12px; margin-left: 2px; }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block; margin-right: 6px;
+  }
+  .status-dot.green { background: var(--accent-green); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+  .status-dot.amber { background: var(--accent-amber); box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+  .status-dot.red { background: var(--accent-red); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+
+  /* === Progress Bars === */
+  .progress-item { margin-bottom: 16px; }
+  .progress-item:last-child { margin-bottom: 0; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .progress-label { font-size: 12.5px; font-weight: 500; }
+  .progress-value { font-size: 12.5px; font-weight: 600; color: var(--accent-cyan); }
+  .progress-bar {
+    height: 8px; background: var(--bg-primary); border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 4px; transition: width 1.5s ease;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    animation: shimmer 2s infinite;
+  }
+  @keyframes shimmer { 100% { transform: translateX(-100%); } }
+
+  /* === Sleep Chart === */
+  .sleep-bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding-top: 10px; }
+  .sleep-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sleep-bar {
+    width: 100%; border-radius: 4px 4px 0 0;
+    transition: height 1s ease; min-height: 4px;
+  }
+  .sleep-day { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+
+  /* === Heart Rate Animation === */
+  .heart-anim {
+    display: inline-block; color: var(--accent-red);
+    animation: heartbeat 1.2s ease-in-out infinite;
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.15); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.1); }
+  }
+
+  /* === Live Indicator === */
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);
+    display: inline-block; margin-right: 6px;
+    animation: live-pulse 2s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  }
+
+  /* === Responsive === */
+  @media (max-width: 1200px) {
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .content-grid, .content-grid.three-col { grid-template-columns: 1fr; }
+    .ai-panel .insight-cards { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .metrics-row { grid-template-columns: 1fr; }
+    .ai-panel .insight-cards { grid-template-columns: 1fr; }
+    .mobile-toggle { display: flex !important; }
+  }
+  .mobile-toggle {
+    display: none; width: 38px; height: 38px; border-radius: 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-secondary); align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px;
+  }
+
+  /* === Scrollbar === */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* === Smooth Fade-In === */
+  .fade-in { opacity: 0; transform: translateY(12px); animation: fadeIn 0.6s ease forwards; }
+  @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+  /* === Toast === */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    padding: 12px 18px; border-radius: var(--radius-sm);
+    background: var(--bg-card); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text-primary);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex; align-items: center; gap: 8px;
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut { to { transform: translateX(100%); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">+</div>
+      <div>
+        <div class="brand-text">HealthAI</div>
+        <div class="brand-sub">智能健康管理</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">概览</div>
+      <div class="nav-item active" onclick="switchTab(this)"><span class="nav-icon">&#9632;</span> 健康仪表盘</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9829;</span> 实时监测 <span class="nav-badge">Live</span></div>
+      <div class="nav-label">分析</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9733;</span> AI 健康报告</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9776;</span> 健康方案</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#8644;</span> 趋势分析</div>
+      <div class="nav-label">管理</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9881;</span> 设备管理</div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9993;</span> 消息提醒 <span class="nav-badge">3</span></div>
+      <div class="nav-item" onclick="switchTab(this)"><span class="nav-icon">&#9883;</span> 健康档案</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-avatar">李</div>
+      <div class="user-info">
+        <div class="user-name">李明</div>
+        <div class="user-role">高级会员</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="header">
+      <div class="header-left">
+        <h1><span class="live-dot"></span>健康仪表盘</h1>
+        <p id="currentDate">2026年3月22日 星期日 · 数据实时刷新中</p>
+      </div>
+      <div class="header-right">
+        <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+        <button class="header-btn" onclick="exportReport()">&#128196; 导出报告</button>
+        <button class="header-btn primary" onclick="generatePlan()">&#10024; 生成方案</button>
+      </div>
+    </div>
+
+    <div class="dashboard">
+      <!-- Metric Cards -->
+      <div class="metrics-row">
+        <div class="metric-card fade-in" style="animation-delay:0.1s">
+          <div class="metric-header">
+            <div class="metric-icon"><span class="heart-anim">&#9829;</span></div>
+            <span class="metric-status normal" id="hrStatus">&#9679; 正常</span>
+          </div>
+          <div class="metric-value"><span id="heartRate">72</span><span class="metric-unit">bpm</span></div>
+          <div class="metric-label">心率</div>
+          <div class="metric-trend up">&#9650; 2.1% <span>较昨日</span></div>
+          <div class="sparkline"><svg id="hrSparkline" viewBox="0 0 200 40"></svg></div>
+        </div>
+
+        <div class="metric-card fade-in" style="animation-delay:0.2s">
+          <div class="metric-header">
+            <div class="metric-icon">&#128170;</div>
+            <span class="metric-status normal" id="bpStatus">&#9679; 正常</span>
+          </div>
+          <div class="metric-value"><span id="bpSystolic">118</span>/<span id="bpDiastolic" style="font-size:20px">76</span><span class="metric-unit">mmHg</span></div>
+          <div class="metric-label">血压</div>
+          <div class="metric-trend up">&#9660; 1.5% <span>较昨日</span></div>
+          <div class="sparkline"><svg id="bpSparkline" viewBox="0 0 200 40"></svg></div>
+        </div>
+
+        <div class="metric-card fade-in" style="animation-delay:0.3s">
+          <div class="metric-header">
+            <div class="metric-icon">&#128293;</div>
+            <span class="metric-status normal" id="calStatus">&#9679; 正常</span>
+          </div>
+          <div class="metric-value"><span id="calories">1,847</span><span class="metric-unit">kcal</span></div>
+          <div class="metric-label">今日消耗热量</div>
+          <div class="metric-trend up">&#9650; 8.3% <span>较昨日</span></div>
+          <div class="sparkline"><svg id="calSparkline" viewBox="0 0 200 40"></svg></div>
+        </div>
+
+        <div class="metric-card fade-in" style="animation-delay:0.4s">
+          <div class="metric-header">
+            <div class="metric-icon">&#128564;</div>
+            <span class="metric-status warning" id="sleepStatus">&#9679; 偏低</span>
+          </div>
+          <div class="metric-value"><span id="sleepHours">6.5</span><span class="metric-unit">小时</span></div>
+          <div class="metric-label">昨晚睡眠时长</div>
+          <div class="metric-trend down">&#9660; 0.3h <span>较昨日</span></div>
+          <div class="sparkline"><svg id="sleepSparkline" viewBox="0 0 200 40"></svg></div>
+        </div>
+      </div>
+
+      <!-- Chart + Score Row -->
+      <div class="content-grid three-col">
+        <div class="card fade-in" style="animation-delay:0.5s">
+          <div class="card-header">
+            <span class="card-title">生命体征趋势</span>
+            <div class="card-tabs">
+              <button class="card-tab active" onclick="switchChart(this, 'heart')">心率</button>
+              <button class="card-tab" onclick="switchChart(this, 'bp')">血压</button>
+              <button class="card-tab" onclick="switchChart(this, 'bo2')">血氧</button>
+              <button class="card-tab" onclick="switchChart(this, 'temp')">体温</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="vitalsChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card fade-in" style="animation-delay:0.6s">
+          <div class="card-header">
+            <span class="card-title">综合健康评分</span>
+          </div>
+          <div class="score-ring-container">
+            <div class="score-ring">
+              <svg viewBox="0 0 180 180">
+                <circle class="score-ring-bg" cx="90" cy="90" r="78"/>
+                <circle class="score-ring-fill" cx="90" cy="90" r="78"
+                  stroke="url(#scoreGrad)"
+                  stroke-dasharray="490"
+                  id="scoreRing"
+                  stroke-dashoffset="490"/>
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="score-ring-value">
+                <div class="score-number" id="scoreNumber">0</div>
+                <div class="score-label">综合评分</div>
+              </div>
+            </div>
+            <div class="score-details">
+              <div class="score-item">
+                <div class="score-item-left"><div class="score-item-dot" style="background:var(--accent-green)"></div><span class="score-item-name">心血管</span></div>
+                <span class="score-item-val">92</span>
+                <div class="score-item-bar"><div class="score-item-bar-fill" style="width:92%;background:var(--accent-green)"></div></div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-left"><div class="score-item-dot" style="background:var(--accent-amber)"></div><span class="score-item-name">睡眠质量</span></div>
+                <span class="score-item-val">68</span>
+                <div class="score-item-bar"><div class="score-item-bar-fill" style="width:68%;background:var(--accent-amber)"></div></div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-left"><div class="score-item-dot" style="background:var(--accent-blue)"></div><span class="score-item-name">运动表现</span></div>
+                <span class="score-item-val">85</span>
+                <div class="score-item-bar"><div class="score-item-bar-fill" style="width:85%;background:var(--accent-blue)"></div></div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-left"><div class="score-item-dot" style="background:var(--accent-purple)"></div><span class="score-item-name">心理压力</span></div>
+                <span class="score-item-val">74</span>
+                <div class="score-item-bar"><div class="score-item-bar-fill" style="width:74%;background:var(--accent-purple)"></div></div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-left"><div class="score-item-dot" style="background:var(--accent-cyan)"></div><span class="score-item-name">营养摄入</span></div>
+                <span class="score-item-val">81</span>
+                <div class="score-item-bar"><div class="score-item-bar-fill" style="width:81%;background:var(--accent-cyan)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Insight Panel -->
+      <div class="ai-panel fade-in" style="animation-delay:0.7s">
+        <div class="ai-header">
+          <div class="ai-avatar">&#129302;</div>
+          <div>
+            <div class="ai-title">AI 健康助手</div>
+            <div class="ai-subtitle">基于您的最新数据，为您生成以下智能建议</div>
+          </div>
+          <div class="ai-typing"><span></span><span></span><span></span></div>
+        </div>
+        <div class="ai-body">
+          <div class="insight-cards" id="insightCards">
+            <div class="insight-card" onclick="expandInsight(this)">
+              <div class="insight-card-header">
+                <div class="insight-icon" style="background:rgba(16,185,129,0.12)">&#127939;</div>
+                <span class="insight-type">运动建议</span>
+              </div>
+              <div class="insight-title">建议进行30分钟有氧运动</div>
+              <div class="insight-desc">根据您近7天运动数据显示，有氧运动量偏低。建议今日下午增加30分钟慢跑或快走，有助于提高心血管评分。</div>
+              <span class="insight-tag tag-exercise">&#127939; 运动方案</span>
+            </div>
+            <div class="insight-card" onclick="expandInsight(this)">
+              <div class="insight-card-header">
+                <div class="insight-icon" style="background:rgba(245,158,11,0.12)">&#127858;</div>
+                <span class="insight-type">饮食建议</span>
+              </div>
+              <div class="insight-title">增加蛋白质和维生素D摄入</div>
+              <div class="insight-desc">检测到近期蛋白质摄入不足每日推荐量的75%。建议午餐增加鸡胸肉或豆制品，并适当补充维生素D。</div>
+              <span class="insight-tag tag-diet">&#127858; 饮食方案</span>
+            </div>
+            <div class="insight-card" onclick="expandInsight(this)">
+              <div class="insight-card-header">
+                <div class="insight-icon" style="background:rgba(139,92,246,0.12)">&#128164;</div>
+                <span class="insight-type">睡眠建议</span>
+              </div>
+              <div class="insight-title">睡眠质量需要改善</div>
+              <div class="insight-desc">近3天平均深睡时长仅1.2小时（建议1.5-2小时）。建议临睡前1小时减少屏幕使用，保持卧室温度在18-22度。</div>
+              <span class="insight-tag tag-sleep">&#128164; 睡眠方案</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="content-grid">
+        <!-- Health Plan -->
+        <div class="card fade-in" style="animation-delay:0.8s">
+          <div class="card-header">
+            <span class="card-title">今日健康方案</span>
+            <button class="header-btn" style="padding:6px 12px;font-size:11px" onclick="generatePlan()">&#10024; AI 优化</button>
+          </div>
+          <div class="card-body">
+            <div class="plan-item">
+              <div class="plan-time">07:00</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#9788; 晨间唤醒</h4>
+                <p>起床后喝一杯温水（200ml），进行10分钟拉伸运动激活身体</p>
+              </div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-time">08:00</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#127857; 营养早餐</h4>
+                <p>全麦面包 + 鸡蛋2个 + 牛奶250ml + 水果一份</p>
+              </div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-time">10:30</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#128167; 补充水分</h4>
+                <p>提醒饮水300ml，起身活动5分钟</p>
+              </div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-time">12:00</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#129367; 均衡午餐</h4>
+                <p>糙米饭 + 鸡胸肉150g + 西兰花 + 青菜沙拉，控制盐分摄入</p>
+              </div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-time">17:30</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#127939; 有氧运动</h4>
+                <p>30分钟中等强度有氧运动，目标心率120-140bpm</p>
+              </div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-time">22:30</div>
+              <div class="plan-dot"></div>
+              <div class="plan-content">
+                <h4>&#127769; 助眠准备</h4>
+                <p>电子产品静音，进行5分钟冥想或深呼吸，22:30前入睡</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <!-- Daily Progress -->
+          <div class="card fade-in" style="animation-delay:0.9s">
+            <div class="card-header">
+              <span class="card-title">今日目标进度</span>
+            </div>
+            <div class="card-body">
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">&#128170; 热量消耗</span>
+                  <span class="progress-value" id="calProgress">1,847 / 2,200 kcal</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:84%;background:var(--gradient-1)"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">&#128694; 步数</span>
+                  <span class="progress-value" id="stepProgress">7,234 / 10,000 步</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:72%;background:var(--gradient-2)"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">&#128167; 饮水量</span>
+                  <span class="progress-value">1,400 / 2,000 ml</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:70%;background:linear-gradient(90deg,#06b6d4,#3b82f6)"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">&#127939; 运动时长</span>
+                  <span class="progress-value">22 / 45 分钟</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:49%;background:var(--gradient-3)"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sleep Weekly -->
+          <div class="card fade-in" style="animation-delay:1s">
+            <div class="card-header">
+              <span class="card-title">本周睡眠时长</span>
+              <span style="font-size:12px;color:var(--text-muted)">平均 6.8 小时</span>
+            </div>
+            <div class="card-body">
+              <div class="sleep-bars" id="sleepBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row 2: Body Data + Activity -->
+      <div class="content-grid">
+        <div class="card fade-in" style="animation-delay:1.1s">
+          <div class="card-header">
+            <span class="card-title">身体指标详情</span>
+            <span style="font-size:11px;color:var(--text-muted)">最近更新: 刚刚</span>
+          </div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>指标</th><th>当前值</th><th>参考范围</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td>心率</td><td class="data-val"><span id="tHR">72</span><span class="data-unit">bpm</span></td><td>60-100</td><td><span class="status-dot green"></span>正常</td></tr>
+                <tr><td>血氧饱和度</td><td class="data-val"><span id="tO2">98</span><span class="data-unit">%</span></td><td>95-100</td><td><span class="status-dot green"></span>正常</td></tr>
+                <tr><td>体温</td><td class="data-val"><span id="tTemp">36.5</span><span class="data-unit">&#8451;</span></td><td>36.0-37.2</td><td><span class="status-dot green"></span>正常</td></tr>
+                <tr><td>BMI</td><td class="data-val">23.1</td><td>18.5-24.9</td><td><span class="status-dot green"></span>正常</td></tr>
+                <tr><td>血糖(空腹)</td><td class="data-val">5.2<span class="data-unit">mmol/L</span></td><td>3.9-6.1</td><td><span class="status-dot green"></span>正常</td></tr>
+                <tr><td>胆固醇</td><td class="data-val">4.8<span class="data-unit">mmol/L</span></td><td>&lt;5.2</td><td><span class="status-dot green"></span>正常</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card fade-in" style="animation-delay:1.2s">
+          <div class="card-header">
+            <span class="card-title">健康动态</span>
+          </div>
+          <div class="card-body">
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(239,68,68,0.12)">&#9829;</div>
+              <div class="activity-text"><strong>心率异常提醒已恢复</strong><p>15:32 心率波动已恢复至正常范围</p></div>
+              <span class="activity-time">10分钟前</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(16,185,129,0.12)">&#127939;</div>
+              <div class="activity-text"><strong>完成下午有氧运动</strong><p>22分钟跑步，消耗186kcal</p></div>
+              <span class="activity-time">1小时前</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(59,130,246,0.12)">&#128196;</div>
+              <div class="activity-text"><strong>AI 健康报告已生成</strong><p>本周综合健康评分 82分，较上周提升3分</p></div>
+              <span class="activity-time">3小时前</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(139,92,246,0.12)">&#128550;</div>
+              <div class="activity-text"><strong>睡眠质量报告</strong><p>深睡比例偏低，AI 已给出改善建议</p></div>
+              <span class="activity-time">今早</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(245,158,11,0.12)">&#128167;</div>
+              <div class="activity-text"><strong>饮水提醒</strong><p>今日饮水量已达到目标的70%</p></div>
+              <span class="activity-time">今早</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
