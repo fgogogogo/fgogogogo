@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 健康管理助手</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+/* ========== Reset & Base ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0E17;--bg2:#111827;--bg3:#1F2937;--bg4:#374151;
+  --glass:rgba(255,255,255,0.05);--glass2:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,0.1);
+  --text:#E5E7EB;--text2:#9CA3AF;--text3:#6B7280;
+  --red:#FF6B6B;--cyan:#4ECDC4;--green:#95E876;--purple:#A78BFA;--orange:#FFB347;
+  --radius:16px;--radius-sm:10px;
+  --sidebar-w:220px;--sidebar-w-collapsed:64px;
+}
+html{font-size:16px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;
+  display:flex;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+
+/* ========== Sidebar ========== */
+.sidebar{
+  width:var(--sidebar-w);height:100vh;position:fixed;left:0;top:0;z-index:100;
+  background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  transition:width .3s;overflow:hidden;
+}
+.sidebar-logo{
+  padding:24px 20px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.sidebar-logo .logo-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.sidebar-logo span{font-size:16px;font-weight:600;opacity:0;transition:opacity .3s}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:4px}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);
+  transition:all .2s;white-space:nowrap;user-select:none;
+}
+.nav-item:hover{background:var(--glass2);color:var(--text)}
+.nav-item.active{background:rgba(78,205,196,0.12);color:var(--cyan)}
+.nav-item svg{width:22px;height:22px;flex-shrink:0}
+.nav-item span{opacity:0;transition:opacity .3s}
+
+/* ========== Main Content ========== */
+.main{flex:1;margin-left:var(--sidebar-w);min-height:100vh;transition:margin .3s}
+.page{display:none;padding:28px;max-width:1400px;animation:fadeIn .4s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== Cards ========== */
+.card{
+  background:var(--glass);backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px;transition:transform .2s,box-shadow .2s;
+}
+.card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.grid{display:grid;gap:20px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+
+/* ========== Metric Cards ========== */
+.metric-card{position:relative;overflow:hidden}
+.metric-card .metric-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:14px;font-size:20px;
+}
+.metric-card .metric-value{font-size:30px;font-weight:700;line-height:1}
+.metric-card .metric-label{font-size:13px;color:var(--text2);margin-top:6px}
+.metric-card .metric-sub{font-size:12px;margin-top:10px;display:flex;align-items:center;gap:4px}
+.metric-card .glow{
+  position:absolute;width:100px;height:100px;border-radius:50%;
+  filter:blur(40px);opacity:.15;top:-20px;right:-20px;
+}
+
+/* ========== Progress Ring ========== */
+.ring-container{display:flex;flex-direction:column;align-items:center;gap:10px}
+.ring-container svg{width:140px;height:140px}
+.ring-bg{fill:none;stroke:var(--bg3);stroke-width:8}
+.ring-fg{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.ring-label{font-size:13px;color:var(--text2);text-align:center}
+.ring-value{font-size:20px;font-weight:700;text-anchor:middle;fill:var(--text)}
+.ring-unit{font-size:11px;fill:var(--text3);text-anchor:middle}
+
+/* ========== Gauges (Health Monitor) ========== */
+.gauge-card{display:flex;flex-direction:column;align-items:center;gap:8px}
+.gauge-card svg{width:180px;height:180px}
+.gauge-arc{fill:none;stroke:var(--bg3);stroke-width:10;stroke-linecap:round}
+.gauge-value-arc{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .5s}
+.gauge-value-text{font-size:26px;font-weight:700;text-anchor:middle;fill:var(--text)}
+.gauge-unit-text{font-size:12px;text-anchor:middle;fill:var(--text3)}
+.gauge-label{font-size:14px;font-weight:600}
+.gauge-range{font-size:12px;color:var(--text3)}
+
+/* ========== Section Title ========== */
+.section-title{
+  font-size:18px;font-weight:600;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-title .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan)}
+
+/* ========== Tabs ========== */
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{
+  padding:8px 18px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--text2);cursor:pointer;font-size:13px;
+  transition:all .2s;font-family:inherit;
+}
+.tab-btn:hover{background:var(--glass2);color:var(--text)}
+.tab-btn.active{background:rgba(78,205,196,0.15);border-color:var(--cyan);color:var(--cyan)}
+.tab-panel{display:none;animation:fadeIn .3s}
+.tab-panel.active{display:block}
+
+/* ========== AI Chat ========== */
+.chat-container{
+  display:flex;flex-direction:column;height:420px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+}
+.chat-messages{
+  flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;
+}
+.chat-msg{
+  max-width:80%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.6;
+  animation:fadeIn .3s;
+}
+.chat-msg.ai{
+  align-self:flex-start;
+  background:var(--glass2);border:1px solid var(--border);
+}
+.chat-msg.user{
+  align-self:flex-end;
+  background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);
+}
+.chat-input-wrap{
+  display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);
+  background:var(--bg2);
+}
+.chat-input-wrap input{
+  flex:1;background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:10px 16px;color:var(--text);font-size:14px;
+  outline:none;font-family:inherit;
+}
+.chat-input-wrap input:focus{border-color:var(--cyan)}
+.chat-input-wrap button{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  border:none;color:#fff;padding:10px 20px;border-radius:20px;
+  cursor:pointer;font-size:14px;font-family:inherit;white-space:nowrap;
+}
+.chat-input-wrap button:hover{opacity:.9}
+
+/* ========== Breathing Animation ========== */
+.breath-circle{
+  width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,rgba(78,205,196,0.3),transparent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:var(--cyan);margin:20px auto;
+  animation:breathe 8s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{transform:scale(.7);opacity:.4}
+  25%{transform:scale(1.1);opacity:.9}
+  50%{transform:scale(1);opacity:.7}
+  75%{transform:scale(.8);opacity:.5}
+}
+
+/* ========== Forms ========== */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--text2);margin-bottom:5px}
+.form-group input,.form-group select{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;
+  outline:none;font-family:inherit;
+}
+.form-group input:focus,.form-group select:focus{border-color:var(--cyan)}
+.btn{
+  padding:10px 22px;border-radius:10px;border:none;
+  cursor:pointer;font-size:14px;font-family:inherit;transition:all .2s;
+}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg4)}
+
+/* ========== Progress Bar ========== */
+.progress-bar{background:var(--bg3);border-radius:6px;height:8px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:6px;transition:width 1s ease}
+
+/* ========== Insight Carousel ========== */
+.carousel{position:relative;overflow:hidden;border-radius:var(--radius-sm)}
+.carousel-track{display:flex;transition:transform .5s ease}
+.carousel-item{min-width:100%;padding:16px}
+.carousel-item h4{margin-bottom:6px;font-size:15px}
+.carousel-item p{font-size:13px;color:var(--text2);line-height:1.6}
+.carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.carousel-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--bg4);
+  cursor:pointer;transition:all .2s;
+}
+.carousel-dot.active{background:var(--cyan);width:20px;border-radius:4px}
+
+/* ========== Profile ========== */
+.profile-avatar{
+  width:80px;height:80px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;margin:0 auto 12px;
+}
+.goal-item{margin-bottom:14px}
+.goal-item .goal-header{display:flex;justify-content:space-between;font-size:13px}
+.goal-item .goal-name{color:var(--text2)}
+
+/* ========== Toast ========== */
+.toast{
+  position:fixed;top:24px;right:24px;z-index:9999;
+  padding:14px 24px;border-radius:var(--radius-sm);
+  background:rgba(17,24,39,0.95);border:1px solid var(--cyan);
+  color:var(--text);font-size:14px;
+  transform:translateX(120%);transition:transform .3s;
+  backdrop-filter:blur(10px);
+}
+.toast.show{transform:translateX(0)}
+
+/* ========== AI Score Ring ========== */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.score-ring-wrap svg{width:220px;height:220px}
+.score-num{font-size:52px;font-weight:800;text-anchor:middle;fill:var(--text)}
+.score-label{text-anchor:middle;fill:var(--text3);font-size:13px}
+
+/* ========== Responsive ========== */
+@media(max-width:1200px){
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:1023px){
+  .sidebar{width:var(--sidebar-w-collapsed)}
+  .sidebar-logo span,.nav-item span{opacity:0}
+  .main{margin-left:var(--sidebar-w-collapsed)}
+}
+@media(max-width:767px){
+  .sidebar{
+    width:100%!important;height:64px!important;
+    top:auto;bottom:0;flex-direction:row;
+    border-right:none;border-top:1px solid var(--border);
+  }
+  .sidebar-logo{display:none}
+  .sidebar-nav{flex-direction:row;padding:6px 8px;gap:0;justify-content:space-around;width:100%}
+  .nav-item{flex-direction:column;gap:4px;padding:8px;font-size:10px}
+  .nav-item span{opacity:1;font-size:10px}
+  .main{margin-left:0!important;padding-bottom:80px}
+  .page{padding:16px}
+  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
+  .gauge-grid{grid-template-columns:repeat(2,1fr)!important}
+}
+
+/* ========== Utility ========== */
+.mt-sm{margin-top:8px}.mt-md{margin-top:16px}.mt-lg{margin-top:24px}
+.mb-md{margin-bottom:16px}
+.flex{display:flex}.flex-col{flex-direction:column}
+.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-sm{gap:8px}.gap-md{gap:16px}
+.text-center{text-align:center}
+.text-sm{font-size:13px}.text-xs{font-size:12px}
+.text-muted{color:var(--text3)}
+.w-full{width:100%}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🩺</div>
+    <span>AI 健康助手</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>仪表盘</span>
+    </div>
+    <div class="nav-item" data-page="monitor" onclick="switchPage('monitor')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>身体数据</span>
+    </div>
+    <div class="nav-item" data-page="plan" onclick="switchPage('plan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>智能方案</span>
+    </div>
+    <div class="nav-item" data-page="profile" onclick="switchPage('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>个人中心</span>
+    </div>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- ==================== 1. Dashboard ==================== -->
+<div class="page active" id="page-dashboard">
+  <h2 style="font-size:24px;margin-bottom:6px">健康仪表盘</h2>
+  <p class="text-sm text-muted mb-md" id="dash-date"></p>
+
+  <!-- Metric Cards -->
+  <div class="grid grid-4 mb-md" id="metric-cards"></div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-2 mb-md">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>24 小时心率趋势</div>
+      <canvas id="chart-hr" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>本周睡眠质量</div>
+      <canvas id="chart-sleep" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Progress Rings -->
+  <div class="grid grid-3 mb-md" id="rings-row"></div>
+
+  <!-- AI Insights -->
+  <div class="card">
+    <div class="section-title"><span class="dot"></span>AI 健康洞察</div>
+    <div class="carousel" id="insight-carousel"></div>
+    <div class="carousel-dots" id="carousel-dots"></div>
+  </div>
+</div>
+
+<!-- ==================== 2. Health Monitor ==================== -->
+<div class="page" id="page-monitor">
+  <h2 style="font-size:24px;margin-bottom:6px">身体数据监测</h2>
+  <p class="text-sm text-muted mb-md">实时模拟 · 数据刷新中</p>
+
+  <!-- Gauges -->
+  <div class="grid grid-3 gauge-grid mb-md" id="gauge-grid"></div>
+
+  <!-- Trend Charts -->
+  <div class="card mb-md">
+    <div class="flex justify-between items-center mb-md">
+      <div class="section-title" style="margin-bottom:0"><span class="dot"></span>趋势分析</div>
+      <div class="tabs" id="trend-tabs">
+        <button class="tab-btn active" onclick="setTrendRange('week')">近一周</button>
+        <button class="tab-btn" onclick="setTrendRange('month')">近一月</button>
+      </div>
+    </div>
+    <div class="grid grid-3" id="trend-charts">
+      <div><div class="text-sm text-muted mb-sm">心率</div><canvas id="trend-hr"></canvas></div>
+      <div><div class="text-sm text-muted mb-sm">血压</div><canvas id="trend-bp"></canvas></div>
+      <div><div class="text-sm text-muted mb-sm">步数</div><canvas id="trend-steps"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Manual Input -->
+  <div class="card">
+    <div class="section-title"><span class="dot"></span>手动录入数据</div>
+    <div class="grid grid-3">
+      <div class="form-group"><label>心率 (bpm)</label><input type="number" id="inp-hr" placeholder="60-100"></div>
+      <div class="form-group"><label>收缩压 (mmHg)</label><input type="number" id="inp-sbp" placeholder="90-140"></div>
+      <div class="form-group"><label>舒张压 (mmHg)</label><input type="number" id="inp-dbp" placeholder="60-90"></div>
+      <div class="form-group"><label>血氧 (%)</label><input type="number" id="inp-spo2" placeholder="95-100"></div>
+      <div class="form-group"><label>体温 (°C)</label><input type="number" step="0.1" id="inp-temp" placeholder="36.0-37.5"></div>
+      <div class="form-group"><label>今日步数</label><input type="number" id="inp-steps" placeholder="5000-10000"></div>
+    </div>
+    <button class="btn btn-primary mt-sm" onclick="saveManualData()">保存记录</button>
+  </div>
+</div>
+
+<!-- ==================== 3. AI Plan ==================== -->
+<div class="page" id="page-plan">
+  <h2 style="font-size:24px;margin-bottom:6px">智能健康方案</h2>
+  <p class="text-sm text-muted mb-md">基于您的数据智能生成</p>
+
+  <!-- Score -->
+  <div class="card mb-md" style="display:flex;gap:40px;align-items:center;flex-wrap:wrap">
+    <div class="score-ring-wrap" id="score-ring"></div>
+    <div style="flex:1;min-width:200px" id="score-summary"></div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div class="tabs" id="plan-tabs">
+    <button class="tab-btn active" onclick="switchPlanTab('diet')">🍽 饮食方案</button>
+    <button class="tab-btn" onclick="switchPlanTab('exercise')">🏃 运动建议</button>
+    <button class="tab-btn" onclick="switchPlanTab('sleep')">😴 睡眠优化</button>
+    <button class="tab-btn" onclick="switchPlanTab('mental')">🧘 心理健康</button>
+  </div>
+
+  <div id="plan-content"></div>
+
+  <!-- AI Chat -->
+  <div class="card mt-lg">
+    <div class="section-title"><span class="dot"></span>AI 健康问答</div>
+    <div class="chat-container">
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-wrap">
+        <input type="text" id="chat-input" placeholder="输入您的健康问题..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">提问</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 4. Profile ==================== -->
+<div class="page" id="page-profile">
+  <h2 style="font-size:24px;margin-bottom:6px">个人中心</h2>
+  <p class="text-sm text-muted mb-md">管理您的健康档案</p>
+
+  <div class="grid grid-2 mb-md">
+    <!-- User Info -->
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>个人信息</div>
+      <div class="profile-avatar">👤</div>
+      <div class="form-group"><label>姓名</label><input type="text" id="pf-name" placeholder="请输入姓名"></div>
+      <div class="form-group"><label>年龄</label><input type="number" id="pf-age" placeholder="25"></div>
+      <div class="form-group"><label>性别</label>
+        <select id="pf-gender"><option value="male">男</option><option value="female">女</option></select>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group"><label>身高 (cm)</label><input type="number" id="pf-height" placeholder="170"></div>
+        <div class="form-group"><label>体重 (kg)</label><input type="number" id="pf-weight" placeholder="65"></div>
+      </div>
+      <button class="btn btn-primary mt-sm" onclick="saveProfile()">保存信息</button>
+    </div>
+
+    <!-- Goals -->
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>健康目标</div>
+      <div id="goals-list"></div>
+    </div>
+  </div>
+
+  <div class="grid grid-2 mb-md">
+    <!-- History -->
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>数据历史</div>
+      <div id="history-summary" class="text-sm text-muted mb-md"></div>
+      <div style="max-height:300px;overflow-y:auto" id="history-list"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>设置</div>
+      <div class="form-group"><label>数据刷新频率</label>
+        <select id="set-refresh"><option value="2000">2 秒</option><option value="5000" selected>5 秒</option><option value="10000">10 秒</option></select>
+      </div>
+      <div class="form-group"><label>通知设置</label>
+        <select id="set-notify"><option value="on">开启</option><option value="off">关闭</option></select>
+      </div>
+      <div class="flex gap-sm mt-md">
+        <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+        <button class="btn btn-secondary" onclick="exportData()">导出 JSON</button>
+        <button class="btn btn-secondary" style="color:var(--red)" onclick="clearAllData()">清除数据</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== Data Engine ====================
+const COLORS = { red:'#FF6B6B', cyan:'#4ECDC4', green:'#95E876', purple:'#A78BFA', orange:'#FFB347' };
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const now = new Date();
+
+// Load / Save helpers
+const load = (k,d) => { try{ return JSON.parse(localStorage.getItem(k)) || d }catch(e){ return d } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+// User profile
+let userData = load('healthApp_user', { name:'张三', age:28, gender:'male', height:172, weight:68 });
+let settings = load('healthApp_settings', { refresh:5000, notify:'on' });
+let records = load('healthApp_records', generateHistory(30));
+
+function generateHistory(days) {
+  const arr = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate()-i);
+    const h = d.getHours() + Math.random()*4 - 2;
+    const day = d.getDay();
+    const isWeekend = day===0||day===6;
+    arr.push({
+      date: d.toISOString().slice(0,10),
+      hr: Math.round(65 + Math.sin(h/24*Math.PI*2)*8 + (Math.random()-0.5)*6),
+      sbp: Math.round(118 + Math.sin(i/7)*5 + (Math.random()-0.5)*8),
+      dbp: Math.round(76 + Math.sin(i/7)*3 + (Math.random()-0.5)*6),
+      spo2: Math.round(97 + (Math.random()-0.5)*2),
+      temp: +(36.4 + Math.sin(i/30)*0.2 + (Math.random()-0.5)*0.3).toFixed(1),
+      steps: Math.round((isWeekend ? 5000 : 8000) + Math.random()*6000),
+      sleep: +(6.2 + Math.sin(i/7)*1 + Math.random()*2).toFixed(1),
+      stress: Math.round(35 + Math.sin(i/5)*15 + (Math.random()-0.5)*20),
+      water: Math.round(4 + Math.random()*5),
+      calories: Math.round(1600 + Math.random()*800)
+    });
+  }
+  return arr;
+}
+
+function todayRec() { return records[records.length-1] || records[0]; }
+function last7() { return records.slice(-7); }
+function bmi() { const h=userData.height/100; return +(userData.weight/(h*h)).toFixed(1); }
+
+// Simulated real-time values with circadian rhythm
+function liveHR() {
+  const h = new Date().getHours();
+  const base = 65 + Math.sin((h-6)/24*Math.PI*2)*10;
+  return Math.round(base + (Math.random()-0.5)*6);
+}
+function liveSpo2() { return Math.round(97 + Math.random()*2) > 99 ? 99 : Math.round(97 + Math.random()*2); }
+function liveTemp() {
+  const h = new Date().getHours();
+  return +(36.2 + Math.sin((h-14)/24*Math.PI*2)*0.4 + (Math.random()-0.5)*0.2).toFixed(1);
+}
+
+// ==================== Navigation ====================
+function switchPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${id}"]`).classList.add('active');
+  if (id==='dashboard') refreshDashboard();
+  if (id==='monitor') refreshMonitor();
+  if (id==='plan') refreshPlan();
+  if (id==='profile') refreshProfile();
+}
+
+// ==================== Toast ====================
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ==================== Chart.js Defaults ====================
+Chart.defaults.color = '#9CA3AF';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif';
+Chart.defaults.font.size = 12;
+Chart.defaults.plugins.legend.display = false;
+Chart.defaults.scale.grid = { color:'rgba(255,255,255,0.04)' };
+
+const chartInstances = {};
+function makeChart(id, cfg) {
+  if (chartInstances[id]) chartInstances[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  chartInstances[id] = new Chart(ctx.getContext('2d'), cfg);
+}
+
+// ==================== Dashboard ====================
+function refreshDashboard() {
+  const t = todayRec();
+  document.getElementById('dash-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${WEEKDAYS[now.getDay()]}`;
+
+  // Metric cards with animated counters
+  const metrics = [
+    { label:'心率', value:liveHR(), unit:'bpm', icon:'❤️', color:COLORS.red, sub:'正常范围 60-100' },
+    { label:'血氧', value:liveSpo2(), unit:'%', icon:'💧', color:COLORS.cyan, sub:'正常 ≥ 95%' },
+    { label:'今日步数', value:t.steps, unit:'步', icon:'🚶', color:COLORS.green, sub:`目标 ${userData.goals?.steps||10000} 步` },
+    { label:'睡眠质量', value:t.sleep, unit:'小时', icon:'🌙', color:COLORS.purple, sub:t.sleep>=7?'良好':'建议增加' },
+  ];
+  const mc = document.getElementById('metric-cards');
+  mc.innerHTML = metrics.map(m => `
+    <div class="card metric-card">
+      <div class="glow" style="background:${m.color}"></div>
+      <div class="metric-icon" style="background:${m.color}20">${m.icon}</div>
+      <div class="metric-value" style="color:${m.color}"><span class="counter" data-target="${m.value}">0</span></div>
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-sub text-xs text-muted">${m.sub}</div>
+    </div>`).join('');
+  animateCounters();
+
+  // Heart rate chart
+  const hrLabels = Array.from({length:24},(_,i)=>`${i}:00`);
+  const hrData = hrLabels.map((_,i) => Math.round(65 + Math.sin((i-6)/24*Math.PI*2)*10 + (Math.random()-0.5)*6));
+  makeChart('chart-hr', {
+    type:'line',
+    data:{ labels:hrLabels, datasets:[{
+      data:hrData, borderColor:COLORS.red, backgroundColor:'rgba(255,107,107,0.1)',
+      fill:true, tension:.4, pointRadius:0, borderWidth:2
+    }]},
+    options:{ responsive:true, plugins:{tooltip:{callbacks:{label:c=>c.raw+' bpm'}}},
+      scales:{x:{ticks:{maxTicksLimit:8}},y:{min:50,max:90}}}
+  });
+
+  // Sleep chart
+  const sl = last7();
+  makeChart('chart-sleep', {
+    type:'bar',
+    data:{ labels:sl.map(r=>'周'+WEEKDAYS[new Date(r.date).getDay()]),
+      datasets:[{
+        data:sl.map(r=>r.sleep),
+        backgroundColor:sl.map(r=>r.sleep>=7?COLORS.purple:'rgba(167,139,250,0.4)'),
+        borderRadius:6, barPercentage:.6
+      }]},
+    options:{ responsive:true, scales:{y:{min:0,max:10}}, plugins:{tooltip:{callbacks:{label:c=>c.raw+' 小时'}}}}
+  });
+
+  // Progress rings
+  const goalSteps = userData.goals?.steps || 10000;
+  const goalCal = userData.goals?.calories || 2200;
+  const goalWater = userData.goals?.water || 8;
+  const rings = [
+    { label:'步数目标', value:t.steps, max:goalSteps, color:COLORS.green, unit:'步' },
+    { label:'热量消耗', value:t.calories, max:goalCal, color:COLORS.orange, unit:'kcal' },
+    { label:'饮水量', value:t.water, max:goalWater, color:COLORS.cyan, unit:'杯' },
+  ];
+  document.getElementById('rings-row').innerHTML = rings.map(r => {
+    const pct = Math.min(r.value/r.max,1);
+    const circum = 2*Math.PI*58;
+    return `<div class="card ring-container">
+      <svg viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="58"/>
+        <circle class="ring-fg" cx="70" cy="70" r="58" stroke="${r.color}"
+          stroke-dasharray="${circum}" stroke-dashoffset="${circum*(1-pct)}"
+          transform="rotate(-90 70 70)"/>
+        <text class="ring-value" x="70" y="66">${Math.round(pct*100)}%</text>
+        <text class="ring-unit" x="70" y="84">${r.value} / ${r.max} ${r.unit}</text>
+      </svg>
+      <div class="ring-label">${r.label}</div>
+    </div>`;
+  }).join('');
+
+  // AI Insights carousel
+  const insights = generateInsights();
+  const carousel = document.getElementById('insight-carousel');
+  carousel.innerHTML = `<div class="carousel-track" id="carousel-track">
+    ${insights.map(ins => `<div class="carousel-item"><h4>${ins.title}</h4><p>${ins.text}</p></div>`).join('')}
+  </div>`;
+  const dots = document.getElementById('carousel-dots');
+  dots.innerHTML = insights.map((_,i)=>`<div class="carousel-dot${i===0?' active':''}" onclick="goSlide(${i})"></div>`).join('');
+  window._carouselIdx = 0;
+  window._carouselTimer = setInterval(()=>goSlide((window._carouselIdx+1)%insights.length), 5000);
+}
+
+function goSlide(i) {
+  window._carouselIdx = i;
+  const track = document.getElementById('carousel-track');
+  if (track) track.style.transform = `translateX(-${i*100}%)`;
+  document.querySelectorAll('#carousel-dots .carousel-dot').forEach((d,j)=>d.classList.toggle('active',j===i));
+}
+
+function animateCounters() {
+  document.querySelectorAll('.counter').forEach(el => {
+    const target = +el.dataset.target;
+    const step = Math.max(1, Math.ceil(target/40));
+    let cur = 0;
+    const tick = () => { cur = Math.min(cur+step, target); el.textContent = cur; if (cur<target) requestAnimationFrame(tick); };
+    tick();
+  });
+}
+
+function generateInsights() {
+  const t = todayRec(), b = bmi();
+  const insights = [];
+  if (t.hr > 80) insights.push({title:'心率偏高提醒',text:`今日平均心率 ${t.hr} bpm，建议减少咖啡因摄入，保持充足睡眠。可以尝试深呼吸放松。`});
+  else insights.push({title:'心率状态良好',text:`今日心率维持在正常范围（${t.hr} bpm），心血管状态良好。继续保持规律作息。`});
+  if (t.sleep < 6.5) insights.push({title:'睡眠不足警告',text:`昨晚睡眠仅 ${t.sleep} 小时，长期睡眠不足会影响免疫力和代谢。建议晚上 11 点前入睡。`});
+  else if (t.sleep >= 7.5) insights.push({title:'睡眠质量优秀',text:`昨晚睡眠 ${t.sleep} 小时，睡眠质量评分较高。良好的睡眠是健康的基石。`});
+  if (t.steps < 6000) insights.push({title:'活动量不足',text:`今日步数 ${t.steps} 步，低于推荐值。建议午后散步 20 分钟，或选择步行通勤。`});
+  else insights.push({title:'运动达标',text:`今日步数 ${t.steps} 步，已达到日常活动目标。坚持运动能有效改善心肺功能。`});
+  if (b > 24) insights.push({title:'BMI 偏高',text:`当前 BMI ${b}，建议控制碳水化合物摄入，增加有氧运动频率，每周至少 150 分钟中等强度运动。`});
+  else if (b < 18.5) insights.push({title:'BMI 偏低',text:`当前 BMI ${b}，体重偏低可能影响免疫力。建议增加优质蛋白和健康脂肪摄入。`});
+  else insights.push({title:'BMI 正常',text:`当前 BMI ${b}，在健康范围内。继续保持均衡饮食和规律运动。`});
+  return insights.slice(0,4);
+}
+
+// ==================== Health Monitor ====================
+function refreshMonitor() {
+  const t = todayRec();
+  const gauges = [
+    { label:'心率', value:liveHR(), min:40, max:140, unit:'bpm', color:COLORS.red, range:'60-100' },
+    { label:'收缩压', value:t.sbp, min:60, max:200, unit:'mmHg', color:COLORS.orange, range:'90-140' },
+    { label:'血氧', value:liveSpo2(), min:85, max:100, unit:'%', color:COLORS.cyan, range:'≥ 95' },
+    { label:'体温', value:liveTemp(), min:35, max:42, unit:'°C', color:COLORS.orange, range:'36-37.3' },
+    { label:'BMI', value:bmi(), min:10, max:40, unit:'', color:COLORS.green, range:'18.5-24' },
+    { label:'压力指数', value:Math.max(0,Math.min(100,t.stress)), min:0, max:100, unit:'', color:COLORS.purple, range:'< 40 轻松' },
+  ];
+  document.getElementById('gauge-grid').innerHTML = gauges.map(g => {
+    const pct = Math.max(0,Math.min(1,(g.value-g.min)/(g.max-g.min)));
+    const r = 70, circum = Math.PI*r; // semicircle
+    return `<div class="card gauge-card">
+      <svg viewBox="0 0 180 110">
+        <path class="gauge-arc" d="M 20 100 A 70 70 0 0 1 160 100"/>
+        <path class="gauge-value-arc" d="M 20 100 A 70 70 0 0 1 160 100"
+          stroke="${g.color}" stroke-dasharray="${circum}" stroke-dashoffset="${circum*(1-pct)}"/>
+        <text class="gauge-value-text" x="90" y="85">${g.value}</text>
+        <text class="gauge-unit-text" x="90" y="102">${g.unit}</text>
+      </svg>
+      <div class="gauge-label">${g.label}</div>
+      <div class="gauge-range">${g.range}</div>
+    </div>`;
+  }).join('');
+  renderTrends('week');
+}
+
+// Trend charts
+let trendRange = 'week';
+function setTrendRange(r) {
+  trendRange = r;
+  document.querySelectorAll('#trend-tabs .tab-btn').forEach(b => b.classList.toggle('active',b.textContent.includes(r==='week'?'一':'一') && (r==='week'?b.textContent.includes('周')||b.textContent.includes('一'):b.textContent.includes('月'))));
+  renderTrends(r);
+}
+function renderTrends(range) {
+  const data = range==='week' ? last7() : records.slice(-30);
+  const labels = data.map(r => range==='week' ? '周'+WEEKDAYS[new Date(r.date).getDay()] : r.date.slice(5));
+
+  makeChart('trend-hr', {
+    type:'line', data:{labels, datasets:[{data:data.map(r=>r.hr),borderColor:COLORS.red,tension:.3,pointRadius:2,borderWidth:2,fill:false}]},
+    options:{responsive:true,scales:{y:{min:55,max:95}}}
+  });
+  makeChart('trend-bp', {
+    type:'line', data:{labels, datasets:[
+      {label:'收缩压',data:data.map(r=>r.sbp),borderColor:COLORS.orange,tension:.3,pointRadius:2,borderWidth:2,fill:false},
+      {label:'舒张压',data:data.map(r=>r.dbp),borderColor:COLORS.cyan,tension:.3,pointRadius:2,borderWidth:2,fill:false}
+    ]}, options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{min:55,max:150}}}
+  });
+  makeChart('trend-steps', {
+    type:'bar', data:{labels, datasets:[{data:data.map(r=>r.steps),backgroundColor:COLORS.green+'80',borderRadius:4,barPercentage:.5}]},
+    options:{responsive:true,scales:{y:{min:0}}}
+  });
+}
+
+// Manual data save
+function saveManualData() {
+  const fields = {hr:'inp-hr',sbp:'inp-sbp',dbp:'inp-dbp',spo2:'inp-spo2',temp:'inp-temp',steps:'inp-steps'};
+  const updated = {...todayRec()};
+  let changed = false;
+  for (const [k,id] of Object.entries(fields)) {
+    const v = document.getElementById(id).value;
+    if (v) { updated[k] = parseFloat(v); changed = true; }
+  }
+  if (!changed) { toast('请至少填写一项数据'); return; }
+  records[records.length-1] = updated;
+  save('healthApp_records', records);
+  toast('数据已保存');
+  refreshMonitor();
+}
+
+// ==================== AI Plan ====================
+function refreshPlan() {
+  const score = calcHealthScore();
+  // Score ring
+  const circum = 2*Math.PI*90;
+  const pct = score/100;
+  const grade = score>=85?'优秀':score>=70?'良好':score>=55?'一般':'需改善';
+  const gradeColor = score>=85?COLORS.green:score>=70?COLORS.cyan:score>=55?COLORS.orange:COLORS.red;
+  document.getElementById('score-ring').innerHTML = `<svg viewBox="0 0 220 220">
+    <circle cx="110" cy="110" r="90" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+    <circle cx="110" cy="110" r="90" fill="none" stroke="${gradeColor}" stroke-width="10"
+      stroke-linecap="round" stroke-dasharray="${circum}" stroke-dashoffset="${circum*(1-pct)}"
+      transform="rotate(-90 110 110)" style="transition:stroke-dashoffset 1.5s"/>
+    <text class="score-num" x="110" y="112">${score}</text>
+    <text class="score-label" x="110" y="135">健康评分 · ${grade}</text>
+  </svg>`;
+
+  // Summary
+  const t = todayRec();
+  document.getElementById('score-summary').innerHTML = `
+    <p style="font-size:15px;margin-bottom:10px">综合健康评估报告</p>
+    <p class="text-sm" style="color:var(--text2);line-height:1.8">
+      BMI <strong style="color:${gradeColor}">${bmi()}</strong> ·
+      心率 <strong>${t.hr}</strong> bpm ·
+      血压 <strong>${t.sbp}/${t.dbp}</strong> mmHg ·
+      睡眠 <strong>${t.sleep}</strong>h ·
+      压力 <strong>${t.stress}</strong>
+    </p>
+    <p class="text-sm mt-sm" style="color:var(--text3);line-height:1.8">
+      ${score>=70?'您的总体健康状况良好，继续保持当前的生活方式。':'您的部分健康指标需要关注，请参考下方建议进行调整。'}
+      建议重点关注${t.sleep<7?'睡眠质量':t.stress>50?'压力管理':t.steps<6000?'运动量':'饮食均衡'}。
+    </p>`;
+
+  switchPlanTab('diet');
+}
+
+function calcHealthScore() {
+  const t = todayRec(), b = bmi();
+  let s = 50;
+  // BMI scoring
+  if (b>=18.5&&b<=24) s+=15; else if (b>24&&b<28) s+=8; else s-=5;
+  // Sleep
+  if (t.sleep>=7&&t.sleep<=9) s+=15; else if (t.sleep>=6) s+=8; else s-=5;
+  // Steps
+  if (t.steps>=8000) s+=10; else if (t.steps>=5000) s+=5;
+  // Heart rate
+  if (t.hr>=60&&t.hr<=80) s+=10; else if (t.hr>=55&&t.hr<=100) s+=5;
+  // Blood pressure
+  if (t.sbp>=90&&t.sbp<=120&&t.dbp>=60&&t.dbp<=80) s+=10; else s+=3;
+  // Stress
+  if (t.stress<30) s+=10; else if (t.stress<50) s+=5; else s-=3;
+  return Math.max(0, Math.min(100, s));
+}
+
+function switchPlanTab(tab) {
+  document.querySelectorAll('#plan-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`#plan-tabs .tab-btn:nth-child(${['diet','exercise','sleep','mental'].indexOf(tab)+1})`).classList.add('active');
+  renderPlanContent(tab);
+}
+
+function renderPlanContent(tab) {
+  const el = document.getElementById('plan-content');
+  if (tab==='diet') el.innerHTML = renderDiet();
+  else if (tab==='exercise') el.innerHTML = renderExercise();
+  else if (tab==='sleep') el.innerHTML = renderSleep();
+  else el.innerHTML = renderMental();
+
+  if (tab==='diet') setTimeout(()=>{
+    makeChart('radar-chart', {
+      type:'radar',
+      data:{
+        labels:['蛋白质','碳水','脂肪','维生素','纤维','矿物质'],
+        datasets:[{
+          data:[75,60,50,80,65,70],backgroundColor:'rgba(78,205,196,0.2)',
+          borderColor:COLORS.cyan,pointBackgroundColor:COLORS.cyan,borderWidth:2
+        }]
+      },
+      options:{responsive:true,scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(255,255,255,0.06)'},angleLines:{color:'rgba(255,255,255,0.06)',pointLabels:{color:'#9CA3AF'}}}}}
+    });
+  }, 100);
+}
+
+function renderDiet() {
+  const b = bmi();
+  const calTarget = b>24 ? 1800 : b<18.5 ? 2400 : 2000;
+  const meals = [
+    { name:'早餐', items:'全麦吐司 + 鸡蛋 + 牛奶 + 蓝莓', cal:380, color:COLORS.orange },
+    { name:'午餐', items:'糙米饭 + 清蒸鱼 + 西兰花 + 紫菜汤', cal:580, color:COLORS.green },
+    { name:'加餐', items:'坚果混合(30g) + 酸奶', cal:220, color:COLORS.cyan },
+    { name:'晚餐', items:'红薯 + 鸡胸肉沙拉 + 番茄蛋汤', cal:480, color:COLORS.purple },
+  ];
+  return `<div class="grid grid-2 mb-md">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>每日食谱推荐</div>
+      <p class="text-sm text-muted mb-md">目标摄入 ${calTarget} kcal</p>
+      ${meals.map(m=>`<div style="background:${m.color}10;border:1px solid ${m.color}30;border-radius:10px;padding:12px;margin-bottom:10px">
+        <div class="flex justify-between" style="margin-bottom:4px"><strong>${m.name}</strong><span class="text-sm" style="color:${m.color}">${m.cal} kcal</span></div>
+        <div class="text-sm text-muted">${m.items}</div>
+      </div>`).join('')}
+      <div class="text-sm text-muted mt-sm">总计约 ${meals.reduce((a,m)=>a+m.cal,0)} kcal</div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>营养摄入分析</div>
+      <canvas id="radar-chart" height="280"></canvas>
+    </div>
+  </div>`;
+}
+
+function renderExercise() {
+  const b = bmi(), t = todayRec();
+  const exercises = b>24
+    ? [{n:'快走',d:'30 分钟中等强度',c:180},{n:'游泳',d:'45 分钟全身运动',c:350},{n:'骑行',d:'40 分钟有氧',c:280},{n:'跳绳',d:'15 分钟间歇',c:200}]
+    : [{n:'跑步',d:'30 分钟配速 6:00',c:300},{n:'力量训练',d:'45 分钟全身',c:250},{n:'瑜伽',d:'30 分钟拉伸',c:120},{n:'HIIT',d:'20 分钟间歇',c:280}];
+  const plan = ['周一: 有氧 + 核心','周二: 上肢力量','周三: 休息/瑜伽','周四: 有氧 + 下肢','周五: 全身 HIIT','周六: 户外运动','周日: 休息'];
+  return `<div class="grid grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>推荐运动</div>
+      ${exercises.map(e=>`<div style="background:var(--glass2);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <div><strong>${e.n}</strong><div class="text-sm text-muted mt-sm">${e.d}</div></div>
+        <div style="color:${COLORS.green};font-weight:600">${e.c} kcal</div>
+      </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>每周运动计划</div>
+      ${plan.map((p,i)=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+        <span style="background:${i%2?COLORS.cyan:COLORS.purple}20;color:${i%2?COLORS.cyan:COLORS.purple};padding:4px 10px;border-radius:6px;font-size:12px;white-space:nowrap">${p.split(':')[0]}</span>
+        <span class="text-sm">${p.split(':')[1]}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderSleep() {
+  const t = todayRec();
+  const tips = [
+    {icon:'🕐',text:`建议入睡时间：${t.sleep<7?'22:00':'22:30'}，目标睡眠时长 7-8 小时`},
+    {icon:'📱',text:'睡前 1 小时远离电子屏幕，减少蓝光对褪黑素的影响'},
+    {icon:'🌡',text:'保持卧室温度 18-22°C，湿度 40-60%'},
+    {icon:'☕',text:'下午 2 点后避免咖啡因摄入'},
+    {icon:'🧘',text:'睡前进行 10 分钟冥想或深呼吸放松'},
+    {icon:'📝',text:'保持规律作息，周末作息差异不超过 1 小时'},
+  ];
+  return `<div class="grid grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>昨晚睡眠分析</div>
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:48px;font-weight:700;color:${COLORS.purple}">${t.sleep}</div>
+        <div class="text-muted">小时</div>
+        <div class="mt-md" style="display:flex;justify-content:center;gap:24px">
+          <div><div class="text-sm" style="color:${COLORS.purple}">深度睡眠</div><div class="text-muted text-sm">${(t.sleep*0.22).toFixed(1)}h</div></div>
+          <div><div class="text-sm" style="color:${COLORS.cyan}">浅度睡眠</div><div class="text-muted text-sm">${(t.sleep*0.55).toFixed(1)}h</div></div>
+          <div><div class="text-sm" style="color:${COLORS.orange}">REM</div><div class="text-muted text-sm">${(t.sleep*0.23).toFixed(1)}h</div></div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${(t.sleep/8)*100}%;background:${COLORS.purple}"></div></div>
+      <div class="text-xs text-muted mt-sm">睡眠达标 ${Math.round(t.sleep/8*100)}%</div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>睡眠优化建议</div>
+      ${tips.map(t=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <span style="font-size:18px">${t.icon}</span>
+        <span class="text-sm" style="color:var(--text2)">${t.text}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderMental() {
+  const t = todayRec();
+  const stressLevel = t.stress < 30 ? '低' : t.stress < 55 ? '中等' : '较高';
+  const stressColor = t.stress < 30 ? COLORS.green : t.stress < 55 ? COLORS.orange : COLORS.red;
+  return `<div class="grid grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>压力状态</div>
+      <div style="text-align:center;margin:20px 0">
+        <div style="font-size:42px;font-weight:700;color:${stressColor}">${t.stress}</div>
+        <div class="text-muted">压力指数 · ${stressLevel}</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${t.stress}%;background:${stressColor}"></div></div>
+      <div class="mt-md" style="padding:14px;background:var(--glass2);border-radius:10px">
+        <div class="text-sm"><strong>建议：</strong>${t.stress>50?'当前压力较高，建议尝试深呼吸放松、散步或冥想。必要时可寻求专业心理咨询。':'压力水平正常，保持良好的心态和社交活动有助于心理健康。'}</div>
+      </div>
+    </div>
+    <div class="card text-center">
+      <div class="section-title"><span class="dot"></span>呼吸训练</div>
+      <div class="breath-circle" id="breathCircle">吸气...</div>
+      <p class="text-sm text-muted mt-md">跟随圆圈的节奏呼吸：4 秒吸气 → 4 秒屏息 → 4 秒呼气</p>
+      <button class="btn btn-secondary mt-md" onclick="toggleBreathing()" id="breathBtn">开始训练</button>
+    </div>
+  </div>`;
+}
+
+let breathingActive = false;
+function toggleBreathing() {
+  breathingActive = !breathingActive;
+  const btn = document.getElementById('breathBtn');
+  const circle = document.getElementById('breathCircle');
+  if (breathingActive) {
+    btn.textContent = '停止训练';
+    btn.style.borderColor = COLORS.cyan;
+    runBreathingCycle();
+  } else {
+    btn.textContent = '开始训练';
+    btn.style.borderColor = '';
+    circle.textContent = '吸气...';
+    circle.style.animation = 'breathe 8s ease-in-out infinite';
+    circle.style.background = 'radial-gradient(circle,rgba(78,205,196,0.3),transparent)';
+  }
+}
+function runBreathingCycle() {
+  if (!breathingActive) return;
+  const circle = document.getElementById('breathCircle');
+  const phases = [
+    {text:'吸气...',dur:4000,color:'rgba(78,205,196,0.3)'},
+    {text:'屏息...',dur:4000,color:'rgba(167,139,250,0.3)'},
+    {text:'呼气...',dur:4000,color:'rgba(255,255,255,0.1)'},
+  ];
+  let phase = 0;
+  function next() {
+    if (!breathingActive) return;
+    const p = phases[phase%3];
+    circle.textContent = p.text;
+    circle.style.background = `radial-gradient(circle,${p.color},transparent)`;
+    phase++;
+    setTimeout(next, p.dur);
+  }
+  next();
+}
+
+// ==================== AI Chat ====================
+const CHAT_KB = [
+  {kw:['心率','心跳','快','慢'],ans:'正常静息心率为 60-100 bpm。心率过快（>100）可能与运动、紧张、咖啡因有关；过慢（<60）如果无症状一般无需担心。建议定期监测，如有不适应就医。'},
+  {kw:['血压','高血压','低血压'],ans:'理想血压为 120/80 mmHg 以下。收缩压 ≥140 或舒张压 ≥90 为高血压。建议减少盐分摄入（<6g/天），规律运动，戒烟限酒。'},
+  {kw:['血氧','氧气','缺氧'],ans:'正常血氧饱和度为 95-100%。低于 95% 需要注意，低于 90% 应及时就医。保持室内通风，适当有氧运动有助于提高血氧。'},
+  {kw:['睡眠','失眠','入睡'],ans:'成年人建议每晚 7-9 小时睡眠。改善睡眠：保持固定作息，睡前远离电子设备，卧室保持凉爽安静，避免咖啡因和酒精。必要时寻求医生帮助。'},
+  {kw:['减肥','减重','瘦'],ans:'健康减重速度为每周 0.5-1 kg。建议控制每日热量缺口 300-500 kcal，增加蛋白质摄入，配合有氧+力量训练。避免极端节食。'},
+  {kw:['运动','锻炼','健身'],ans:'世界卫生组织建议成年人每周至少 150 分钟中等强度有氧运动或 75 分钟高强度运动。运动前热身，运动后拉伸，循序渐进。'},
+  {kw:['饮食','吃','食物','营养'],ans:'均衡饮食应包括：谷物、蛋白质（肉蛋奶豆）、蔬菜水果、健康脂肪。建议每日蔬菜 ≥300g，水果 200-350g，限制加工食品和含糖饮料。'},
+  {kw:['压力','焦虑','紧张','烦'],ans:'适度压力可提高效率，过度压力会影响身心健康。缓解方法：规律运动、深呼吸、冥想、社交、培养爱好。如有持续焦虑建议寻求专业帮助。'},
+  {kw:['BMI','体重','胖'],ans:'BMI = 体重(kg) / 身高(m)²。18.5-24 为正常，24-28 为超重，>28 为肥胖。BMI 不能完全反映健康状况，肌肉量多的人可能 BMI 偏高。'},
+  {kw:['喝水','水','饮水'],ans:'成年人每日建议饮水 1500-1700 ml（约 8 杯）。运动、高温环境需增加。建议少量多次饮用温水，避免一次性大量饮水。'},
+  {kw:['体温','发烧','发热'],ans:'正常腋下体温 36.0-37.0°C。37.3-38.0°C 为低热，38.1-39.0°C 为中度发热，>39.0°C 为高热。发热时多饮水休息，持续不退应就医。'},
+  {kw:['维生素','补充剂'],ans:'建议通过均衡饮食获取营养。如需补充：维生素 D（日照不足时）、维生素 B12（素食者）、铁（女性易缺乏）。服用前建议咨询医生。'},
+  {kw:['头痛','头疼'],ans:'常见原因：紧张、睡眠不足、脱水、用眼过度。缓解方法：休息、补充水分、按摩太阳穴。频繁或剧烈头痛应就医检查。'},
+  {kw:['感冒','咳嗽','流感'],ans:'普通感冒多可自愈（7-10 天）。多休息多饮水，必要时可对症用药。流感症状更重，建议接种流感疫苗预防。持续高热应就医。'},
+  {kw:['久坐','久站','颈椎','腰椎'],ans:'久坐久站都会影响健康。建议每 30-60 分钟起身活动。保持正确坐姿，做颈椎/腰椎操。办公时屏幕高度与视线齐平。'},
+  {kw:['便秘','拉肚子','肠胃'],ans:'改善消化：多吃蔬果和全谷物（增加纤维），每日饮水充足，规律进食，细嚼慢咽。便秘可适当运动，腹泻注意补水。持续症状应就医。'},
+  {kw:['眼睛','视力','近视'],ans:'保护视力：20-20-20 法则（每 20 分钟看 20 英尺远处 20 秒），保持屏幕距离 50-70 cm，充足照明。每年进行一次眼科检查。'},
+  {kw:['戒','烟','酒'],ans:'戒烟可显著降低心血管和肺部疾病风险。建议限制酒精：男性每日不超过 25g 纯酒精，女性更少。必要时寻求专业戒断支持。'},
+  {kw:['体检','检查'],ans:'建议每年进行一次全面体检。基础项目：血常规、肝肾功能、血脂血糖、心电图、B 超。30 岁以上增加肿瘤标志物筛查。'},
+];
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addChatMsg(msg, 'user');
+  // Search KB
+  let reply = '感谢您的提问。根据我的知识库，这是一个很好的健康问题。建议您保持良好的生活习惯，如有不适症状请及时就医咨询专业意见。您也可以问我关于心率、血压、睡眠、运动、饮食等方面的问题。';
+  for (const item of CHAT_KB) {
+    if (item.kw.some(k => msg.includes(k))) {
+      reply = item.ans;
+      break;
+    }
+  }
+  setTimeout(() => addChatMsg(reply, 'ai'), 500 + Math.random()*500);
+}
+
+function addChatMsg(text, type) {
+  const el = document.getElementById('chat-messages');
+  el.innerHTML += `<div class="chat-msg ${type}">${text}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ==================== Profile ====================
+function refreshProfile() {
+  document.getElementById('pf-name').value = userData.name||'';
+  document.getElementById('pf-age').value = userData.age||'';
+  document.getElementById('pf-gender').value = userData.gender||'male';
+  document.getElementById('pf-height').value = userData.height||'';
+  document.getElementById('pf-weight').value = userData.weight||'';
+
+  // Goals
+  const goals = userData.goals || {steps:10000,calories:2200,water:8,sleep:8};
+  userData.goals = goals;
+  const goalsList = document.getElementById('goals-list');
+  const items = [
+    {key:'steps',name:'每日步数',max:20000,color:COLORS.green,unit:'步'},
+    {key:'calories',name:'热量摄入',max:4000,color:COLORS.orange,unit:'kcal'},
+    {key:'water',name:'饮水量',max:15,color:COLORS.cyan,unit:'杯'},
+    {key:'sleep',name:'睡眠时长',max:12,color:COLORS.purple,unit:'小时'},
+  ];
+  goalsList.innerHTML = items.map(it => {
+    const val = goals[it.key]||0;
+    const pct = Math.min(val/it.max*100,100);
+    return `<div class="goal-item">
+      <div class="goal-header"><span class="goal-name">${it.name}</span><span>${val} ${it.unit}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${it.color}"></div></div>
+      <div class="mt-sm"><input type="range" min="0" max="${it.max}" value="${val}"
+        style="width:100%;accent-color:${it.color}"
+        onchange="updateGoal('${it.key}',this.value,${it.max},'${it.color}','${it.unit}','${it.name}')"></div>
+    </div>`;
+  }).join('');
+
+  // History
+  const keys = ['hr','sbp','dbp','spo2','temp','steps','sleep'];
+  document.getElementById('history-summary').textContent = `共 ${records.length} 天记录`;
+  document.getElementById('history-list').innerHTML = records.slice(-7).reverse().map(r =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <div style="color:var(--text2)">${r.date}</div>
+      <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap">
+        <span>❤️ ${r.hr}</span><span>🩸 ${r.sbp}/${r.dbp}</span><span>💨 ${r.spo2}%</span>
+        <span>🌡 ${r.temp}°C</span><span>🚶 ${r.steps}</span><span>🌙 ${r.sleep}h</span>
+      </div>
+    </div>`
+  ).join('');
+
+  // Settings
+  document.getElementById('set-refresh').value = settings.refresh;
+  document.getElementById('set-notify').value = settings.notify;
+}
+
+function saveProfile() {
+  userData.name = document.getElementById('pf-name').value;
+  userData.age = +document.getElementById('pf-age').value;
+  userData.gender = document.getElementById('pf-gender').value;
+  userData.height = +document.getElementById('pf-height').value;
+  userData.weight = +document.getElementById('pf-weight').value;
+  save('healthApp_user', userData);
+  toast('个人信息已保存');
+}
+
+function updateGoal(key, val, max, color, unit, name) {
+  if (!userData.goals) userData.goals = {};
+  userData.goals[key] = +val;
+  save('healthApp_user', userData);
+  toast(`${name} 已更新为 ${val} ${unit}`);
+  refreshProfile();
+}
+
+function saveSettings() {
+  settings.refresh = +document.getElementById('set-refresh').value;
+  settings.notify = document.getElementById('set-notify').value;
+  save('healthApp_settings', settings);
+  toast('设置已保存');
+  clearInterval(window._liveTimer);
+  window._liveTimer = setInterval(liveUpdate, settings.refresh);
+}
+
+function exportData() {
+  const data = { user:userData, records:records, settings:settings, exportDate:new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `健康数据_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('数据已导出');
+}
+
+function clearAllData() {
+  if (!confirm('确定要清除所有数据吗？此操作不可撤销。')) return;
+  localStorage.removeItem('healthApp_user');
+  localStorage.removeItem('healthApp_records');
+  localStorage.removeItem('healthApp_settings');
+  userData = { name:'', age:25, gender:'male', height:170, weight:65 };
+  records = generateHistory(30);
+  settings = { refresh:5000, notify:'on' };
+  toast('所有数据已清除');
+  refreshProfile();
+}
+
+// ==================== Live Update ====================
+function liveUpdate() {
+  if (document.getElementById('page-dashboard').classList.contains('active')) {
+    // Update metric card values
+    const counters = document.querySelectorAll('.counter');
+    if (counters.length >= 2) {
+      counters[0].textContent = liveHR();
+      counters[0].closest('.metric-value').style.color = COLORS.red;
+      counters[1].textContent = liveSpo2();
+    }
+  }
+  if (document.getElementById('page-monitor').classList.contains('active')) {
+    refreshMonitor();
+  }
+}
+
+// ==================== Init ====================
+function init() {
+  // Restore goals if missing
+  if (!userData.goals) {
+    userData.goals = { steps:10000, calories:2200, water:8, sleep:8 };
+    save('healthApp_user', userData);
+  }
+
+  refreshDashboard();
+
+  // Add initial chat message
+  addChatMsg('您好！我是您的 AI 健康助手。您可以问我关于心率、血压、睡眠、运动、饮食等健康问题。', 'ai');
+
+  // Start live updates
+  window._liveTimer = setInterval(liveUpdate, settings.refresh);
+}
+
+init();
+</script>
+</body>
+</html>
