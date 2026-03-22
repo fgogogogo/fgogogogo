@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>FitTrack - 健身追踪仪表盘</title>
+  <meta name="description" content="健身追踪仪表盘 - 记录锻炼、追踪进度、达成目标">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <div class="nav-brand">FitTrack</div>
+    <div class="nav-links">
+      <a href="#dashboard" class="nav-link active" data-tab="dashboard">仪表盘</a>
+      <a href="#workouts" class="nav-link" data-tab="workouts">锻炼记录</a>
+      <a href="#goals" class="nav-link" data-tab="goals">目标设定</a>
+      <a href="#progress" class="nav-link" data-tab="progress">进度追踪</a>
+    </div>
+    <button class="nav-menu-btn" id="menuBtn">☰</button>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#dashboard" class="mobile-link active" data-tab="dashboard">📊 仪表盘</a>
+    <a href="#workouts" class="mobile-link" data-tab="workouts">💪 锻炼记录</a>
+    <a href="#goals" class="mobile-link" data-tab="goals">🎯 目标设定</a>
+    <a href="#progress" class="mobile-link" data-tab="progress">📈 进度追踪</a>
+  </div>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Dashboard Tab -->
+    <section id="dashboard" class="tab-content active">
+      <h1>健身仪表盘</h1>
+
+      <!-- Step Counter -->
+      <div class="card step-counter-card">
+        <div class="card-header">
+          <h3>👟 今日步数</h3>
+          <span class="badge" id="stepStatus">未连接</span>
+        </div>
+        <div class="step-display">
+          <div class="step-circle" id="stepCircle">
+            <svg viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="90" class="step-bg"/>
+              <circle cx="100" cy="100" r="90" class="step-progress" id="stepProgress"/>
+            </svg>
+            <div class="step-count">
+              <span id="stepCount">0</span>
+              <small>步</small>
+            </div>
+          </div>
+          <div class="step-info">
+            <p>目标: <strong id="dailyStepGoal">10,000</strong> 步</p>
+            <p>距离: <strong id="stepDistance">0</strong> 公里</p>
+            <p>卡路里: <strong id="stepCalories">0</strong> 千卡</p>
+            <button class="btn btn-primary btn-sm" id="startPedometer">开始计步</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalCalories">0</span>
+            <span class="stat-label">本周消耗(千卡)</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏱</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalDuration">0</span>
+            <span class="stat-label">本周时长(分钟)</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💪</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalWorkouts">0</span>
+            <span class="stat-label">本周锻炼次数</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚖</div>
+          <div class="stat-info">
+            <span class="stat-value" id="currentWeight">--</span>
+            <span class="stat-label">当前体重(kg)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Add Workout -->
+      <div class="card">
+        <h3>➕ 快速记录锻炼</h3>
+        <form id="quickWorkoutForm" class="workout-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>锻炼类型</label>
+              <select id="quickType" required>
+                <option value="running">🏃 跑步</option>
+                <option value="cycling">🚴 骑行</option>
+                <option value="weightlifting">🏋️ 举重</option>
+                <option value="swimming">🏊 游泳</option>
+                <option value="yoga">🧘 瑜伽</option>
+                <option value="hiit">⚡ HIIT</option>
+                <option value="walking">🚶 散步</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>时长(分钟)</label>
+              <input type="number" id="quickDuration" min="1" max="600" required placeholder="30">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>距离(km，可选)</label>
+              <input type="number" id="quickDistance" min="0" step="0.1" placeholder="5.0">
+            </div>
+            <div class="form-group">
+              <label>重量(kg，可选)</label>
+              <input type="number" id="quickWeight" min="0" step="0.5" placeholder="20">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>备注</label>
+            <input type="text" id="quickNotes" placeholder="感觉如何？">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">记录锻炼</button>
+            <button type="button" class="btn btn-secondary" id="shareWorkoutBtn" disabled>📤 分享</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Recent Workouts -->
+      <div class="card">
+        <h3>📋 最近锻炼</h3>
+        <div id="recentWorkouts" class="workout-list">
+          <p class="empty-state">还没有锻炼记录，开始记录吧！</p>
+        </div>
+      </div>
+
+      <!-- Weight Chart -->
+      <div class="card">
+        <h3>📊 体重趋势</h3>
+        <div class="chart-container">
+          <canvas id="weightChart"></canvas>
+        </div>
+        <form id="weightForm" class="inline-form">
+          <input type="number" id="weightInput" step="0.1" min="20" max="300" placeholder="输入体重(kg)" required>
+          <button type="submit" class="btn btn-primary btn-sm">记录体重</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Workouts Tab -->
+    <section id="workouts" class="tab-content">
+      <h1>锻炼记录</h1>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>筛选</h3>
+        </div>
+        <div class="filter-bar">
+          <select id="filterType">
+            <option value="all">全部类型</option>
+            <option value="running">跑步</option>
+            <option value="cycling">骑行</option>
+            <option value="weightlifting">举重</option>
+            <option value="swimming">游泳</option>
+            <option value="yoga">瑜伽</option>
+            <option value="hiit">HIIT</option>
+            <option value="walking">散步</option>
+          </select>
+          <input type="date" id="filterDateFrom">
+          <span>至</span>
+          <input type="date" id="filterDateTo">
+          <button class="btn btn-secondary btn-sm" id="applyFilter">筛选</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>锻炼历史</h3>
+        <div id="workoutHistory" class="workout-list">
+          <p class="empty-state">暂无匹配的锻炼记录</p>
+        </div>
+      </div>
+
+      <!-- Weekly Workout Volume Chart -->
+      <div class="card">
+        <h3>📊 每周锻炼量</h3>
+        <div class="chart-container">
+          <canvas id="volumeChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Goals Tab -->
+    <section id="goals" class="tab-content">
+      <h1>目标设定</h1>
+
+      <div class="card">
+        <h3>🎯 设定新目标</h3>
+        <form id="goalForm" class="goal-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>目标类型</label>
+              <select id="goalType" required>
+                <option value="weekly_workouts">每周锻炼次数</option>
+                <option value="weekly_duration">每周运动时长(分钟)</option>
+                <option value="weekly_distance">每周运动距离(km)</option>
+                <option value="weight_target">目标体重(kg)</option>
+                <option value="run_5k">5公里跑步</option>
+                <option value="run_10k">10公里跑步</option>
+                <option value="total_workouts">总锻炼次数</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>目标值</label>
+              <input type="number" id="goalTarget" min="1" required placeholder="目标数值">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>截止日期</label>
+              <input type="date" id="goalDeadline" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">添加目标</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>🏆 我的目标</h3>
+        <div id="goalsList" class="goals-list">
+          <p class="empty-state">还没有设定目标</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Tab -->
+    <section id="progress" class="tab-content">
+      <h1>进度追踪</h1>
+
+      <!-- Workout Type Distribution -->
+      <div class="card">
+        <h3>📊 锻炼类型分布</h3>
+        <div class="chart-container chart-small">
+          <canvas id="typeChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Monthly Progress -->
+      <div class="card">
+        <h3>📊 月度锻炼趋势</h3>
+        <div class="chart-container">
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Calories Chart -->
+      <div class="card">
+        <h3>📊 每日卡路里消耗</h3>
+        <div class="chart-container">
+          <canvas id="caloriesChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Personal Records -->
+      <div class="card">
+        <h3>🏅 个人记录</h3>
+        <div id="personalRecords" class="records-grid">
+          <p class="empty-state">继续锻炼来创造记录吧！</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📤 分享锻炼卡片</h3>
+        <button class="modal-close" id="closeShareModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="shareCard" class="share-card">
+          <div class="share-card-header">
+            <div class="share-card-logo">FitTrack</div>
+            <div class="share-card-date" id="shareDate"></div>
+          </div>
+          <div class="share-card-workout" id="shareWorkoutType"></div>
+          <div class="share-card-stats" id="shareStats"></div>
+          <div class="share-card-footer">
+            <span>坚持锻炼，遇见更好的自己 💪</span>
+          </div>
+        </div>
+        <div class="share-actions">
+          <button class="btn btn-primary" id="downloadShareCard">📥 保存为图片</button>
+          <button class="btn btn-secondary" id="nativeShareBtn" style="display:none;">📤 系统分享</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
