@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问卷构建工具</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header id="app-header">
+    <div class="header-inner">
+      <a href="#/" class="logo">📋 问卷构建工具</a>
+      <nav>
+        <a href="#/" data-nav="home">我的问卷</a>
+        <a href="#/create" data-nav="create">创建问卷</a>
+      </nav>
+      <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <main id="app-main">
+    <!-- Home View -->
+    <div id="home-view" class="view">
+      <div class="container">
+        <div class="home-header">
+          <h1>我的问卷</h1>
+          <a href="#/create" class="btn btn-primary">+ 创建新问卷</a>
+        </div>
+        <div id="survey-list" class="survey-grid"></div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+          <div class="empty-icon">📋</div>
+          <h2>还没有问卷</h2>
+          <p>点击"创建新问卷"开始构建您的第一个问卷</p>
+          <a href="#/create" class="btn btn-primary">创建问卷</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Builder View -->
+    <div id="builder-view" class="view" style="display:none;">
+      <div class="container">
+        <div class="builder-header">
+          <a href="#/" class="btn btn-secondary">← 返回</a>
+          <h1 id="builder-title">创建问卷</h1>
+          <button id="save-survey-btn" class="btn btn-primary">保存问卷</button>
+        </div>
+
+        <div class="builder-section">
+          <h2>基本设置</h2>
+          <div class="form-group">
+            <label for="survey-title-input">问卷标题 *</label>
+            <input type="text" id="survey-title-input" placeholder="输入问卷标题..." class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="survey-desc-input">问卷描述</label>
+            <textarea id="survey-desc-input" placeholder="输入问卷描述..." class="form-input" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="time-limit-input">时间限制（分钟，0 = 无限制）</label>
+              <input type="number" id="time-limit-input" value="0" min="0" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="builder-section">
+          <h2>问题列表</h2>
+          <div id="questions-list" class="questions-list"></div>
+          <div class="add-question-bar">
+            <button class="btn btn-outline btn-add-q" data-type="single">+ 单选题</button>
+            <button class="btn btn-outline btn-add-q" data-type="multiple">+ 多选题</button>
+            <button class="btn btn-outline btn-add-q" data-type="text">+ 文本题</button>
+            <button class="btn btn-outline btn-add-q" data-type="slider">+ 滑块题</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fill View -->
+    <div id="fill-view" class="view" style="display:none;">
+      <div class="container fill-container">
+        <div id="fill-header" class="fill-header">
+          <h1 id="fill-title"></h1>
+          <p id="fill-description"></p>
+          <div id="timer-display" class="timer-display" style="display:none;">
+            <span id="timer-icon">⏱</span>
+            <span id="timer-text"></span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="fill-progress" class="progress-bar"></div>
+          </div>
+          <span id="fill-progress-text" class="progress-text"></span>
+        </div>
+
+        <div id="fill-content" class="fill-content"></div>
+
+        <div class="fill-actions">
+          <button id="fill-prev-btn" class="btn btn-secondary">上一题</button>
+          <button id="fill-next-btn" class="btn btn-primary">下一题</button>
+          <button id="fill-submit-btn" class="btn btn-primary">提交问卷</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results View -->
+    <div id="results-view" class="view" style="display:none;">
+      <div class="container">
+        <div class="results-header">
+          <a href="#/" class="btn btn-secondary">← 返回</a>
+          <div class="results-title-area">
+            <h1 id="results-title"></h1>
+            <p id="results-summary"></p>
+          </div>
+          <div class="results-actions">
+            <button id="copy-link-btn" class="btn btn-outline">复制填写链接</button>
+            <button id="delete-responses-btn" class="btn btn-danger">清除数据</button>
+          </div>
+        </div>
+        <div id="results-charts" class="results-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Question Edit Modal -->
+  <div id="question-modal" class="modal" style="display:none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">编辑问题</h2>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="q-title">问题标题 *</label>
+          <input type="text" id="q-title" class="form-input" placeholder="输入问题...">
+        </div>
+        <div class="form-group">
+          <label for="q-desc">问题描述（可选）</label>
+          <textarea id="q-desc" class="form-input" rows="2" placeholder="补充说明..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="q-required" checked>
+            <span>此题必填</span>
+          </label>
+        </div>
+
+        <div id="q-options-section" class="form-group">
+          <label>选项列表</label>
+          <div id="q-options-list" class="options-list"></div>
+          <button class="btn btn-outline btn-sm" id="add-option-btn">+ 添加选项</button>
+        </div>
+
+        <div id="q-slider-section" class="form-group" style="display:none;">
+          <label>滑块设置</label>
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label for="q-min">最小值</label>
+              <input type="number" id="q-min" class="form-input" value="0">
+            </div>
+            <div class="form-group">
+              <label for="q-max">最大值</label>
+              <input type="number" id="q-max" class="form-input" value="100">
+            </div>
+            <div class="form-group">
+              <label for="q-step">步长</label>
+              <input type="number" id="q-step" class="form-input" value="1" min="1">
+            </div>
+          </div>
+        </div>
+
+        <div id="q-branching-section" class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="q-enable-branching">
+            <span>启用分支逻辑</span>
+          </label>
+          <div id="q-branching-rules" style="display:none;">
+            <p class="hint-text">根据用户选择跳转到不同问题（留空则按顺序）</p>
+            <div id="q-branching-list" class="branching-list"></div>
+            <div class="form-group" style="margin-top:12px;">
+              <label for="q-default-next">默认下一题（无匹配时）</label>
+              <select id="q-default-next" class="form-input">
+                <option value="">按顺序到下一题</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">取消</button>
+        <button class="btn btn-primary" id="modal-save-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" class="modal" style="display:none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2 id="confirm-title">确认</h2>
+        <button class="modal-close" id="confirm-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="confirm-cancel-btn">取消</button>
+        <button class="btn btn-danger" id="confirm-ok-btn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
