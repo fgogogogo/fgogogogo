@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酸碱指示剂变色实验模拟器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px 60px;
+    color: #e0e0e0;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #8888aa;
+    margin-bottom: 36px;
+  }
+
+  /* === Selection Panel === */
+  .panel {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 36px;
+  }
+
+  .select-group {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 24px 28px;
+    min-width: 260px;
+    backdrop-filter: blur(10px);
+  }
+
+  .select-group h2 {
+    font-size: 15px;
+    color: #a78bfa;
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .option-btn {
+    position: relative;
+    padding: 14px 22px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    color: #ccc;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .option-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .option-btn.active {
+    border-color: #7c3aed;
+    background: rgba(124, 58, 237, 0.2);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .option-btn .icon {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+
+  .option-btn .label {
+    display: block;
+    font-size: 14px;
+  }
+
+  /* === Experiment Area === */
+  .experiment-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* Mix button */
+  .mix-btn {
+    padding: 14px 56px;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 3px;
+    box-shadow: 0 4px 24px rgba(124, 58, 237, 0.4);
+  }
+
+  .mix-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 6px 32px rgba(124, 58, 237, 0.6);
+  }
+
+  .mix-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .mix-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Test Tube Container */
+  .tube-area {
+    display: flex;
+    gap: 60px;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+    min-height: 350px;
+    padding: 20px 40px 0;
+  }
+
+  .tube-set {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tube-label {
+    font-size: 13px;
+    color: #999;
+    text-align: center;
+  }
+
+  .test-tube {
+    position: relative;
+    width: 56px;
+    height: 220px;
+  }
+
+  .tube-glass {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 200px;
+    border: 3px solid rgba(200,210,230,0.35);
+    border-top: none;
+    border-radius: 0 0 26px 26px;
+    background: rgba(200,210,230,0.06);
+    overflow: hidden;
+  }
+
+  .tube-glass::after {
+    content: '';
+    position: absolute;
+    top: -14px;
+    left: -8px;
+    width: 68px;
+    height: 16px;
+    border: 3px solid rgba(200,210,230,0.4);
+    border-radius: 4px 4px 2px 2px;
+    background: rgba(200,210,230,0.04);
+  }
+
+  /* Liquid */
+  .liquid {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    right: 3px;
+    height: 60%;
+    border-radius: 0 0 22px 22px;
+    transition: background-color 1.8s ease-in-out;
+    overflow: hidden;
+  }
+
+  .liquid-tube-a { background-color: transparent; }
+  .liquid-tube-b { background-color: transparent; }
+
+  /* liquid wave effect */
+  .liquid::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -10%;
+    width: 120%;
+    height: 12px;
+    background: inherit;
+    filter: brightness(1.15);
+    border-radius: 50%;
+    animation: wave 2.5s ease-in-out infinite;
+  }
+
+  @keyframes wave {
+    0%, 100% { transform: translateX(0) scaleY(1); }
+    50% { transform: translateX(-5px) scaleY(0.7); }
+  }
+
+  /* Bubbles */
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    animation: rise linear forwards;
+  }
+
+  @keyframes rise {
+    0% { opacity: 0.8; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-160px) scale(0.3); }
+  }
+
+  /* Plus sign between tubes */
+  .plus-sign {
+    align-self: center;
+    font-size: 36px;
+    color: #555;
+    font-weight: 300;
+  }
+
+  /* Arrow to result */
+  .arrow-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: -10px;
+  }
+
+  .arrow-down {
+    font-size: 30px;
+    color: #7c3aed;
+    animation: bounce-arrow 1.2s ease-in-out infinite;
+  }
+
+  @keyframes bounce-arrow {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(6px); opacity: 1; }
+  }
+
+  /* Result tube (bigger) */
+  .result-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .result-tube .tube-glass {
+    width: 68px;
+    height: 250px;
+    border-width: 4px;
+    border-color: rgba(200,210,230,0.45);
+    background: rgba(200,210,230,0.08);
+  }
+
+  .result-tube .tube-glass::after {
+    top: -16px;
+    left: -10px;
+    width: 88px;
+    height: 18px;
+  }
+
+  .result-tube .liquid {
+    height: 70%;
+    border-radius: 0 0 28px 28px;
+    transition: background-color 2.2s ease-in-out;
+    background-color: transparent;
+  }
+
+  .result-label {
+    font-size: 14px;
+    color: #bbb;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* Principle Card */
+  .principle-card {
+    max-width: 560px;
+    width: 100%;
+    margin-top: 36px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px 32px;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+    min-height: 60px;
+  }
+
+  .principle-card.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .principle-card h3 {
+    font-size: 16px;
+    color: #a78bfa;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .principle-card .color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+
+  .principle-card p {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #c0c0d0;
+  }
+
+  .principle-card .formula {
+    display: inline-block;
+    background: rgba(167,139,250,0.15);
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    color: #c4b5fd;
+    font-size: 13.5px;
+    margin: 2px 0;
+  }
+
+  .principle-card .ph-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  .ph-acid { background: rgba(239,68,68,0.2); color: #f87171; }
+  .ph-base { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .ph-neutral { background: rgba(156,163,175,0.2); color: #9ca3af; }
+
+  /* Reset button */
+  .reset-btn {
+    margin-top: 16px;
+    padding: 8px 28px;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .reset-btn:hover {
+    background: rgba(255,255,255,0.06);
+    color: #ccc;
+  }
+
+  /* Indicator color swatch on button */
+  .swatch {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: middle;
+    border: 2px solid rgba(255,255,255,0.3);
+    margin-left: 4px;
+  }
+
+  .swatch-litmus { background: #9b59b6; }
+  .swatch-phenol { background: #fce4ec; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .panel { gap: 20px; }
+    .select-group { padding: 18px 16px; min-width: 220px; }
+    .tube-area { gap: 30px; padding: 20px 10px 0; }
+    h1 { font-size: 22px; }
+    .mix-btn { padding: 12px 40px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧪 酸碱指示剂变色实验模拟器</h1>
+<p class="subtitle">选择指示剂与溶液，观察颜色变化</p>
+
+<!-- Selection -->
+<div class="panel">
+  <div class="select-group">
+    <h2>🧫 选择指示剂</h2>
+    <div class="options" id="indicator-options">
+      <button class="option-btn active" data-value="litmus" onclick="selectIndicator('litmus')">
+        <span class="icon">🟣</span>
+        <span class="label">石蕊 <span class="swatch swatch-litmus"></span></span>
+      </button>
+      <button class="option-btn" data-value="phenolphthalein" onclick="selectIndicator('phenolphthalein')">
+        <span class="icon">🤍</span>
+        <span class="label">酚酞 <span class="swatch swatch-phenol"></span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="select-group">
+    <h2>🫧 选择溶液</h2>
+    <div class="options" id="solution-options">
+      <button class="option-btn active" data-value="vinegar" onclick="selectSolution('vinegar')">
+        <span class="icon">🫗</span>
+        <span class="label">醋</span>
+      </button>
+      <button class="option-btn" data-value="limewater" onclick="selectSolution('limewater')">
+        <span class="icon">🥛</span>
+        <span class="label">石灰水</span>
+      </button>
+      <button class="option-btn" data-value="saltwater" onclick="selectSolution('saltwater')">
+        <span class="icon">💧</span>
+        <span class="label">盐水</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Experiment -->
+<div class="experiment-area">
+
+  <button class="mix-btn" id="mixBtn" onclick="startExperiment()">开始实验</button>
+
+  <div class="tube-area">
+    <!-- Tube A: indicator -->
+    <div class="tube-set">
+      <div class="test-tube">
+        <div class="tube-glass">
+          <div class="liquid" id="liquidA"></div>
+        </div>
+      </div>
+      <div class="tube-label" id="labelA">石蕊试液</div>
+    </div>
+
+    <div class="plus-sign">+</div>
+
+    <!-- Tube B: solution -->
+    <div class="tube-set">
+      <div class="test-tube">
+        <div class="tube-glass">
+          <div class="liquid" id="liquidB"></div>
+        </div>
+      </div>
+      <div class="tube-label" id="labelB">醋</div>
+    </div>
+  </div>
+
+  <div class="arrow-row">
+    <span class="arrow-down">⬇</span>
+  </div>
+
+  <!-- Result -->
+  <div class="result-area">
+    <div class="test-tube result-tube">
+      <div class="tube-glass">
+        <div class="liquid" id="liquidResult"></div>
+      </div>
+    </div>
+    <div class="result-label" id="resultLabel">实验结果</div>
+  </div>
+
+  <!-- Principle -->
+  <div class="principle-card" id="principleCard">
+    <h3 id="principleTitle">变色原理</h3>
+    <p id="principleText"></p>
+  </div>
+
+  <button class="reset-btn" onclick="resetExperiment()">🔄 重置实验</button>
+</div>
+
+<script>
+// ===== DATA =====
+const indicatorData = {
+  litmus: {
+    name: '石蕊试液',
+    baseColor: 'rgba(110, 70, 160, 0.55)',
+    resultColors: {
+      vinegar:   { color: 'rgba(220, 40, 40, 0.7)',   name: '红色' },
+      limewater: { color: 'rgba(50, 100, 220, 0.7)',   name: '蓝色' },
+      saltwater: { color: 'rgba(130, 70, 160, 0.55)',  name: '紫色（不变）' }
+    }
+  },
+  phenolphthalein: {
+    name: '酚酞试液',
+    baseColor: 'rgba(255, 220, 230, 0.18)',
+    resultColors: {
+      vinegar:   { color: 'rgba(255, 220, 230, 0.15)',  name: '无色（不变）' },
+      limewater: { color: 'rgba(230, 30, 80, 0.65)',    name: '玫红色' },
+      saltwater: { color: 'rgba(255, 220, 230, 0.15)',  name: '无色（不变）' }
+    }
+  }
+};
+
+const solutionData = {
+  vinegar: {
+    name: '醋',
+    baseColor: 'rgba(240, 230, 140, 0.25)',
+    ph: '酸性 (pH ≈ 3)', phClass: 'ph-acid'
+  },
+  limewater: {
+    name: '石灰水',
+    baseColor: 'rgba(200, 230, 255, 0.2)',
+    ph: '碱性 (pH ≈ 12)', phClass: 'ph-base'
+  },
+  saltwater: {
+    name: '盐水',
+    baseColor: 'rgba(200, 210, 220, 0.15)',
+    ph: '中性 (pH = 7)', phClass: 'ph-neutral'
+  }
+};
+
+const principleData = {
+  litmus: {
+    vinegar: {
+      title: '🧪 石蕊遇酸变红',
+      text: '石蕊是一种酸碱指示剂，其主要成分是从地衣中提取的<strong>石蕊素</strong>（Azolitmin）。<br><br>' +
+            '醋的主要成分是 <span class="formula">CH₃COOH</span>（醋酸），是一种弱酸。当石蕊试液遇到酸性溶液时，溶液中的 <span class="formula">H⁺</span> 会使石蕊素分子结构发生变化，呈现出<strong style="color:#e55">红色</strong>。<br><br>' +
+            '原理：石蕊素含共轭酸碱对，H⁺ 浓度升高时平衡移动，显红色。'
+    },
+    limewater: {
+      title: '🧪 石蕊遇碱变蓝',
+      text: '石灰水的主要成分是 <span class="formula">Ca(OH)₂</span>（氢氧化钙），属于强碱。<br><br>' +
+            '当石蕊试液遇到碱性溶液时，溶液中的 <span class="formula">OH⁻</span> 使石蕊素分子变为另一种共轭形式，呈现出<strong style="color:#60a5fa">蓝色</strong>。<br><br>' +
+            '原理：OH⁻ 浓度升高促使石蕊素平衡向碱式方向移动，吸收波长红移，人眼感知为蓝色。'
+    },
+    saltwater: {
+      title: '🧪 石蕊遇中性溶液不变色',
+      text: '食盐水的成分为 <span class="formula">NaCl</span>（氯化钠），溶解后完全电离为 <span class="formula">Na⁺</span> 和 <span class="formula">Cl⁻</span>，溶液呈中性。<br><br>' +
+            '中性溶液中 H⁺ 与 OH⁻ 浓度相等（<span class="formula">pH = 7</span>），石蕊素保持其原有的<strong style="color:#a78bfa">紫色</strong>，不发生颜色变化。<br><br>' +
+            '原理：石蕊的变色范围为 pH 5.0 ~ 8.0，pH = 7 处于变色范围中间，仍呈紫色。'
+    }
+  },
+  phenolphthalein: {
+    vinegar: {
+      title: '🧪 酚酞遇酸不变色',
+      text: '酚酞是一种常用的酸碱指示剂，其分子结构在不同 pH 环境下会发生可逆的 structural change。<br><br>' +
+            '醋中含有 <span class="formula">CH₃COOH</span>（醋酸），溶液呈酸性。在酸性环境中（pH < 8.2），酚酞以<strong>无色</strong>的内酯形式（lactone form）存在。<br><br>' +
+            '原理：酸性条件下酚酞的共轭体系未扩展，在可见光区无吸收，故溶液仍为无色。'
+    },
+    limewater: {
+      title: '🧪 酚酞遇碱变红',
+      text: '石灰水中的 <span class="formula">Ca(OH)₂</span> 提供了丰富的 <span class="formula">OH⁻</span>，使 pH 远高于酚酞的变色起点（pH 8.2）。<br><br>' +
+            '在碱性环境中，酚酞内酯环打开，转变为醌式结构（quinoid form），共轭体系扩展，在可见光区产生强烈吸收，呈现出鲜艳的<strong style="color:#e2195b">玫红色</strong>。<br><br>' +
+            '原理：OH⁻ 促使酚酞从无色内酯式转化为红色醌式，共轭双键增加导致吸收波长红移。'
+    },
+    saltwater: {
+      title: '🧪 酚酞遇中性溶液不变色',
+      text: '盐水为 <span class="formula">NaCl</span> 的水溶液，pH = 7，呈中性。<br><br>' +
+            '酚酞的变色范围是 <strong>pH 8.2 ~ 10.0</strong>。在中性环境下（pH = 7 < 8.2），酚酞仍以内酯形式存在，溶液保持<strong>无色</strong>。<br><br>' +
+            '原理：pH 未达到酚酞变色阈值，分子结构不发生转变，故不显色。'
+    }
+  }
+};
+
+// ===== STATE =====
+let currentIndicator = 'litmus';
+let currentSolution = 'vinegar';
+let isAnimating = false;
+
+const liquidA = document.getElementById('liquidA');
+const liquidB = document.getElementById('liquidB');
+const liquidResult = document.getElementById('liquidResult');
+const labelA = document.getElementById('labelA');
+const labelB = document.getElementById('labelB');
+const resultLabel = document.getElementById('resultLabel');
+const principleCard = document.getElementById('principleCard');
+const principleTitle = document.getElementById('principleTitle');
+const principleText = document.getElementById('principleText');
+const mixBtn = document.getElementById('mixBtn');
+
+// ===== INIT =====
+function init() {
+  applySelection();
+}
+
+function selectIndicator(val) {
+  if (isAnimating) return;
+  currentIndicator = val;
+  document.querySelectorAll('#indicator-options .option-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === val);
+  });
+  resetExperiment();
+}
+
+function selectSolution(val) {
+  if (isAnimating) return;
+  currentSolution = val;
+  document.querySelectorAll('#solution-options .option-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === val);
+  });
+  resetExperiment();
+}
+
+function applySelection() {
+  const ind = indicatorData[currentIndicator];
+  const sol = solutionData[currentSolution];
+  liquidA.style.backgroundColor = ind.baseColor;
+  liquidB.style.backgroundColor = sol.baseColor;
+  labelA.textContent = ind.name;
+  labelB.textContent = sol.name;
+  liquidResult.style.backgroundColor = 'transparent';
+  resultLabel.textContent = '实验结果';
+  principleCard.classList.remove('show');
+}
+
+// ===== MIX =====
+function startExperiment() {
+  if (isAnimating) return;
+  isAnimating = true;
+  mixBtn.disabled = true;
+
+  // Fade out tube A, tube B liquids & fade in result
+  liquidA.style.opacity = '0.3';
+  liquidB.style.opacity = '0.3';
+
+  // Show result after brief delay
+  setTimeout(() => {
+    const ind = indicatorData[currentIndicator];
+    const sol = solutionData[currentSolution];
+    const result = ind.resultColors[currentSolution];
+
+    // Liquid level animation (fill up)
+    liquidResult.style.height = '0%';
+    liquidResult.style.backgroundColor = sol.baseColor;
+
+    requestAnimationFrame(() => {
+      liquidResult.style.height = '70%';
+    });
+
+    // Color transition after liquid fills
+    setTimeout(() => {
+      liquidResult.style.backgroundColor = result.color;
+      spawnBubbles();
+
+      // Update label
+      resultLabel.textContent = ind.name + ' + ' + sol.name + ' → ' + result.name;
+
+      // Show principle
+      const info = principleData[currentIndicator][currentSolution];
+      principleTitle.innerHTML = info.title +
+        ' <span class="ph-badge ' + sol.phClass + '">' + sol.ph + '</span>';
+      principleText.innerHTML = info.text;
+      principleCard.classList.add('show');
+
+      isAnimating = false;
+      mixBtn.disabled = false;
+    }, 800);
+
+  }, 400);
+}
+
+// ===== BUBBLES =====
+function spawnBubbles() {
+  const container = document.querySelector('.result-tube .tube-glass');
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = 4 + Math.random() * 6;
+      bubble.style.width = size + 'px';
+      bubble.style.height = size + 'px';
+      bubble.style.left = (15 + Math.random() * 30) + 'px';
+      bubble.style.bottom = '10px';
+      bubble.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+      container.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 3000);
+    }, i * 200);
+  }
+}
+
+// ===== RESET =====
+function resetExperiment() {
+  isAnimating = false;
+  mixBtn.disabled = false;
+  liquidA.style.opacity = '1';
+  liquidB.style.opacity = '1';
+  liquidResult.style.height = '70%';
+  liquidResult.style.backgroundColor = 'transparent';
+  resultLabel.textContent = '实验结果';
+  principleCard.classList.remove('show');
+
+  // Re-apply base colors
+  applySelection();
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
