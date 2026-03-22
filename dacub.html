@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>限时大促 · 疯狂秒杀</title>
+<style>
+/* ========== Reset & Base ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --red: #C41230;
+  --red-dark: #9A0E27;
+  --red-light: #E8314A;
+  --gold: #D4A843;
+  --gold-light: #F0D078;
+  --gold-dark: #B8922E;
+  --bg-dark: #1A1A2E;
+  --bg-darker: #12121F;
+  --white: #FFFFFF;
+  --gray: #999999;
+  --text-light: #E0E0E0;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg-dark);
+  color: var(--white);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+button { border: none; cursor: pointer; font-family: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ========== Marquee Top Bar ========== */
+.marquee-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: 36px; background: linear-gradient(90deg, var(--red-dark), var(--red), var(--red-dark));
+  display: flex; align-items: center; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(196,18,48,0.5);
+}
+.marquee-track {
+  display: flex; white-space: nowrap; animation: marquee 15s linear infinite;
+}
+.marquee-track span {
+  padding: 0 60px; font-size: 14px; font-weight: 600; color: var(--gold-light);
+  letter-spacing: 2px;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ========== Body offset for fixed bar ========== */
+body { padding-top: 36px; }
+
+/* ========== Gold Particles ========== */
+.particles {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.particle {
+  position: absolute; width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: fall linear infinite;
+}
+.particle:nth-child(1) { left: 5%; width: 4px; height: 4px; animation-duration: 8s; animation-delay: 0s; }
+.particle:nth-child(2) { left: 15%; width: 3px; height: 3px; animation-duration: 10s; animation-delay: 1s; }
+.particle:nth-child(3) { left: 25%; width: 5px; height: 5px; animation-duration: 7s; animation-delay: 2s; }
+.particle:nth-child(4) { left: 35%; width: 4px; height: 4px; animation-duration: 9s; animation-delay: 0.5s; }
+.particle:nth-child(5) { left: 45%; width: 3px; height: 3px; animation-duration: 11s; animation-delay: 3s; }
+.particle:nth-child(6) { left: 55%; width: 5px; height: 5px; animation-duration: 8.5s; animation-delay: 1.5s; }
+.particle:nth-child(7) { left: 65%; width: 4px; height: 4px; animation-duration: 9.5s; animation-delay: 2.5s; }
+.particle:nth-child(8) { left: 75%; width: 3px; height: 3px; animation-duration: 10.5s; animation-delay: 0.8s; }
+.particle:nth-child(9) { left: 85%; width: 5px; height: 5px; animation-duration: 7.5s; animation-delay: 3.5s; }
+.particle:nth-child(10) { left: 95%; width: 4px; height: 4px; animation-duration: 8.8s; animation-delay: 1.2s; }
+@keyframes fall {
+  0% { top: -10px; opacity: 0; transform: rotate(0deg); }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.6; }
+  100% { top: 100vh; opacity: 0; transform: rotate(720deg); }
+}
+
+/* ========== Hero Banner ========== */
+.hero {
+  position: relative; z-index: 1;
+  background: linear-gradient(180deg, var(--red-dark) 0%, var(--bg-dark) 100%);
+  padding: 80px 20px 60px; text-align: center; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(212,168,67,0.1) 0%, transparent 50%);
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+.hero-title {
+  position: relative; font-size: clamp(28px, 6vw, 56px); font-weight: 900;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(212,168,67,0.4));
+  letter-spacing: 4px; margin-bottom: 16px;
+}
+.hero-sub {
+  position: relative; font-size: clamp(14px, 2.5vw, 18px); color: var(--text-light);
+  margin-bottom: 40px; opacity: 0.9;
+}
+
+/* ========== Countdown ========== */
+.countdown-wrap { position: relative; margin-bottom: 36px; }
+.countdown-label {
+  font-size: 14px; color: var(--gold); margin-bottom: 12px;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.countdown {
+  display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  justify-content: center;
+}
+.cd-block {
+  background: linear-gradient(145deg, #2A2A45, #1A1A2E);
+  border: 1px solid rgba(212,168,67,0.3);
+  border-radius: 10px; padding: 10px 4px; min-width: 60px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.cd-block::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: rgba(255,255,255,0.03); pointer-events: none;
+}
+.cd-num {
+  display: block; font-size: clamp(24px, 5vw, 40px); font-weight: 800;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1.2;
+  transition: transform 0.3s;
+}
+.cd-num.flip { animation: cd-flip 0.5s ease; }
+@keyframes cd-flip {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1); }
+}
+.cd-text { display: block; font-size: 11px; color: var(--gray); margin-top: 2px; letter-spacing: 1px; }
+.cd-sep { font-size: 28px; font-weight: 700; color: var(--gold); opacity: 0.6; }
+
+.cta-btn {
+  position: relative; display: inline-block;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--bg-dark); font-size: 18px; font-weight: 700;
+  padding: 14px 48px; border-radius: 50px; letter-spacing: 2px;
+  transition: all 0.3s; box-shadow: 0 4px 20px rgba(212,168,67,0.4);
+}
+.cta-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 30px rgba(212,168,67,0.6);
+}
+
+/* ========== Section Shared ========== */
+.section { position: relative; z-index: 1; padding: 60px 20px; max-width: 1200px; margin: 0 auto; }
+.section-title {
+  text-align: center; font-size: clamp(20px, 4vw, 28px); font-weight: 800;
+  margin-bottom: 36px; letter-spacing: 2px;
+}
+.section-title .icon { color: var(--gold); }
+
+/* ========== Activity Rules ========== */
+.rules-section { background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(26,26,46,0.8) 100%); }
+.rules-box {
+  max-width: 700px; margin: 0 auto; background: rgba(42,42,69,0.6);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 12px; overflow: hidden;
+}
+.rules-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; cursor: pointer; user-select: none;
+  transition: background 0.3s;
+}
+.rules-header:hover { background: rgba(212,168,67,0.05); }
+.rules-header h3 { font-size: 16px; color: var(--gold); }
+.rules-toggle {
+  font-size: 20px; color: var(--gold); transition: transform 0.3s;
+  display: inline-block;
+}
+.rules-toggle.open { transform: rotate(180deg); }
+.rules-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+}
+.rules-body.open { max-height: 500px; }
+.rules-list {
+  padding: 0 20px 20px; list-style: none;
+}
+.rules-list li {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+  font-size: 14px; color: var(--text-light); border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.rules-list li:last-child { border-bottom: none; }
+.rules-list li .dot {
+  flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); margin-top: 8px;
+}
+
+/* ========== Seckill Product Section ========== */
+.seckill-section {
+  background: linear-gradient(180deg, rgba(26,26,46,0.8), var(--bg-dark));
+}
+.seckill-header {
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 32px;
+}
+.seckill-header .section-title { margin-bottom: 0; }
+.seckill-header .mini-cd { display: flex; gap: 4px; align-items: center; }
+.seckill-header .mini-cd .mini-num {
+  background: var(--bg-darker); color: var(--gold); font-size: 14px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center;
+}
+.seckill-header .mini-cd .mini-sep { color: var(--gold); font-weight: 700; }
+
+.product-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+@media (min-width: 640px) { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
+@media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+
+.product-card {
+  background: linear-gradient(145deg, #252540, #1E1E35);
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+  overflow: hidden; transition: all 0.3s; position: relative;
+}
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+.product-card.sold-out { opacity: 0.5; }
+.product-card.sold-out .product-img::after {
+  content: '已抢光'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  font-size: 20px; font-weight: 900; color: var(--red);
+  border: 3px solid var(--red); padding: 4px 16px; border-radius: 4px;
+  background: rgba(0,0,0,0.7); z-index: 2;
+}
+.product-img {
+  position: relative; width: 100%; aspect-ratio: 1/1;
+  background: linear-gradient(135deg, #2A2A45, #1A1A2E);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.product-img .placeholder-icon { font-size: 48px; opacity: 0.3; }
+.product-info { padding: 12px; }
+.product-name {
+  font-size: 13px; color: var(--text-light); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 8px; min-height: 36px;
+}
+.price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.price-now { font-size: 20px; font-weight: 800; color: var(--red-light); }
+.price-now .yen { font-size: 14px; }
+.price-old { font-size: 12px; color: var(--gray); text-decoration: line-through; }
+
+.progress-bar-wrap { margin-bottom: 10px; }
+.progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); margin-bottom: 4px; }
+.progress-bar {
+  height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--red), var(--red-light));
+  transition: width 1s ease;
+}
+
+.buy-btn {
+  display: block; width: 100%; padding: 8px; border-radius: 20px; text-align: center;
+  font-size: 13px; font-weight: 700; transition: all 0.3s;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--bg-dark);
+}
+.buy-btn:hover { box-shadow: 0 2px 12px rgba(212,168,67,0.5); transform: scale(1.02); }
+.product-card.sold-out .buy-btn {
+  background: #444; color: #888; cursor: not-allowed;
+}
+.product-card.sold-out .buy-btn:hover { box-shadow: none; transform: none; }
+
+/* ========== Sub Activity Section ========== */
+.sub-activity { background: linear-gradient(180deg, var(--bg-dark), rgba(26,26,46,0.8)); }
+.sub-cards { display: grid; grid-template-columns: 1fr; gap: 20px; }
+@media (min-width: 640px) { .sub-cards { grid-template-columns: repeat(2, 1fr); } }
+
+.sub-card {
+  background: linear-gradient(145deg, #252540, #1E1E35);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 16px;
+  padding: 28px 24px; position: relative; overflow: hidden; transition: all 0.3s;
+}
+.sub-card:hover {
+  border-color: rgba(212,168,67,0.5);
+  box-shadow: 0 0 30px rgba(212,168,67,0.1);
+}
+.sub-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+}
+.sub-card h3 {
+  font-size: 20px; font-weight: 800; color: var(--gold); margin-bottom: 16px;
+}
+.sub-card ul { list-style: none; }
+.sub-card ul li {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  font-size: 14px; color: var(--text-light);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.sub-card ul li:last-child { border-bottom: none; }
+.sub-card ul li .tag {
+  flex-shrink: 0; background: rgba(212,168,67,0.15); color: var(--gold);
+  font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+}
+
+/* ========== Coupon Section ========== */
+.coupon-section { background: linear-gradient(180deg, rgba(26,26,46,0.8), var(--bg-dark)); }
+.coupon-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+@media (min-width: 640px) { .coupon-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
+
+.coupon-card {
+  background: linear-gradient(145deg, #2A1A1E, #1E1520);
+  border: 1px solid rgba(196,18,48,0.3); border-radius: 12px;
+  padding: 24px 16px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+.coupon-card:hover { border-color: var(--red); transform: translateY(-3px); }
+.coupon-card::before {
+  content: ''; position: absolute; top: -20px; right: -20px;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(212,168,67,0.08);
+}
+.coupon-amount { font-size: 32px; font-weight: 900; color: var(--gold); margin-bottom: 4px; }
+.coupon-amount .yen { font-size: 18px; }
+.coupon-condition { font-size: 12px; color: var(--gray); margin-bottom: 4px; }
+.coupon-expire { font-size: 11px; color: #666; margin-bottom: 14px; }
+.coupon-btn {
+  display: inline-block; padding: 8px 24px; border-radius: 20px;
+  font-size: 13px; font-weight: 700; transition: all 0.3s;
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
+  color: var(--white);
+}
+.coupon-btn:hover { box-shadow: 0 2px 12px rgba(196,18,48,0.5); }
+.coupon-btn.claimed {
+  background: #444; color: #888; cursor: default;
+}
+.coupon-btn.claimed:hover { box-shadow: none; }
+
+/* ========== After-sales ========== */
+.after-sales { background: var(--bg-dark); }
+.sales-items {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  max-width: 800px; margin: 0 auto;
+}
+@media (min-width: 640px) { .sales-items { grid-template-columns: repeat(4, 1fr); } }
+.sales-item {
+  text-align: center; padding: 20px 12px;
+  background: rgba(42,42,69,0.4); border-radius: 12px;
+}
+.sales-icon { font-size: 32px; margin-bottom: 10px; }
+.sales-label { font-size: 13px; color: var(--text-light); }
+
+/* ========== Footer ========== */
+footer {
+  position: relative; z-index: 1; text-align: center;
+  padding: 32px 20px; border-top: 1px solid rgba(255,255,255,0.05);
+  background: var(--bg-darker);
+}
+footer p { font-size: 12px; color: #555; margin-bottom: 6px; }
+footer a { color: var(--gray); transition: color 0.3s; }
+footer a:hover { color: var(--gold); }
+
+/* ========== Toast ========== */
+.toast {
+  position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(42,42,69,0.95); color: var(--white);
+  padding: 12px 28px; border-radius: 8px; font-size: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(212,168,67,0.3);
+  opacity: 0; transition: all 0.3s; z-index: 9999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ========== Responsive fine-tuning ========== */
+@media (max-width: 639px) {
+  .hero { padding: 50px 16px 40px; }
+  .section { padding: 40px 16px; }
+  .cd-block { min-width: 50px; padding: 8px 2px; }
+  .cd-sep { font-size: 22px; }
+  .coupon-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Gold Particles -->
+<div class="particles">
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+</div>
+
+<!-- Marquee Top Bar -->
+<div class="marquee-bar">
+  <div class="marquee-track" id="marqueeTrack">
+    <span>⚡ 限时大促 疯狂秒杀 即将结束 ⚡</span>
+    <span>🔥 全场满减 优惠不停 🔥</span>
+    <span>💰 限量优惠券 先到先得 💰</span>
+    <span>⚡ 限时大促 疯狂秒杀 即将结束 ⚡</span>
+    <span>🔥 全场满减 优惠不停 🔥</span>
+    <span>💰 限量优惠券 先到先得 💰</span>
+  </div>
+</div>
+
+<!-- Hero Banner -->
+<section class="hero">
+  <h1 class="hero-title">限时大促 疯狂秒杀</h1>
+  <p class="hero-sub">2026.03.20 — 2026.03.30 &nbsp;|&nbsp; 爆款直降 低至1折 &nbsp;|&nbsp; 限量抢购 先到先得</p>
+
+  <div class="countdown-wrap">
+    <p class="countdown-label">距离活动结束还剩</p>
+    <div class="countdown" id="mainCountdown">
+      <div class="cd-block"><span class="cd-num" id="cd-days">00</span><span class="cd-text">天</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-hours">00</span><span class="cd-text">时</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-mins">00</span><span class="cd-text">分</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-secs">00</span><span class="cd-text">秒</span></div>
+    </div>
+  </div>
+
+  <a href="#seckill" class="cta-btn">立即抢购</a>
+</section>
+
+<!-- Activity Rules -->
+<section class="section rules-section">
+  <div class="rules-box">
+    <div class="rules-header" id="rulesHeader">
+      <h3>📋 活动规则</h3>
+      <span class="rules-toggle" id="rulesToggle">▼</span>
+    </div>
+    <div class="rules-body" id="rulesBody">
+      <ul class="rules-list">
+        <li><span class="dot"></span>活动时间：2026年3月20日 00:00 至 2026年3月30日 23:59:59</li>
+        <li><span class="dot"></span>限时秒杀价格为活动专属价，活动结束后恢复原价</li>
+        <li><span class="dot"></span>满减活动可与优惠券叠加使用，同一订单仅限使用一张优惠券</li>
+        <li><span class="dot"></span>秒杀商品每人限购 2 件，先到先得，售完即止</li>
+        <li><span class="dot"></span>优惠券领取后 7 天内有效，过期自动作废</li>
+        <li><span class="dot"></span>活动期间订单可在签收后 7 天内享受无理由退换服务</li>
+        <li><span class="dot"></span>如在活动期间遇到问题，请联系官方客服获取帮助</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Seckill Product Section -->
+<section class="section seckill-section" id="seckill">
+  <div class="seckill-header">
+    <h2 class="section-title"><span class="icon">🔥</span> 限量秒杀</h2>
+    <div class="mini-cd">
+      <span class="mini-num" id="mini-h">00</span><span class="mini-sep">:</span>
+      <span class="mini-num" id="mini-m">00</span><span class="mini-sep">:</span>
+      <span class="mini-num" id="mini-s">00</span>
+    </div>
+  </div>
+
+  <div class="product-grid" id="productGrid">
+    <!-- JS Render -->
+  </div>
+</section>
+
+<!-- Sub Activities -->
+<section class="section sub-activity">
+  <div class="sub-cards">
+    <div class="sub-card">
+      <h3>🏷️ 满减专区</h3>
+      <ul>
+        <li><span class="tag">满199</span> <span>立减 ¥30</span></li>
+        <li><span class="tag">满399</span> <span>立减 ¥80</span></li>
+        <li><span class="tag">满699</span> <span>立减 ¥150</span></li>
+        <li><span class="tag">满999</span> <span>立减 ¥250</span></li>
+      </ul>
+    </div>
+    <div class="sub-card">
+      <h3>🎁 买赠专区</h3>
+      <ul>
+        <li><span class="tag">买1送1</span> <span>指定护肤套装同款赠品</span></li>
+        <li><span class="tag">买2赠1</span> <span>指定保健品类赠同款一份</span></li>
+        <li><span class="tag">满3赠好礼</span> <span>消费满3件赠精美礼盒</span></li>
+        <li><span class="tag">限量赠品</span> <span>赠品数量有限 送完即止</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Coupon Section -->
+<section class="section coupon-section">
+  <h2 class="section-title"><span class="icon">🎫</span> 限量优惠券</h2>
+  <div class="coupon-grid" id="couponGrid">
+    <!-- JS Render -->
+  </div>
+</section>
+
+<!-- After-sales -->
+<section class="section after-sales">
+  <div class="sales-items">
+    <div class="sales-item"><div class="sales-icon">✅</div><div class="sales-label">正品保障</div></div>
+    <div class="sales-item"><div class="sales-icon">🔄</div><div class="sales-label">7天无理由退换</div></div>
+    <div class="sales-item"><div class="sales-icon">🚀</div><div class="sales-label">极速发货</div></div>
+    <div class="sales-item"><div class="sales-icon">🎧</div><div class="sales-label">官方客服</div></div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>© 2026 DACUB · 限时大促活动页面</p>
+  <p><a href="#">服务条款</a> &nbsp;|&nbsp; <a href="#">隐私政策</a> &nbsp;|&nbsp; <a href="#">联系客服</a></p>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== Data ========== */
+const products = [
+  { name: '奢华精华液套装 锁水保湿 抗皱紧致', priceNow: 199, priceOld: 899, sold: 87, soldOut: false },
+  { name: '高级防晒霜 SPF50+ 清爽不油腻', priceNow: 49, priceOld: 198, sold: 95, soldOut: false },
+  { name: '限定礼盒装口红套装 6色组合', priceNow: 129, priceOld: 399, sold: 72, soldOut: false },
+  { name: '胶原蛋白饮品盒装 30袋装', priceNow: 168, priceOld: 498, sold: 100, soldOut: true },
+  { name: '玻尿酸面膜 深层补水 10片装', priceNow: 39, priceOld: 128, sold: 63, soldOut: false },
+  { name: '护手霜礼盒套装 英伦经典配方', priceNow: 59, priceOld: 199, sold: 81, soldOut: false },
+  { name: '男士洗面奶 控油祛痘 温和不刺激', priceNow: 29, priceOld: 99, sold: 100, soldOut: true },
+  { name: '红石榴睡眠面膜 夜间修护 100ml', priceNow: 149, priceOld: 459, sold: 55, soldOut: false },
+];
+
+const coupons = [
+  { amount: 50, condition: 299, expire: '2026.04.30', key: 'coupon_50' },
+  { amount: 100, condition: 599, expire: '2026.04.30', key: 'coupon_100' },
+  { amount: 200, condition: 999, expire: '2026.04.30', key: 'coupon_200' },
+  { amount: 30, condition: 199, expire: '2026.04.30', key: 'coupon_30' },
+];
+
+/* ========== Countdown ========== */
+const endDate = new Date('2026-03-30T23:59:59').getTime();
+let prevValues = { d: '', h: '', m: '', s: '' };
+
+function updateCountdown() {
+  const now = Date.now();
+  let diff = Math.max(0, endDate - now);
+  const d = String(Math.floor(diff / 86400000)).padStart(2, '0'); diff %= 86400000;
+  const h = String(Math.floor(diff / 3600000)).padStart(2, '0'); diff %= 3600000;
+  const m = String(Math.floor(diff / 60000)).padStart(2, '0'); diff %= 60000;
+  const s = String(Math.floor(diff / 1000)).padStart(2, '0');
+
+  const ids = { d: 'cd-days', h: 'cd-hours', m: 'cd-mins', s: 'cd-secs' };
+  for (const [k, id] of Object.entries(ids)) {
+    const el = document.getElementById(id);
+    const val = { d, h, m, s }[k];
+    if (prevValues[k] !== val) {
+      el.textContent = val;
+      el.classList.remove('flip');
+      void el.offsetWidth; // trigger reflow
+      el.classList.add('flip');
+    }
+  }
+  prevValues = { d, h, m, s };
+
+  // Mini countdown in seckill header
+  document.getElementById('mini-h').textContent = h;
+  document.getElementById('mini-m').textContent = m;
+  document.getElementById('mini-s').textContent = s;
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+/* ========== Render Products ========== */
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = products.map((p, i) => `
+    <div class="product-card${p.soldOut ? ' sold-out' : ''}">
+      <div class="product-img">
+        <span class="placeholder-icon">🛍️</span>
+      </div>
+      <div class="product-info">
+        <p class="product-name">${p.name}</p>
+        <div class="price-row">
+          <span class="price-now"><span class="yen">¥</span>${p.priceNow}</span>
+          <span class="price-old">¥${p.priceOld}</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-info">
+            <span>已抢 ${p.sold}%</span>
+            <span>剩余 ${100 - p.sold}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:0%" data-target="${p.sold}"></div>
+          </div>
+        </div>
+        <button class="buy-btn" ${p.soldOut ? 'disabled' : ''} onclick="handleBuy(${i})">
+          ${p.soldOut ? '已抢光' : '立即抢'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+  // Animate progress bars
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.progress-fill').forEach(el => {
+      el.style.width = el.dataset.target + '%';
+    });
+  });
+}
+renderProducts();
+
+/* ========== Render Coupons ========== */
+function renderCoupons() {
+  const grid = document.getElementById('couponGrid');
+  grid.innerHTML = coupons.map(c => {
+    const claimed = localStorage.getItem(c.key);
+    return `
+      <div class="coupon-card">
+        <div class="coupon-amount"><span class="yen">¥</span>${c.amount}</div>
+        <div class="coupon-condition">满 ¥${c.condition} 可用</div>
+        <div class="coupon-expire">有效期至 ${c.expire}</div>
+        <button class="coupon-btn${claimed ? ' claimed' : ''}" onclick="claimCoupon('${c.key}', this)">
+          ${claimed ? '已领取' : '立即领取'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+renderCoupons();
+
+/* ========== Handlers ========== */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function handleBuy(idx) {
+  if (products[idx].soldOut) return;
+  showToast('🛒 正在前往抢购：' + products[idx].name.slice(0, 10) + '...');
+}
+
+function claimCoupon(key, btn) {
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, 'claimed');
+  btn.textContent = '已领取';
+  btn.classList.add('claimed');
+  showToast('🎉 优惠券领取成功！');
+}
+
+/* ========== Rules Toggle ========== */
+document.getElementById('rulesHeader').addEventListener('click', () => {
+  const body = document.getElementById('rulesBody');
+  const toggle = document.getElementById('rulesToggle');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+});
+</script>
+</body>
+</html>
