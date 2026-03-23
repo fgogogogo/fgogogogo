@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 健康管理助手</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #3b82f6;
+    --primary-light: #60a5fa;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: #fff;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* Layout */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .user-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .user-avatar-lg {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 28px; color: #fff;
+  }
+  .user-name { font-size: 18px; font-weight: 600; }
+  .user-info { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .health-score {
+    margin-top: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+    border-radius: 12px;
+  }
+  .score-label { font-size: 12px; color: var(--success); font-weight: 500; }
+  .score-value { font-size: 36px; font-weight: 700; color: var(--success); line-height: 1; margin-top: 4px; }
+  .score-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .nav-menu {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: var(--shadow);
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .nav-item:hover { background: #f1f5f9; }
+  .nav-item.active { background: #eff6ff; color: var(--primary); font-weight: 500; }
+  .nav-icon { font-size: 18px; }
+
+  /* Main Content */
+  .main { display: flex; flex-direction: column; gap: 20px; }
+
+  /* Section Title */
+  .section-title {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title h2 { font-size: 17px; font-weight: 600; }
+  .section-title .more { font-size: 13px; color: var(--primary); cursor: pointer; }
+
+  /* Cards Grid */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .metric-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .metric-card:hover { transform: translateY(-2px); }
+  .metric-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .metric-label { font-size: 13px; color: var(--text-muted); }
+  .metric-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .metric-unit { font-size: 14px; font-weight: 400; color: var(--text-muted); }
+  .metric-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 8px;
+  }
+  .trend-up { background: #fef2f2; color: var(--danger); }
+  .trend-down { background: #ecfdf5; color: var(--success); }
+  .trend-stable { background: #fffbeb; color: var(--warning); }
+
+  .metric-ring {
+    position: absolute;
+    right: 16px; top: 50%;
+    transform: translateY(-50%);
+    width: 56px; height: 56px;
+  }
+
+  /* Charts */
+  .chart-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-header h3 { font-size: 16px; font-weight: 600; }
+  .chart-tabs { display: flex; gap: 4px; background: #f1f5f9; border-radius: 8px; padding: 3px; }
+  .chart-tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .chart-tab.active { background: #fff; color: var(--primary); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* AI Recommendations */
+  .ai-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .ai-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .ai-card-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .ai-badge {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .ai-card h3 { font-size: 16px; font-weight: 600; }
+  .ai-insight {
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--primary);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .ai-insight.warning { border-left-color: var(--warning); background: #fffbeb; }
+  .ai-insight.danger { border-left-color: var(--danger); background: #fef2f2; }
+  .ai-insight.success { border-left-color: var(--success); background: #ecfdf5; }
+  .ai-insight-title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  /* Health Plan */
+  .plan-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .plan-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .plan-content h4 { font-size: 14px; font-weight: 600; }
+  .plan-content p { font-size: 13px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+  .plan-time {
+    font-size: 11px;
+    color: var(--primary);
+    background: #eff6ff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Today's Tasks */
+  .tasks-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .task-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-checkbox {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .task-checkbox.done {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .task-text { font-size: 14px; }
+  .task-text.done { text-decoration: line-through; color: var(--text-muted); }
+  .task-points {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    background: #eff6ff;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Bottom Grid */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Live Indicator */
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+    margin-right: 6px;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+
+  /* AI Chat Bubble */
+  .ai-chat {
+    background: linear-gradient(135deg, #eff6ff, #f0f4ff);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #dbeafe;
+  }
+  .chat-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .chat-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px;
+  }
+  .chat-header span { font-weight: 600; font-size: 14px; }
+  .chat-msg {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .chat-actions {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .chat-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chat-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .chat-btn.primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* Progress Ring */
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+  .progress-ring circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .container { grid-template-columns: 1fr; }
+    .ai-section { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .container { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">🩺</div>
+    <div>
+      <h1>AI 健康管理助手</h1>
+      <p>智能监测 · 个性方案 · 全程守护</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="live-dot"></span>
+    <span style="font-size:13px">实时监测中</span>
+    <div class="avatar">👤</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="user-card">
+      <div class="user-avatar-lg">🧑</div>
+      <div class="user-name">张明</div>
+      <div class="user-info">男 · 32岁 · 175cm · 72kg</div>
+      <div class="health-score">
+        <div class="score-label">今日健康评分</div>
+        <div class="score-value" id="healthScore">87</div>
+        <div class="score-desc">较昨日 +3 分 · 状态良好</div>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <div class="nav-item active"><span class="nav-icon">📊</span> 数据总览</div>
+      <div class="nav-item"><span class="nav-icon">❤️</span> 心率监测</div>
+      <div class="nav-item"><span class="nav-icon">🩸</span> 血压管理</div>
+      <div class="nav-item"><span class="nav-icon">🍬</span> 血糖追踪</div>
+      <div class="nav-item"><span class="nav-icon">😴</span> 睡眠分析</div>
+      <div class="nav-item"><span class="nav-icon">🏃</span> 运动记录</div>
+      <div class="nav-item"><span class="nav-icon">🍎</span> 饮食建议</div>
+      <div class="nav-item"><span class="nav-icon">🤖</span> AI 助手</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Metrics -->
+    <section>
+      <div class="section-title">
+        <h2>实时身体数据</h2>
+        <span style="font-size:13px;color:var(--text-muted)">更新于 14:32</span>
+      </div>
+      <div class="metrics-grid" id="metricsGrid">
+        <!-- JS renders -->
+      </div>
+    </section>
+
+    <!-- Charts Row -->
+    <div class="bottom-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>心率趋势（7天）</h3>
+          <div class="chart-tabs">
+            <div class="chart-tab active" data-range="7">7天</div>
+            <div class="chart-tab" data-range="30">30天</div>
+          </div>
+        </div>
+        <canvas id="heartRateChart" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>睡眠质量分析</h3>
+        </div>
+        <canvas id="sleepChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- AI Insights -->
+    <section>
+      <div class="section-title">
+        <h2>AI 智能分析</h2>
+        <span class="more">查看全部 →</span>
+      </div>
+      <div class="ai-section">
+        <div class="ai-card">
+          <div class="ai-card-header">
+            <span class="ai-badge">AI 洞察</span>
+            <h3>今日健康洞察</h3>
+          </div>
+          <div class="ai-insight success">
+            <div class="ai-insight-title">✅ 运动达标</div>
+            您今日步数已达 8,432 步，超额完成目标。继续保持！
+          </div>
+          <div class="ai-insight">
+            <div class="ai-insight-title">💧 水分摄入提醒</div>
+            今日饮水量约 1.2L，建议再补充 600ml，有助于代谢和血液循环。
+          </div>
+          <div class="ai-insight warning">
+            <div class="ai-insight-title">⚠️ 久坐提醒</div>
+            您已连续坐着工作 2 小时，建议起身活动 5-10 分钟。
+          </div>
+        </div>
+        <div class="ai-card">
+          <div class="ai-card-header">
+            <span class="ai-badge">AI 方案</span>
+            <h3>个性化健康方案</h3>
+          </div>
+          <div class="plan-item">
+            <div class="plan-icon" style="background:#eff6ff">🏋️</div>
+            <div class="plan-content">
+              <h4>力量训练计划</h4>
+              <p>每周3次，每次45分钟。重点：核心训练 + 上肢力量</p>
+            </div>
+            <span class="plan-time">周一/三/五</span>
+          </div>
+          <div class="plan-item">
+            <div class="plan-icon" style="background:#ecfdf5">🥗</div>
+            <div class="plan-content">
+              <h4>营养饮食方案</h4>
+              <p>每日蛋白质≥100g，碳水控制，多摄入膳食纤维</p>
+            </div>
+            <span class="plan-time">每日</span>
+          </div>
+          <div class="plan-item">
+            <div class="plan-icon" style="background:#fef3c7">😴</div>
+            <div class="plan-content">
+              <h4>睡眠优化方案</h4>
+              <p>建议22:30前入睡，保证7.5小时深度睡眠</p>
+            </div>
+            <span class="plan-time">每晚</span>
+          </div>
+          <div class="plan-item">
+            <div class="plan-icon" style="background:#fce7f3">🧘</div>
+            <div class="plan-content">
+              <h4>减压放松方案</h4>
+              <p>每日15分钟冥想，降低皮质醇水平，改善心血管</p>
+            </div>
+            <span class="plan-time">每日20:00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Today's Tasks -->
+    <section>
+      <div class="section-title">
+        <h2>今日健康任务</h2>
+        <span style="font-size:13px;color:var(--text-muted)">完成 3/6</span>
+      </div>
+      <div class="tasks-card" id="tasksCard">
+        <!-- JS renders -->
+      </div>
+    </section>
+
+    <!-- AI Chat -->
+    <section>
+      <div class="ai-chat">
+        <div class="chat-header">
+          <div class="chat-avatar">🤖</div>
+          <span>AI 健康助手</span>
+        </div>
+        <div class="chat-msg" id="chatMsg">
+          您好！根据您最近7天的健康数据分析，您的整体健康状态良好，BMI 指数为 23.5，处于正常范围。心率变异性略有下降，建议增加有氧运动。今日血压略高于平常值，可能与最近工作压力有关，建议保持规律作息。
+        </div>
+        <div class="chat-actions">
+          <button class="chat-btn primary" onclick="askAI('生成我的运动计划')">生成运动计划</button>
+          <button class="chat-btn" onclick="askAI('分析我的睡眠质量')">分析睡眠</button>
+          <button class="chat-btn" onclick="askAI('推荐健康食谱')">推荐食谱</button>
+          <button class="chat-btn" onclick="askAI('生成健康周报')">健康周报</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+// ===== Data =====
+const metricsData = [
+  { icon: '❤️', label: '心率', value: 72, unit: 'bpm', color: '#ef4444', bg: '#fef2f2', trend: 'stable', trendText: '平稳' },
+  { icon: '🩸', label: '收缩压', value: 128, unit: 'mmHg', color: '#f59e0b', bg: '#fffbeb', trend: 'up', trendText: '偏高' },
+  { icon: '🩸', label: '舒张压', value: 82, unit: 'mmHg', color: '#3b82f6', bg: '#eff6ff', trend: 'stable', trendText: '正常' },
+  { icon: '🍬', label: '血糖', value: 5.4, unit: 'mmol/L', color: '#10b981', bg: '#ecfdf5', trend: 'down', trendText: '良好' },
+  { icon: '😴', label: '睡眠', value: 7.2, unit: '小时', color: '#8b5cf6', bg: '#f5f3ff', trend: 'down', trendText: '充足' },
+  { icon: '🏃', label: '步数', value: 8432, unit: '步', color: '#3b82f6', bg: '#eff6ff', trend: 'down', trendText: '达标' },
+  { icon: '⚡', label: '卡路里', value: 1847, unit: 'kcal', color: '#f97316', bg: '#fff7ed', trend: 'stable', trendText: '适中' },
+  { icon: '🫁', label: '血氧', value: 98, unit: '%', color: '#06b6d4', bg: '#ecfeff', trend: 'stable', trendText: '正常' },
+];
+
+const tasksData = [
+  { text: '完成30分钟有氧运动', points: '+20', done: true },
+  { text: '喝满8杯水（2L）', points: '+15', done: true },
+  { text: '23:00前入睡', points: '+10', done: true },
+  { text: '力量训练 - 上肢', points: '+25', done: false },
+  { text: '15分钟冥想放松', points: '+15', done: false },
+  { text: '记录晚餐热量', points: '+10', done: false },
+];
+
+const heartRateData = {
+  labels: ['3/17', '3/18', '3/19', '3/20', '3/21', '3/22', '3/23'],
+  datasets: [{
+    label: '静息心率',
+    data: [68, 70, 72, 69, 71, 73, 72],
+    borderColor: '#ef4444',
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    fill: true,
+    tension: 0.4,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+  }]
+};
+
+const bloodPressureData = {
+  labels: ['3/17', '3/18', '3/19', '3/20', '3/21', '3/22', '3/23'],
+  datasets: [
+    {
+      label: '收缩压',
+      data: [122, 125, 120, 118, 124, 126, 128],
+      borderColor: '#ef4444',
+      backgroundColor: 'transparent',
+      tension: 0.4,
+      pointRadius: 4,
+    },
+    {
+      label: '舒张压',
+      data: [78, 80, 76, 75, 79, 81, 82],
+      borderColor: '#3b82f6',
+      backgroundColor: 'transparent',
+      tension: 0.4,
+      pointRadius: 4,
+    }
+  ]
+};
+
+const sleepData = {
+  labels: ['3/17', '3/18', '3/19', '3/20', '3/21', '3/22', '3/23'],
+  datasets: [
+    { label: '深度睡眠', data: [2.1, 1.8, 2.3, 2.0, 2.2, 1.9, 2.4], backgroundColor: '#3b82f6', borderRadius: 4 },
+    { label: '浅睡眠', data: [3.5, 4.0, 3.8, 4.2, 3.6, 4.1, 3.7], backgroundColor: '#93c5fd', borderRadius: 4 },
+    { label: 'REM', data: [1.4, 1.2, 1.5, 1.3, 1.6, 1.1, 1.1], backgroundColor: '#8b5cf6', borderRadius: 4 },
+  ]
+};
+
+// ===== Render Metrics =====
+function renderMetrics() {
+  const grid = document.getElementById('metricsGrid');
+  grid.innerHTML = metricsData.map(m => {
+    const progress = m.label === '步数' ? Math.min(m.value / 10000 * 100, 100) :
+                     m.label === '血氧' ? m.value :
+                     m.label === '心率' ? Math.min((100 - m.value) / 30 * 100, 100) : null;
+    const trendClass = `trend-${m.trend}`;
+    const arrow = m.trend === 'up' ? '↑' : m.trend === 'down' ? '↓' : '→';
+    return `
+      <div class="metric-card">
+        <div class="metric-icon" style="background:${m.bg}">${m.icon}</div>
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value" style="color:${m.color}">
+          ${typeof m.value === 'number' && m.value > 100 ? m.value.toLocaleString() : m.value}
+          <span class="metric-unit">${m.unit}</span>
+        </div>
+        <span class="metric-trend ${trendClass}">${arrow} ${m.trendText}</span>
+        ${progress !== null ? `
+          <svg class="metric-ring" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="15" stroke="${m.bg.replace('#','') === m.bg ? '#e2e8f0' : 'transparent'}" fill="none" opacity="0.3"/>
+            <circle cx="18" cy="18" r="15" stroke="${m.color}" fill="none" stroke-dasharray="${progress} ${100-progress}" stroke-linecap="round" style="stroke-width:3;transform:rotate(-90deg);transform-origin:center"/>
+          </svg>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== Render Tasks =====
+function renderTasks() {
+  const card = document.getElementById('tasksCard');
+  card.innerHTML = tasksData.map((t, i) => `
+    <div class="task-item" onclick="toggleTask(${i})">
+      <div class="task-checkbox ${t.done ? 'done' : ''}">${t.done ? '✓' : ''}</div>
+      <span class="task-text ${t.done ? 'done' : ''}">${t.text}</span>
+      <span class="task-points">${t.points}</span>
+    </div>
+  `).join('');
+}
+
+function toggleTask(i) {
+  tasksData[i].done = !tasksData[i].done;
+  renderTasks();
+  updateScore();
+}
+
+function updateScore() {
+  const done = tasksData.filter(t => t.done).length;
+  const score = 70 + done * 5;
+  document.getElementById('healthScore').textContent = score;
+}
+
+// ===== Charts =====
+function initCharts() {
+  // Heart Rate
+  new Chart(document.getElementById('heartRateChart'), {
+    type: 'line',
+    data: heartRateData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: false, min: 60, max: 80, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Sleep
+  new Chart(document.getElementById('sleepChart'), {
+    type: 'bar',
+    data: sleepData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 12 } } } },
+      scales: {
+        y: { beginAtZero: true, stacked: true, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + 'h' } },
+        x: { stacked: true, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ===== Tab switching =====
+document.querySelectorAll('.chart-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.parentElement.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== AI Chat =====
+const aiResponses = {
+  '生成我的运动计划': '根据您当前的体能水平和健康数据，我为您生成了以下运动计划：\n\n🏋️ 周一：上肢力量训练（45分钟）\n🏃 周三：有氧跑步 5km（30分钟）\n🧘 周五：瑜伽 + 核心训练（40分钟）\n🚴 周末：户外骑行或游泳（60分钟）\n\n建议心率保持在 120-150 bpm 之间，运动后做 10 分钟拉伸放松。',
+  '分析我的睡眠质量': '您的睡眠分析结果：\n\n📊 平均睡眠时长：7.1 小时（达标）\n😴 深度睡眠占比：32%（良好）\n🌙 入睡时间平均：23:15（建议提前至22:30）\n🌅 平均起床：06:45\n\n建议：睡前1小时避免使用电子设备，保持卧室温度在18-22°C。',
+  '推荐健康食谱': '为您推荐一周健康食谱：\n\n🥗 早餐：燕麦+蓝莓+鸡蛋+牛奶\n🍲 午餐：糙米饭+清蒸鱼+西兰花+番茄\n🥙 晚餐：藜麦沙拉+鸡胸肉+牛油果\n🥤 加餐：坚果+酸奶+水果\n\n每日热量控制在 2000-2200 kcal，蛋白质≥100g。',
+  '生成健康周报': '📋 您的本周健康周报（3/17-3/23）：\n\n✅ 完成运动 5/7 天\n✅ 平均步数 7,856 步/天\n✅ 血糖始终处于正常范围\n⚠️ 周四血压略有升高（130/85）\n⚠️ 周六睡眠不足（6.2h）\n\n综合评分：85/100，整体健康状态良好。继续保持规律运动和饮食！',
+};
+
+function askAI(question) {
+  const msgEl = document.getElementById('chatMsg');
+  msgEl.innerHTML = '<span style="color:var(--primary)">🤖 AI 正在分析您的健康数据...</span>';
+  setTimeout(() => {
+    msgEl.innerHTML = aiResponses[question]?.replace(/\n/g, '<br>') || '抱歉，我暂时无法回答这个问题。';
+  }, 1200);
+}
+
+// ===== Real-time simulation =====
+function simulateRealTime() {
+  setInterval(() => {
+    // Randomly fluctuate heart rate
+    const hrCard = document.querySelector('.metric-card:nth-child(1) .metric-value');
+    if (hrCard) {
+      const hr = 70 + Math.floor(Math.random() * 6);
+      hrCard.innerHTML = hr + ' <span class="metric-unit">bpm</span>';
+    }
+    // Fluctuate blood oxygen
+    const spo2Card = document.querySelector('.metric-card:nth-child(8) .metric-value');
+    if (spo2Card) {
+      const spo2 = 97 + Math.floor(Math.random() * 3);
+      spo2Card.innerHTML = spo2 + ' <span class="metric-unit">%</span>';
+    }
+  }, 5000);
+}
+
+// ===== Nav menu =====
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== Init =====
+renderMetrics();
+renderTasks();
+initCharts();
+simulateRealTime();
+</script>
+
+</body>
+</html>
