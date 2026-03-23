@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时区地图工具</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0a1628;
+    color: #e0e7ff;
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, #1a2744, #0d1b2a);
+    border-bottom: 1px solid rgba(100, 150, 255, 0.2);
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .header p {
+    font-size: 13px;
+    color: #8fa3c7;
+    margin-top: 4px;
+  }
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (min-width: 900px) {
+    .layout { flex-direction: row; align-items: flex-start; }
+  }
+  .map-section {
+    flex: 1;
+    min-width: 0;
+  }
+  .map-container {
+    background: #0d1f3c;
+    border-radius: 12px;
+    border: 1px solid rgba(100, 150, 255, 0.15);
+    overflow: hidden;
+    position: relative;
+  }
+  #map {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .city-dot {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .city-dot:hover { r: 6; fill: #fbbf24; }
+  .city-dot.selected { r: 7; fill: #34d399; stroke: #fff; stroke-width: 1.5; }
+  .city-label {
+    font-size: 9px;
+    fill: #94a3b8;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  .panel {
+    width: 100%;
+    max-width: 360px;
+    background: #0d1f3c;
+    border-radius: 12px;
+    border: 1px solid rgba(100, 150, 255, 0.15);
+    padding: 16px;
+  }
+  @media (min-width: 900px) {
+    .panel { position: sticky; top: 12px; }
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title span {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 400;
+  }
+  .clear-btn {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .clear-btn:hover { background: #dc2626; }
+  .search-box {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(100, 150, 255, 0.2);
+    border-radius: 8px;
+    background: #1a2744;
+    color: #e0e7ff;
+    font-size: 14px;
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .search-box:focus { border-color: #3b82f6; }
+  .search-box::placeholder { color: #64748b; }
+  .city-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .city-card {
+    background: linear-gradient(135deg, #1a2744, #162033);
+    border: 1px solid rgba(100, 150, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .city-card:hover { border-color: rgba(100, 150, 255, 0.3); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .card-city {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .card-country {
+    font-size: 12px;
+    color: #64748b;
+  }
+  .card-time {
+    font-size: 28px;
+    font-weight: 700;
+    color: #60a5fa;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+  }
+  .card-date {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+  }
+  .card-info {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .card-info-item {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .card-info-item strong { color: #60a5fa; }
+  .card-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .card-remove:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+    font-size: 14px;
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .diff-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .diff-ahead { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+  .diff-behind { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+  .diff-same { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+  .night-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .night { background: #1e3a5f; box-shadow: 0 0 4px #1e3a5f; }
+  .day { background: #fbbf24; box-shadow: 0 0 4px #fbbf24; }
+  .sunrise { background: linear-gradient(135deg, #fb923c, #fbbf24); }
+  .sunset { background: linear-gradient(135deg, #ef4444, #fb923c); }
+  .city-list::-webkit-scrollbar { width: 4px; }
+  .city-list::-webkit-scrollbar-track { background: transparent; }
+  .city-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+  .my-time-section {
+    background: linear-gradient(135deg, #1e3a8a, #1e293b);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .my-time-label {
+    font-size: 12px;
+    color: #93c5fd;
+    margin-bottom: 4px;
+  }
+  .my-time {
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .my-time-date {
+    font-size: 12px;
+    color: #93c5fd;
+  }
+  .time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .time-cell {
+    background: #1a2744;
+    border: 1px solid rgba(100, 150, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .time-cell-name {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .time-cell-time {
+    font-size: 18px;
+    font-weight: 700;
+    color: #60a5fa;
+    font-variant-numeric: tabular-nums;
+  }
+  .time-cell-daynight {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .search-dropdown {
+    position: absolute;
+    background: #1a2744;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+    width: calc(100% - 2px);
+    margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  .search-dropdown::-webkit-scrollbar { width: 4px; }
+  .search-dropdown::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>🌍 时区地图工具</h1>
+    <p>点击地图上的城市圆点，或使用搜索添加城市进行时区对比</p>
+  </div>
+
+  <div class="layout">
+    <div class="map-section">
+      <div class="map-container">
+        <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="my-time-section">
+        <div class="my-time-label">我的本地时间</div>
+        <div class="my-time" id="myTime">--:--:--</div>
+        <div class="my-time-date" id="myDate">----年--月--日 星期-</div>
+      </div>
+
+      <div class="panel-title">
+        已选城市 <span id="cityCount">(0)</span>
+        <button class="clear-btn" id="clearAll" style="display:none;">清空全部</button>
+      </div>
+      <div style="position:relative;">
+        <input class="search-box" id="searchBox" placeholder="搜索城市名称..." />
+      </div>
+      <div class="city-list" id="cityList">
+        <div class="empty-state">
+          <div class="icon">🕐</div>
+          点击地图上的城市圆点开始添加
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ========== 城市数据 ==========
+const CITIES = [
+  // 北美
+  { id: 'losangeles', name: '洛杉矶', nameEn: 'Los Angeles', country: '美国', tz: 'America/Los_Angeles', lon: -118.24, lat: 34.05 },
+  { id: 'sanfrancisco', name: '旧金山', nameEn: 'San Francisco', country: '美国', tz: 'America/Los_Angeles', lon: -122.42, lat: 37.77 },
+  { id: 'seattle', name: '西雅图', nameEn: 'Seattle', country: '美国', tz: 'America/Los_Angeles', lon: -122.33, lat: 47.61 },
+  { id: 'denver', name: '丹佛', nameEn: 'Denver', country: '美国', tz: 'America/Denver', lon: -104.99, lat: 39.74 },
+  { id: 'dallas', name: '达拉斯', nameEn: 'Dallas', country: '美国', tz: 'America/Chicago', lon: -96.80, lat: 32.78 },
+  { id: 'chicago', name: '芝加哥', nameEn: 'Chicago', country: '美国', tz: 'America/Chicago', lon: -87.63, lat: 41.88 },
+  { id: 'newyork', name: '纽约', nameEn: 'New York', country: '美国', tz: 'America/New_York', lon: -74.01, lat: 40.71 },
+  { id: 'washington', name: '华盛顿', nameEn: 'Washington DC', country: '美国', tz: 'America/New_York', lon: -77.04, lat: 38.91 },
+  { id: 'miami', name: '迈阿密', nameEn: 'Miami', country: '美国', tz: 'America/New_York', lon: -80.19, lat: 25.76 },
+  { id: 'toronto', name: '多伦多', nameEn: 'Toronto', country: '加拿大', tz: 'America/Toronto', lon: -79.38, lat: 43.65 },
+  { id: 'vancouver', name: '温哥华', nameEn: 'Vancouver', country: '加拿大', tz: 'America/Vancouver', lon: -123.12, lat: 49.25 },
+  { id: 'mexicocity', name: '墨西哥城', nameEn: 'Mexico City', country: '墨西哥', tz: 'America/Mexico_City', lon: -99.13, lat: 19.43 },
+
+  // 南美
+  { id: 'saopaulo', name: '圣保罗', nameEn: 'São Paulo', country: '巴西', tz: 'America/Sao_Paulo', lon: -46.63, lat: -23.55 },
+  { id: 'buenosaires', name: '布宜诺斯艾利斯', nameEn: 'Buenos Aires', country: '阿根廷', tz: 'America/Argentina/Buenos_Aires', lon: -58.38, lat: -34.60 },
+  { id: 'lima', name: '利马', nameEn: 'Lima', country: '秘鲁', tz: 'America/Lima', lon: -77.03, lat: -12.05 },
+  { id: 'bogota', name: '波哥大', nameEn: 'Bogotá', country: '哥伦比亚', tz: 'America/Bogota', lon: -74.07, lat: 4.61 },
+  { id: 'santiago', name: '圣地亚哥', nameEn: 'Santiago', country: '智利', tz: 'America/Santiago', lon: -70.65, lat: -33.45 },
+
+  // 欧洲
+  { id: 'london', name: '伦敦', nameEn: 'London', country: '英国', tz: 'Europe/London', lon: -0.13, lat: 51.51 },
+  { id: 'paris', name: '巴黎', nameEn: 'Paris', country: '法国', tz: 'Europe/Paris', lon: 2.35, lat: 48.86 },
+  { id: 'berlin', name: '柏林', nameEn: 'Berlin', country: '德国', tz: 'Europe/Berlin', lon: 13.41, lat: 52.52 },
+  { id: 'frankfurt', name: '法兰克福', nameEn: 'Frankfurt', country: '德国', tz: 'Europe/Berlin', lon: 8.68, lat: 50.11 },
+  { id: 'amsterdam', name: '阿姆斯特丹', nameEn: 'Amsterdam', country: '荷兰', tz: 'Europe/Amsterdam', lon: 4.90, lat: 52.37 },
+  { id: 'brussels', name: '布鲁塞尔', nameEn: 'Brussels', country: '比利时', tz: 'Europe/Brussels', lon: 4.35, lat: 50.85 },
+  { id: 'zurich', name: '苏黎世', nameEn: 'Zurich', country: '瑞士', tz: 'Europe/Zurich', lon: 8.54, lat: 47.37 },
+  { id: 'vienna', name: '维也纳', nameEn: 'Vienna', country: '奥地利', tz: 'Europe/Vienna', lon: 16.37, lat: 48.21 },
+  { id: 'madrid', name: '马德里', nameEn: 'Madrid', country: '西班牙', tz: 'Europe/Madrid', lon: -3.70, lat: 40.42 },
+  { id: 'rome', name: '罗马', nameEn: 'Rome', country: '意大利', tz: 'Europe/Rome', lon: 12.50, lat: 41.90 },
+  { id: 'milan', name: '米兰', nameEn: 'Milan', country: '意大利', tz: 'Europe/Rome', lon: 9.19, lat: 45.46 },
+  { id: 'stockholm', name: '斯德哥尔摩', nameEn: 'Stockholm', country: '瑞典', tz: 'Europe/Stockholm', lon: 18.07, lat: 59.33 },
+  { id: 'oslo', name: '奥斯陆', nameEn: 'Oslo', country: '挪威', tz: 'Europe/Oslo', lon: 10.75, lat: 59.91 },
+  { id: 'copenhagen', name: '哥本哈根', nameEn: 'Copenhagen', country: '丹麦', tz: 'Europe/Copenhagen', lon: 12.57, lat: 55.68 },
+  { id: 'helsinki', name: '赫尔辛基', nameEn: 'Helsinki', country: '芬兰', tz: 'Europe/Helsinki', lon: 24.94, lat: 60.17 },
+  { id: 'warsaw', name: '华沙', nameEn: 'Warsaw', country: '波兰', tz: 'Europe/Warsaw', lon: 21.01, lat: 52.23 },
+  { id: 'prague', name: '布拉格', nameEn: 'Prague', country: '捷克', tz: 'Europe/Prague', lon: 14.44, lat: 50.08 },
+  { id: 'budapest', name: '布达佩斯', nameEn: 'Budapest', country: '匈牙利', tz: 'Europe/Budapest', lon: 19.04, lat: 47.50 },
+  { id: 'athens', name: '雅典', nameEn: 'Athens', country: '希腊', tz: 'Europe/Athens', lon: 23.73, lat: 37.98 },
+  { id: 'istanbul', name: '伊斯坦布尔', nameEn: 'Istanbul', country: '土耳其', tz: 'Europe/Istanbul', lon: 28.98, lat: 41.01 },
+  { id: 'moscow', name: '莫斯科', nameEn: 'Moscow', country: '俄罗斯', tz: 'Europe/Moscow', lon: 37.62, lat: 55.75 },
+  { id: 'dublin', name: '都柏林', nameEn: 'Dublin', country: '爱尔兰', tz: 'Europe/Dublin', lon: -6.27, lat: 53.35 },
+  { id: 'lisbon', name: '里斯本', nameEn: 'Lisbon', country: '葡萄牙', tz: 'Europe/Lisbon', lon: -9.14, lat: 38.72 },
+
+  // 非洲
+  { id: 'cairo', name: '开罗', nameEn: 'Cairo', country: '埃及', tz: 'Africa/Cairo', lon: 31.24, lat: 30.04 },
+  { id: 'johannesburg', name: '约翰内斯堡', nameEn: 'Johannesburg', country: '南非', tz: 'Africa/Johannesburg', lon: 28.05, lat: -26.20 },
+  { id: 'capetown', name: '开普敦', nameEn: 'Cape Town', country: '南非', tz: 'Africa/Johannesburg', lon: 18.42, lat: -33.93 },
+  { id: 'lagos', name: '拉各斯', nameEn: 'Lagos', country: '尼日利亚', tz: 'Africa/Lagos', lon: 3.38, lat: 6.52 },
+  { id: 'nairobi', name: '内罗毕', nameEn: 'Nairobi', country: '肯尼亚', tz: 'Africa/Nairobi', lon: 36.82, lat: -1.29 },
+  { id: 'casablanca', name: '卡萨布兰卡', nameEn: 'Casablanca', country: '摩洛哥', tz: 'Africa/Casablanca', lon: -7.59, lat: 33.57 },
+
+  // 中东
+  { id: 'dubai', name: '迪拜', nameEn: 'Dubai', country: '阿联酋', tz: 'Asia/Dubai', lon: 55.27, lat: 25.20 },
+  { id: 'riyadh', name: '利雅得', nameEn: 'Riyadh', country: '沙特阿拉伯', tz: 'Asia/Riyadh', lon: 46.72, lat: 24.71 },
+  { id: 'telaviv', name: '特拉维夫', nameEn: 'Tel Aviv', country: '以色列', tz: 'Asia/Jerusalem', lon: 34.79, lat: 32.08 },
+  { id: 'tehran', name: '德黑兰', nameEn: 'Tehran', country: '伊朗', tz: 'Asia/Tehran', lon: 51.39, lat: 35.69 },
+
+  // 亚洲
+  { id: 'mumbai', name: '孟买', nameEn: 'Mumbai', country: '印度', tz: 'Asia/Kolkata', lon: 72.88, lat: 19.08 },
+  { id: 'delhi', name: '新德里', nameEn: 'New Delhi', country: '印度', tz: 'Asia/Kolkata', lon: 77.21, lat: 28.61 },
+  { id: 'bangalore', name: '班加罗尔', nameEn: 'Bangalore', country: '印度', tz: 'Asia/Kolkata', lon: 77.60, lat: 12.97 },
+  { id: 'karachi', name: '卡拉奇', nameEn: 'Karachi', country: '巴基斯坦', tz: 'Asia/Karachi', lon: 67.01, lat: 24.86 },
+  { id: 'dhaka', name: '达卡', nameEn: 'Dhaka', country: '孟加拉国', tz: 'Asia/Dhaka', lon: 90.40, lat: 23.81 },
+  { id: 'kathmandu', name: '加德满都', nameEn: 'Kathmandu', country: '尼泊尔', tz: 'Asia/Kathmandu', lon: 85.32, lat: 27.72 },
+  { id: 'colombo', name: '科伦坡', nameEn: 'Colombo', country: '斯里兰卡', tz: 'Asia/Colombo', lon: 79.85, lat: 6.93 },
+  { id: 'yangon', name: '仰光', nameEn: 'Yangon', country: '缅甸', tz: 'Asia/Yangon', lon: 96.20, lat: 16.85 },
+  { id: 'bangkok', name: '曼谷', nameEn: 'Bangkok', country: '泰国', tz: 'Asia/Bangkok', lon: 100.50, lat: 13.76 },
+  { id: 'hanoi', name: '河内', nameEn: 'Hanoi', country: '越南', tz: 'Asia/Ho_Chi_Minh', lon: 105.85, lat: 21.03 },
+  { id: 'hochiminh', name: '胡志明市', nameEn: 'Ho Chi Minh', country: '越南', tz: 'Asia/Ho_Chi_Minh', lon: 106.63, lat: 10.76 },
+  { id: 'kualalumpur', name: '吉隆坡', nameEn: 'Kuala Lumpur', country: '马来西亚', tz: 'Asia/Kuala_Lumpur', lon: 101.69, lat: 3.14 },
+  { id: 'singapore', name: '新加坡', nameEn: 'Singapore', country: '新加坡', tz: 'Asia/Singapore', lon: 103.82, lat: 1.35 },
+  { id: 'jakarta', name: '雅加达', nameEn: 'Jakarta', country: '印度尼西亚', tz: 'Asia/Jakarta', lon: 106.85, lat: -6.21 },
+  { id: 'manila', name: '马尼拉', nameEn: 'Manila', country: '菲律宾', tz: 'Asia/Manila', lon: 120.98, lat: 14.60 },
+  { id: 'taipei', name: '台北', nameEn: 'Taipei', country: '中国台湾', tz: 'Asia/Taipei', lon: 121.57, lat: 25.03 },
+  { id: 'hongkong', name: '香港', nameEn: 'Hong Kong', country: '中国香港', tz: 'Asia/Hong_Kong', lon: 114.17, lat: 22.28 },
+  { id: 'macau', name: '澳门', nameEn: 'Macau', country: '中国澳门', tz: 'Asia/Macau', lon: 113.55, lat: 22.19 },
+
+  // 东亚
+  { id: 'seoul', name: '首尔', nameEn: 'Seoul', country: '韩国', tz: 'Asia/Seoul', lon: 126.98, lat: 37.57 },
+  { id: 'tokyo', name: '东京', nameEn: 'Tokyo', country: '日本', tz: 'Asia/Tokyo', lon: 139.69, lat: 35.69 },
+  { id: 'osaka', name: '大阪', nameEn: 'Osaka', country: '日本', tz: 'Asia/Tokyo', lon: 135.50, lat: 34.69 },
+  { id: 'beijing', name: '北京', nameEn: 'Beijing', country: '中国', tz: 'Asia/Shanghai', lon: 116.41, lat: 39.90 },
+  { id: 'shanghai', name: '上海', nameEn: 'Shanghai', country: '中国', tz: 'Asia/Shanghai', lon: 121.47, lat: 31.23 },
+  { id: 'guangzhou', name: '广州', nameEn: 'Guangzhou', country: '中国', tz: 'Asia/Shanghai', lon: 113.26, lat: 23.13 },
+  { id: 'shenzhen', name: '深圳', nameEn: 'Shenzhen', country: '中国', tz: 'Asia/Shanghai', lon: 114.07, lat: 22.54 },
+  { id: 'chengdu', name: '成都', nameEn: 'Chengdu', country: '中国', tz: 'Asia/Shanghai', lon: 104.07, lat: 30.67 },
+  { id: 'wuhan', name: '武汉', nameEn: 'Wuhan', country: '中国', tz: 'Asia/Shanghai', lon: 114.31, lat: 30.59 },
+  { id: 'xian', name: '西安', nameEn: 'Xi\'an', country: '中国', tz: 'Asia/Shanghai', lon: 108.94, lat: 34.26 },
+  { id: 'nanjing', name: '南京', nameEn: 'Nanjing', country: '中国', tz: 'Asia/Shanghai', lon: 118.80, lat: 32.06 },
+  { id: 'hangzhou', name: '杭州', nameEn: 'Hangzhou', country: '中国', tz: 'Asia/Shanghai', lon: 120.15, lat: 30.27 },
+  { id: 'qingdao', name: '青岛', nameEn: 'Qingdao', country: '中国', tz: 'Asia/Shanghai', lon: 120.38, lat: 36.07 },
+  { id: 'dalian', name: '大连', nameEn: 'Dalian', country: '中国', tz: 'Asia/Shanghai', lon: 121.62, lat: 38.92 },
+  { id: 'harbin', name: '哈尔滨', nameEn: 'Harbin', country: '中国', tz: 'Asia/Shanghai', lon: 126.65, lat: 45.76 },
+  { id: 'lasa', name: '拉萨', nameEn: 'Lhasa', country: '中国', tz: 'Asia/Shanghai', lon: 91.13, lat: 29.65 },
+
+  // 大洋洲
+  { id: 'sydney', name: '悉尼', nameEn: 'Sydney', country: '澳大利亚', tz: 'Australia/Sydney', lon: 151.21, lat: -33.87 },
+  { id: 'melbourne', name: '墨尔本', nameEn: 'Melbourne', country: '澳大利亚', tz: 'Australia/Melbourne', lon: 144.96, lat: -37.81 },
+  { id: 'perth', name: '珀斯', nameEn: 'Perth', country: '澳大利亚', tz: 'Australia/Perth', lon: 115.86, lat: -31.95 },
+  { id: 'brisbane', name: '布里斯班', nameEn: 'Brisbane', country: '澳大利亚', tz: 'Australia/Brisbane', lon: 153.03, lat: -27.47 },
+  { id: 'auckland', name: '奥克兰', nameEn: 'Auckland', country: '新西兰', tz: 'Pacific/Auckland', lon: 174.76, lat: -36.85 },
+];
+
+// ========== 坐标转换 ==========
+function lonToX(lon) {
+  return ((lon + 180) / 360) * 1000;
+}
+function latToY(lat) {
+  return ((90 - lat) / 180) * 500;
+}
+
+// ========== 简化世界地图路径 ==========
+function getWorldMapSVG() {
+  // Simplified continent outlines using Mercator-like projection
+  return `
+  <g fill="rgba(59, 130, 246, 0.08)" stroke="rgba(59, 130, 246, 0.15)" stroke-width="0.5">
+    <!-- 北美 -->
+    <path d="M120,80 L200,60 L280,70 L320,90 L340,130 L350,180 L340,220 L300,250 L260,240 L220,250 L180,230 L140,200 L110,150 L120,80Z" />
+    <path d="M140,240 L180,250 L220,260 L260,255 L280,270 L260,300 L220,320 L180,310 L150,280 L140,240Z" />
+
+    <!-- 南美 -->
+    <path d="M260,280 L290,290 L310,320 L320,360 L310,400 L290,430 L260,440 L240,420 L230,380 L240,340 L250,300 L260,280Z" />
+
+    <!-- 欧洲 -->
+    <path d="M450,100 L480,90 L520,95 L550,110 L560,140 L550,170 L530,180 L500,175 L470,160 L450,140 L445,120 L450,100Z" />
+    <!-- 英国 -->
+    <path d="M430,100 L440,95 L450,100 L448,120 L435,130 L425,120 L430,100Z" />
+    <!-- 斯堪的纳维亚 -->
+    <path d="M480,60 L510,50 L530,60 L540,90 L520,100 L490,95 L470,80 L480,60Z" />
+    <!-- 冰岛 -->
+    <path d="M380,55 L400,50 L410,60 L400,75 L385,70 L380,55Z" />
+
+    <!-- 非洲 -->
+    <path d="M440,180 L480,170 L520,175 L550,200 L560,240 L550,290 L520,340 L480,370 L440,380 L420,360 L410,310 L420,260 L430,220 L440,180Z" />
+    <!-- 马达加斯加 -->
+    <path d="M560,310 L570,305 L575,320 L570,340 L560,345 L555,330 L560,310Z" />
+
+    <!-- 中东/西亚 -->
+    <path d="M560,160 L590,150 L620,155 L640,175 L635,200 L610,210 L580,200 L560,180 L560,160Z" />
+
+    <!-- 亚洲大陆 -->
+    <path d="M580,100 L640,80 L700,70 L780,75 L850,90 L900,120 L920,160 L900,200 L860,230 L800,250 L740,260 L680,250 L620,230 L580,200 L560,160 L560,130 L570,110 L580,100Z" />
+    <!-- 印度 -->
+    <path d="M660,180 L700,170 L720,200 L710,250 L680,280 L650,270 L640,230 L650,200 L660,180Z" />
+    <!-- 东南亚 -->
+    <path d="M720,260 L760,250 L790,270 L800,300 L780,330 L740,340 L710,320 L700,290 L720,260Z" />
+    <!-- 日本 -->
+    <path d="M880,130 L900,125 L915,140 L910,170 L895,180 L880,170 L875,150 L880,130Z" />
+    <!-- 台湾 -->
+    <path d="M850,200 L860,195 L865,210 L855,220 L845,215 L850,200Z" />
+    <!-- 菲律宾 -->
+    <path d="M800,260 L815,255 L825,270 L815,285 L800,280 L800,260Z" />
+    <!-- 印尼群岛 -->
+    <path d="M760,340 L790,335 L820,345 L830,360 L810,370 L780,365 L760,350 L760,340Z" />
+
+    <!-- 大洋洲 -->
+    <path d="M820,370 L880,360 L930,370 L950,390 L940,420 L900,440 L850,440 L820,420 L810,390 L820,370Z" />
+    <!-- 新西兰 -->
+    <path d="M940,420 L955,415 L960,430 L950,445 L940,440 L940,420Z" />
+
+    <!-- 格陵兰 -->
+    <path d="M300,40 L340,30 L380,45 L390,80 L360,100 L320,90 L290,70 L300,40Z" />
+  </g>
+
+  <!-- 时区分隔线（每15度一条经线） -->
+  <g stroke="rgba(59, 130, 246, 0.06)" stroke-width="0.5" stroke-dasharray="2,4">
+    ${Array.from({length: 24}, (_, i) => {
+      const x = (i * 15 / 360) * 1000;
+      return `<line x1="${x}" y1="0" x2="${x}" y2="500" />`;
+    }).join('\n    ')}
+  </g>
+
+  <!-- UTC 标记 -->
+  <g font-size="8" fill="rgba(59, 130, 246, 0.3)" text-anchor="middle">
+    ${Array.from({length: 25}, (_, i) => {
+      const x = (i * 15 / 360) * 1000;
+      const offset = i - 12;
+      const label = offset === 0 ? 'UTC' : (offset > 0 ? `UTC+${offset}` : `UTC${offset}`);
+      return `<text x="${x}" y="12">${label}</text>`;
+    }).join('\n    ')}
+  </g>
+
+  <!-- 赤道 -->
+  <line x1="0" y1="250" x2="1000" y2="250" stroke="rgba(251, 191, 36, 0.15)" stroke-width="0.8" stroke-dasharray="4,4" />
+  <text x="510" y="245" font-size="8" fill="rgba(251, 191, 36, 0.3)" text-anchor="middle">赤道</text>
+
+  <!-- 南北回归线 -->
+  <line x1="0" y1="167" x2="1000" y2="167" stroke="rgba(251, 191, 36, 0.08)" stroke-width="0.5" stroke-dasharray="2,4" />
+  <line x1="0" y1="333" x2="1000" y2="333" stroke="rgba(251, 191, 36, 0.08)" stroke-width="0.5" stroke-dasharray="2,4" />
+
+  <!-- 南北极圈 -->
+  <line x1="0" y1="33" x2="1000" y2="33" stroke="rgba(59, 130, 246, 0.08)" stroke-width="0.5" stroke-dasharray="2,4" />
+  <line x1="0" y1="467" x2="1000" y2="467" stroke="rgba(59, 130, 246, 0.08)" stroke-width="0.5" stroke-dasharray="2,4" />
+  `;
+}
+
+// ========== 状态 ==========
+let selectedCities = [];
+
+// ========== 渲染地图 ==========
+function renderMap() {
+  const mapEl = document.getElementById('map');
+  let svg = getWorldMapSVG();
+
+  // 渲染城市圆点
+  CITIES.forEach(city => {
+    const x = lonToX(city.lon);
+    const y = latToY(city.lat);
+    const isSelected = selectedCities.some(c => c.id === city.id);
+    svg += `
+    <g class="city-dot-group" data-city="${city.id}">
+      <circle class="city-dot ${isSelected ? 'selected' : ''}" cx="${x}" cy="${y}" r="4"
+        fill="${isSelected ? '#34d399' : '#60a5fa'}" stroke="${isSelected ? '#fff' : 'transparent'}"
+        stroke-width="${isSelected ? 1.5 : 0}" data-city="${city.id}" />
+      <text class="city-label" x="${x + 6}" y="${y + 3}" data-city="${city.id}">${city.name}</text>
+    </g>`;
+  });
+
+  mapEl.innerHTML = svg;
+
+  // 绑定点击事件
+  mapEl.querySelectorAll('.city-dot').forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      const cityId = e.target.dataset.city;
+      toggleCity(cityId);
+    });
+  });
+}
+
+// ========== 切换城市选中状态 ==========
+function toggleCity(cityId) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
+
+  const idx = selectedCities.findIndex(c => c.id === cityId);
+  if (idx >= 0) {
+    selectedCities.splice(idx, 1);
+  } else {
+    selectedCities.push(city);
+  }
+
+  renderMap();
+  renderCityList();
+}
+
+// ========== 移除城市 ==========
+function removeCity(cityId) {
+  selectedCities = selectedCities.filter(c => c.id !== cityId);
+  renderMap();
+  renderCityList();
+}
+
+// ========== 清空所有 ==========
+function clearAll() {
+  selectedCities = [];
+  renderMap();
+  renderCityList();
+}
+
+// ========== 获取时区时间 ==========
+function getTimeInZone(tz) {
+  try {
+    return new Date().toLocaleString('zh-CN', { timeZone: tz });
+  } catch {
+    return '--';
+  }
+}
+
+function getTimeParts(tz) {
+  const now = new Date();
+  try {
+    const opts = { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    const time = now.toLocaleTimeString('zh-CN', opts);
+    const dateOpts = { timeZone: tz, year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+    const date = now.toLocaleDateString('zh-CN', dateOpts);
+    const hour = parseInt(time.split(':')[0]);
+    const offsetStr = getTZOffset(tz);
+    const utcOffset = getUTCOffsetHours(tz);
+    return { time, date, hour, offsetStr, utcOffset };
+  } catch {
+    return { time: '--:--:--', date: '', hour: 0, offsetStr: '', utcOffset: 0 };
+  }
+}
+
+// ========== 时区偏移 ==========
+function getTZOffset(tz) {
+  try {
+    const now = new Date();
+    const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+    const diffMs = tzDate - utcDate;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const sign = diffHours >= 0 ? '+' : '';
+    return `UTC${sign}${diffHours}`;
+  } catch {
+    return '';
+  }
+}
+
+function getUTCOffsetHours(tz) {
+  try {
+    const now = new Date();
+    const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+    return (tzDate - utcDate) / (1000 * 60 * 60);
+  } catch {
+    return 0;
+  }
+}
+
+// ========== 日夜判断 ==========
+function getDayNightStatus(tz) {
+  const { hour } = getTimeParts(tz);
+  if (hour >= 6 && hour < 8) return { cls: 'sunrise', label: '日出' };
+  if (hour >= 8 && hour < 18) return { cls: 'day', label: '白天' };
+  if (hour >= 18 && hour < 20) return { cls: 'sunset', label: '日落' };
+  return { cls: 'night', label: '夜晚' };
+}
+
+// ========== 时差计算 ==========
+function getTimeDiff(tz1, tz2) {
+  const offset1 = getUTCOffsetHours(tz1);
+  const offset2 = getUTCOffsetHours(tz2);
+  const diff = offset2 - offset1;
+  if (Math.abs(diff) < 0.01) return { label: '相同', cls: 'diff-same' };
+  const sign = diff > 0 ? '快' : '慢';
+  const absH = Math.abs(diff);
+  const m = Math.round((absH % 1) * 60);
+  let text = `${sign} ${Math.floor(absH)}小时`;
+  if (m > 0) text += `${m}分钟`;
+  return { label: text, cls: diff > 0 ? 'diff-ahead' : 'diff-behind' };
+}
+
+// ========== 渲染城市列表 ==========
+function renderCityList() {
+  const listEl = document.getElementById('cityList');
+  const countEl = document.getElementById('cityCount');
+  const clearBtn = document.getElementById('clearAll');
+
+  countEl.textContent = `(${selectedCities.length})`;
+  clearBtn.style.display = selectedCities.length > 0 ? 'inline' : 'none';
+
+  if (selectedCities.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🕐</div>
+        点击地图上的城市圆点开始添加
+      </div>`;
+    return;
+  }
+
+  const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const localOffset = getUTCOffsetHours(localTz);
+
+  listEl.innerHTML = selectedCities.map(city => {
+    const parts = getTimeParts(city.tz);
+    const dayNight = getDayNightStatus(city.tz);
+    const timeDiff = getTimeDiff(localTz, city.tz);
+    return `
+    <div class="city-card" data-city-id="${city.id}">
+      <button class="card-remove" onclick="removeCity('${city.id}')">&times;</button>
+      <div class="card-header">
+        <div>
+          <span class="card-city">${city.name}</span>
+          <span class="card-country">${city.country}</span>
+        </div>
+        <span class="diff-tag ${timeDiff.cls}">${timeDiff.label}</span>
+      </div>
+      <div class="card-time">${parts.time}</div>
+      <div class="card-date">${parts.date}</div>
+      <div class="card-info">
+        <span class="card-info-item"><strong>时区</strong> ${parts.offsetStr}</span>
+        <span class="card-info-item"><strong>日夜</strong> ${dayNight.label}</span>
+        <span class="card-info-item"><span class="night-indicator ${dayNight.cls}"></span></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== 更新我的时间 ==========
+function updateMyTime() {
+  const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const now = new Date();
+  const timeOpts = { timeZone: localTz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const dateOpts = { timeZone: localTz, year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+  document.getElementById('myTime').textContent = now.toLocaleTimeString('zh-CN', timeOpts);
+  document.getElementById('myDate').textContent = now.toLocaleDateString('zh-CN', dateOpts);
+}
+
+// ========== 搜索功能 ==========
+const searchBox = document.getElementById('searchBox');
+let searchResults = [];
+
+searchBox.addEventListener('input', (e) => {
+  const query = e.target.value.trim().toLowerCase();
+  if (!query) {
+    document.querySelectorAll('.search-dropdown').forEach(d => d.remove());
+    return;
+  }
+  const results = CITIES.filter(c =>
+    c.name.includes(query) || c.nameEn.toLowerCase().includes(query) || c.country.includes(query)
+  ).slice(0, 8);
+
+  // 移除旧的下拉
+  document.querySelectorAll('.search-dropdown').forEach(d => d.remove());
+
+  if (results.length === 0) return;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'search-dropdown';
+  dropdown.innerHTML = results.map(c => `
+    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(100,150,255,0.05);font-size:13px;"
+      onmouseover="this.style.background='#0d1f3c'" onmouseout="this.style.background=''"
+      onclick="addCityFromSearch('${c.id}')">
+      <span style="color:#fff;font-weight:500;">${c.name}</span>
+      <span style="color:#64748b;margin-left:4px;">${c.country}</span>
+      <span style="color:#60a5fa;margin-left:4px;font-size:11px;">${c.tz.split('/').pop().replace(/_/g, ' ')}</span>
+    </div>
+  `).join('');
+  searchBox.parentElement.appendChild(dropdown);
+});
+
+searchBox.addEventListener('blur', () => {
+  setTimeout(() => document.querySelectorAll('.search-dropdown').forEach(d => d.remove()), 200);
+});
+
+function addCityFromSearch(cityId) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (city && !selectedCities.some(c => c.id === cityId)) {
+    selectedCities.push(city);
+    renderMap();
+    renderCityList();
+  }
+  searchBox.value = '';
+  document.querySelectorAll('.search-dropdown').forEach(d => d.remove());
+}
+
+// ========== 定时器 ==========
+function tick() {
+  updateMyTime();
+  if (selectedCities.length > 0) {
+    // 只更新时间文本，不重新渲染整个列表
+    document.querySelectorAll('.city-card').forEach(card => {
+      const cityId = card.dataset.cityId;
+      const city = selectedCities.find(c => c.id === cityId);
+      if (city) {
+        const parts = getTimeParts(city.tz);
+        const timeEl = card.querySelector('.card-time');
+        const dateEl = card.querySelector('.card-date');
+        if (timeEl) timeEl.textContent = parts.time;
+        if (dateEl) dateEl.textContent = parts.date;
+
+        // 更新日夜指示
+        const dayNight = getDayNightStatus(city.tz);
+        const indicator = card.querySelector('.night-indicator');
+        const labelEl = card.querySelector('.card-info-item:nth-child(2)');
+        if (indicator) indicator.className = `night-indicator ${dayNight.cls}`;
+        if (labelEl) labelEl.innerHTML = `<strong>日夜</strong> ${dayNight.label}`;
+
+        // 更新时差
+        const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const timeDiff = getTimeDiff(localTz, city.tz);
+        const diffTag = card.querySelector('.diff-tag');
+        if (diffTag) {
+          diffTag.className = `diff-tag ${timeDiff.cls}`;
+          diffTag.textContent = timeDiff.label;
+        }
+      }
+    });
+  }
+}
+
+// ========== 初始化 ==========
+document.getElementById('clearAll').addEventListener('click', clearAll);
+
+renderMap();
+renderCityList();
+updateMyTime();
+setInterval(tick, 1000);
+
+</script>
+</body>
+</html>
