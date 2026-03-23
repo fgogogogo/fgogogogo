@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>指示剂变色实验模拟器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #ddd6fe 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 36px 40px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    max-width: 900px;
+    width: 100%;
+  }
+
+  h1 {
+    text-align: center;
+    color: #1e1b4b;
+    margin-bottom: 28px;
+    font-size: 1.6em;
+    letter-spacing: 2px;
+  }
+
+  /* 控制面板 */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .control-group {
+    background: #f8f9ff;
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid #e0e7ff;
+  }
+
+  .control-group h3 {
+    color: #4338ca;
+    margin-bottom: 14px;
+    font-size: 1.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .control-group h3 .icon {
+    font-size: 1.2em;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: #fff;
+    user-select: none;
+  }
+
+  .option:hover {
+    border-color: #a5b4fc;
+    background: #eef2ff;
+  }
+
+  .option.selected {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+  }
+
+  .option .color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+  }
+
+  .option span {
+    font-size: 0.95em;
+    color: #334155;
+  }
+
+  .option .chem {
+    font-size: 0.8em;
+    color: #94a3b8;
+    margin-left: auto;
+    font-family: monospace;
+  }
+
+  /* 按钮区 */
+  .action-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.05em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+  }
+
+  .btn-mix {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(79,70,229,0.35);
+  }
+
+  .btn-mix:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79,70,229,0.5);
+  }
+
+  .btn-mix:active {
+    transform: translateY(0);
+  }
+
+  .btn-reset {
+    background: #f1f5f9;
+    color: #475569;
+    border: 2px solid #cbd5e1;
+  }
+
+  .btn-reset:hover {
+    background: #e2e8f0;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  /* 试管区 */
+  .tube-area {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 30px;
+    align-items: flex-end;
+  }
+
+  .tube-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tube-label {
+    font-size: 0.85em;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .test-tube {
+    position: relative;
+    width: 80px;
+    height: 200px;
+    background: rgba(200, 220, 255, 0.3);
+    border: 3px solid #94a3b8;
+    border-radius: 0 0 40px 40px;
+    border-top: none;
+    overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.06);
+  }
+
+  .test-tube::before {
+    /* 玻璃高光 */
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3), transparent);
+    border-radius: 0 0 20px 0;
+  }
+
+  .liquid {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    transition: background-color 1.5s ease, height 1s ease;
+    border-radius: 0 0 37px 37px;
+  }
+
+  .liquid.indicator-liquid {
+    height: 0%;
+    transition: height 1s ease, background-color 1.5s ease;
+  }
+
+  /* 结果信息 */
+  .result-panel {
+    display: none;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 16px;
+    padding: 22px 28px;
+    border: 2px solid #fcd34d;
+    animation: fadeSlideIn 0.5s ease;
+  }
+
+  .result-panel.show {
+    display: block;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-panel h3 {
+    color: #92400e;
+    margin-bottom: 12px;
+    font-size: 1.1em;
+  }
+
+  .result-panel .principle {
+    color: #78350f;
+    line-height: 1.8;
+    font-size: 0.95em;
+  }
+
+  .result-panel .principle .highlight {
+    background: rgba(255,255,255,0.5);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .result-panel .color-name {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    margin-top: 8px;
+    font-size: 0.9em;
+  }
+
+  /* 倒水动画 */
+  @keyframes pour {
+    0% { transform: rotate(0deg); }
+    30% { transform: rotate(-70deg); }
+    50% { transform: rotate(-70deg); }
+    80% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .pouring .test-tube {
+    animation: pour 1.8s ease-in-out;
+  }
+
+  /* 液体涟漪 */
+  @keyframes ripple {
+    0% { transform: scale(0.8); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .ripple-effect {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    animation: ripple 1.2s ease-out infinite;
+    pointer-events: none;
+  }
+
+  .color-transitioning .liquid {
+    transition: background-color 1.5s ease !important;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 指示剂变色实验模拟器</h1>
+
+  <!-- 控制面板 -->
+  <div class="controls">
+    <!-- 选择指示剂 -->
+    <div class="control-group">
+      <h3><span class="icon">🧫</span> 选择指示剂</h3>
+      <div class="options" id="indicatorOptions">
+        <div class="option" data-value="litmus" onclick="selectIndicator('litmus')">
+          <div class="color-dot" style="background: #8b5cf6;"></div>
+          <span>石蕊</span>
+          <span class="chem">紫色试纸/溶液</span>
+        </div>
+        <div class="option" data-value="phenolphthalein" onclick="selectIndicator('phenolphthalein')">
+          <div class="color-dot" style="background: #f0f0f0; border-color: #d1d5db;"></div>
+          <span>酚酞</span>
+          <span class="chem">无色溶液</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 选择溶液 -->
+    <div class="control-group">
+      <h3><span class="icon">🧪</span> 选择溶液</h3>
+      <div class="options" id="solutionOptions">
+        <div class="option" data-value="vinegar" onclick="selectSolution('vinegar')">
+          <div class="color-dot" style="background: #fef3c7;"></div>
+          <span>醋（乙酸）</span>
+          <span class="chem">酸性 · pH≈3</span>
+        </div>
+        <div class="option" data-value="limewater" onclick="selectSolution('limewater')">
+          <div class="color-dot" style="background: #e0f2fe;"></div>
+          <span>石灰水（氢氧化钙）</span>
+          <span class="chem">碱性 · pH≈12</span>
+        </div>
+        <div class="option" data-value="saltwater" onclick="selectSolution('saltwater')">
+          <div class="color-dot" style="background: #f1f5f9;"></div>
+          <span>盐水（氯化钠）</span>
+          <span class="chem">中性 · pH≈7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 按钮 -->
+  <div class="action-row">
+    <button class="btn btn-mix" id="mixBtn" onclick="mix()" disabled>开始混合</button>
+    <button class="btn btn-reset" onclick="reset()">重置</button>
+  </div>
+
+  <!-- 试管区 -->
+  <div class="tube-area" id="tubeArea">
+    <div class="tube-wrapper">
+      <div class="tube-label">溶液</div>
+      <div class="test-tube" id="solutionTube">
+        <div class="liquid" id="solutionLiquid" style="height: 60%;"></div>
+      </div>
+    </div>
+    <div class="tube-wrapper">
+      <div class="tube-label">指示剂</div>
+      <div class="test-tube" id="indicatorTube">
+        <div class="liquid indicator-liquid" id="indicatorLiquid" style="height: 50%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="result-panel" id="resultPanel">
+    <h3>📋 变色原理</h3>
+    <div class="principle" id="principleText"></div>
+  </div>
+</div>
+
+<script>
+// 状态
+let selectedIndicator = null;
+let selectedSolution = null;
+let isAnimating = false;
+
+// 颜色配置
+const colors = {
+  vinegar:       '#fef3c7', // 醋 — 淡黄
+  limewater:      '#e0f2fe', // 石灰水 — 淡蓝
+  saltwater:      '#f1f5f9', // 盐水 — 浅灰
+
+  litmus:         '#8b5cf6', // 石蕊 — 紫色
+  litmus_acid:    '#ef4444', // 石蕊+酸 — 红
+  litmus_base:    '#3b82f6', // 石蕊+碱 — 蓝
+  litmus_neutral: '#8b5cf6', // 石蕊+中性 — 紫
+
+  phenolphthalein:        '#f8fafc', // 酚酞 — 近白
+  phenolphthalein_base:   '#ec4899', // 酚酞+碱 — 粉红
+  phenolphthalein_other:  '#f8fafc', // 酚酞+酸/中 — 无色
+};
+
+// 原理文本
+const principles = {
+  litmus_vinegar: {
+    text: `<span class="highlight">石蕊指示剂</span>是一种天然色素，在酸性溶液中会变成<span class="highlight">红色</span>。
+           醋（乙酸）的pH值约为3，属于<strong>酸性</strong>溶液。
+           当紫色石蕊遇到醋时，溶液中的H⁺离子使石蕊分子结构发生改变，从而呈现<span class="highlight">红色</span>。`,
+    color: '红色 · Red',
+    colorBg: '#ef4444'
+  },
+  litmus_limewater: {
+    text: `<span class="highlight">石蕊指示剂</span>在碱性溶液中会变成<span class="highlight">蓝色</span>。
+           石灰水（氢氧化钙溶液）的pH值约为12，属于<strong>碱性</strong>溶液。
+           碱性环境中的OH⁻离子使石蕊分子结构发生变化，从而呈现<span class="highlight">蓝色</span>。`,
+    color: '蓝色 · Blue',
+    colorBg: '#3b82f6'
+  },
+  litmus_saltwater: {
+    text: `<span class="highlight">石蕊指示剂</span>在中性溶液中保持<span class="highlight">紫色</span>不变。
+           盐水（氯化钠溶液）的pH值约为7，属于<strong>中性</strong>溶液。
+           没有过多的H⁺或OH⁻离子干扰，石蕊分子保持原有结构，颜色仍为<span class="highlight">紫色</span>。`,
+    color: '紫色 · Purple',
+    colorBg: '#8b5cf6'
+  },
+  phenolphthalein_vinegar: {
+    text: `<span class="highlight">酚酞指示剂</span>在酸性溶液中保持<span class="highlight">无色</span>不变。
+           酚酞是一种有机弱酸，只有在碱性环境中才会发生结构变化并显色。
+           醋（乙酸，pH≈3）属于<strong>酸性</strong>，酚酞分子保持无色状态。`,
+    color: '无色 · Colorless',
+    colorBg: '#94a3b8'
+  },
+  phenolphthalein_limewater: {
+    text: `<span class="highlight">酚酞指示剂</span>在碱性溶液中会变成<span class="highlight">粉红色</span>。
+           石灰水（氢氧化钙，pH≈12）属于<strong>碱性</strong>溶液。
+           碱性环境中的OH⁻离子使酚酞分子发生互变异构，醌式结构呈现粉红色，
+           这是中学化学实验中最经典的变色现象之一。`,
+    color: '粉红色 · Pink',
+    colorBg: '#ec4899'
+  },
+  phenolphthalein_saltwater: {
+    text: `<span class="highlight">酚酞指示剂</span>在中性溶液中保持<span class="highlight">无色</span>不变。
+           盐水（氯化钠，pH≈7）属于<strong>中性</strong>溶液。
+           酚酞只有在pH > 8.2 时才会开始变色，中性环境下保持无色。`,
+    color: '无色 · Colorless',
+    colorBg: '#94a3b8'
+  }
+};
+
+// 选择指示剂
+function selectIndicator(value) {
+  if (isAnimating) return;
+  selectedIndicator = value;
+  document.querySelectorAll('#indicatorOptions .option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.value === value);
+  });
+  updateLiquidDisplay();
+  checkReady();
+}
+
+// 选择溶液
+function selectSolution(value) {
+  if (isAnimating) return;
+  selectedSolution = value;
+  document.querySelectorAll('#solutionOptions .option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.value === value);
+  });
+  updateLiquidDisplay();
+  checkReady();
+}
+
+// 更新试管液体颜色
+function updateLiquidDisplay() {
+  const solLiquid = document.getElementById('solutionLiquid');
+  const indLiquid = document.getElementById('indicatorLiquid');
+
+  if (selectedSolution) {
+    solLiquid.style.backgroundColor = colors[selectedSolution];
+  } else {
+    solLiquid.style.backgroundColor = 'transparent';
+  }
+
+  if (selectedIndicator) {
+    indLiquid.style.backgroundColor = colors[selectedIndicator];
+    indLiquid.style.height = '50%';
+  } else {
+    indLiquid.style.backgroundColor = 'transparent';
+    indLiquid.style.height = '0%';
+  }
+}
+
+// 检查是否可以混合
+function checkReady() {
+  const btn = document.getElementById('mixBtn');
+  btn.disabled = !(selectedIndicator && selectedSolution);
+}
+
+// 混合动画
+function mix() {
+  if (isAnimating || !selectedIndicator || !selectedSolution) return;
+  isAnimating = true;
+  document.getElementById('mixBtn').disabled = true;
+
+  const tubeArea = document.getElementById('tubeArea');
+  const solLiquid = document.getElementById('solutionLiquid');
+  const indLiquid = document.getElementById('indicatorLiquid');
+  const resultPanel = document.getElementById('resultPanel');
+
+  resultPanel.classList.remove('show');
+
+  // 1. 指示剂试管倒水动画
+  tubeArea.classList.add('pouring');
+
+  // 2. 指示剂液体流入溶液试管
+  setTimeout(() => {
+    indLiquid.style.height = '0%';
+    solLiquid.style.height = '70%';
+  }, 600);
+
+  // 3. 添加涟漪效果
+  setTimeout(() => {
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple-effect';
+    solLiquid.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 1500);
+  }, 800);
+
+  // 4. 颜色变化过渡
+  setTimeout(() => {
+    const finalColor = getFinalColor();
+    solLiquid.classList.add('color-transitioning');
+
+    // 平滑过渡到最终颜色
+    solLiquid.style.backgroundColor = finalColor;
+  }, 1200);
+
+  // 5. 撤销倒水动画
+  setTimeout(() => {
+    tubeArea.classList.remove('pouring');
+  }, 2000);
+
+  // 6. 显示结果
+  setTimeout(() => {
+    showResult();
+    isAnimating = false;
+    checkReady();
+  }, 2800);
+}
+
+// 获取最终颜色
+function getFinalColor() {
+  if (selectedIndicator === 'litmus') {
+    if (selectedSolution === 'vinegar') return colors.litmus_acid;
+    if (selectedSolution === 'limewater') return colors.litmus_base;
+    return colors.litmus_neutral;
+  } else {
+    if (selectedSolution === 'limewater') return colors.phenolphthalein_base;
+    return colors.phenolphthalein_other;
+  }
+}
+
+// 显示结果
+function showResult() {
+  const key = `${selectedIndicator}_${selectedSolution}`;
+  const data = principles[key];
+  if (!data) return;
+
+  const panel = document.getElementById('resultPanel');
+  const text = document.getElementById('principleText');
+
+  text.innerHTML = data.text + `<div><span class="color-name" style="background:${data.colorBg}">${data.color}</span></div>`;
+  panel.classList.add('show');
+}
+
+// 重置
+function reset() {
+  if (isAnimating) return;
+  selectedIndicator = null;
+  selectedSolution = null;
+
+  document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('solutionLiquid').style.backgroundColor = 'transparent';
+  document.getElementById('solutionLiquid').style.height = '60%';
+  document.getElementById('indicatorLiquid').style.backgroundColor = 'transparent';
+  document.getElementById('indicatorLiquid').style.height = '0%';
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('mixBtn').disabled = true;
+  document.getElementById('tubeArea').classList.remove('pouring');
+}
+</script>
+</body>
+</html>
