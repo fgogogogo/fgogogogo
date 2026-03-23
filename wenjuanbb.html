@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问卷构建工具</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--p:#6366f1;--ph:#4f46e5;--pl:#e0e7ff;--pb:#f0f0ff;--s:#64748b;--ok:#22c55e;--okb:#f0fdf4;--w:#f59e0b;--wb:#fffbeb;--d:#ef4444;--db:#fef2f2;--bg:#f8fafc;--sf:#fff;--bd:#e2e8f0;--tx:#1e293b;--tx2:#64748b;--tx3:#94a3b8;--r:8px;--rl:12px;--t:.2s ease;--f:'Segoe UI',system-ui,-apple-system,sans-serif;--nh:56px;--xs:4px;--sm:8px;--md:16px;--lg:24px;--xl:32px}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:var(--f);background:var(--bg);color:var(--tx);line-height:1.6;min-height:100vh}
+button{cursor:pointer;font-family:var(--f);border:none;background:none}
+input,textarea,select{font-family:var(--f);border:1px solid var(--bd);border-radius:var(--r);padding:8px 12px;font-size:.875rem;outline:none;transition:border-color var(--t),box-shadow var(--t)}
+input:focus,textarea:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px var(--pl)}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.nav{height:var(--nh);background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 var(--lg);gap:var(--sm);position:sticky;top:0;z-index:100;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.nb{font-weight:700;font-size:1.125rem;color:var(--p);white-space:nowrap}
+.ns{flex:1}
+.nt{display:flex;gap:2px;background:var(--bg);border-radius:var(--r);padding:3px}
+.ntb{padding:6px 16px;border-radius:6px;font-size:.875rem;font-weight:500;color:var(--tx2);transition:all var(--t);white-space:nowrap}
+.ntb:hover{color:var(--tx);background:rgba(0,0,0,.04)}
+.ntb.on{background:var(--sf);color:var(--p);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.na{display:flex;gap:var(--sm)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:.875rem;font-weight:500;transition:all var(--t);white-space:nowrap}
+.bp{background:var(--p);color:#fff}.bp:hover{background:var(--ph)}
+.bs{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}.bs:hover{background:var(--bd)}
+.bsm{padding:5px 10px;font-size:.8rem}
+.bd{background:var(--d);color:#fff}.bd:hover{background:#dc2626}
+.bok{background:var(--ok);color:#fff}.bok:hover{background:#16a34a}
+.bi{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);color:var(--tx2);font-size:.9rem}
+.bi:hover{background:var(--bg);color:var(--tx)}
+.vw{display:none;flex:1;padding:var(--lg)}.vw.on{display:flex;flex-direction:column}
+.bl{display:grid;grid-template-columns:280px 1fr;gap:var(--lg);flex:1;overflow:hidden}
+@media(max-width:639px){.bl{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+.sh{background:var(--sf);border-radius:var(--rl);padding:var(--lg);margin-bottom:var(--lg);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06)}
+.sh h1{font-size:1.5rem;margin-bottom:var(--sm)}
+.sh .fd{margin-bottom:var(--md)}
+.sh .fd label{display:block;font-size:.8rem;font-weight:600;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sh .fd input,.sh .fd textarea{width:100%}
+.sh .fd textarea{resize:vertical;min-height:60px}
+.ssr{display:flex;gap:var(--md);flex-wrap:wrap}
+.ssr .fd{flex:1;min-width:150px}
+.pn{background:var(--sf);border-radius:var(--rl);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - var(--nh) - 120px)}
+.ph{padding:var(--md);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ph h3{font-size:.95rem;font-weight:600}
+.pb{flex:1;overflow-y:auto;padding:var(--sm)}
+.qi{display:flex;align-items:center;gap:var(--sm);padding:10px 12px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:all var(--t);margin-bottom:2px}
+.qi:hover{background:var(--pb)}
+.qi.on{background:var(--pl);border-color:var(--p)}
+.qi .qn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--p);color:#fff;font-size:.7rem;font-weight:700;flex-shrink:0}
+.qi .qif{flex:1;min-width:0}
+.qi .qt{font-size:.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qi .qtp{font-size:.7rem;color:var(--tx3);text-transform:uppercase}
+.qi .qa{display:flex;gap:2px;opacity:0;transition:opacity var(--t)}
+.qi:hover .qa{opacity:1}
+.ep{background:var(--sf);border-radius:var(--rl);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);padding:var(--lg);overflow-y:auto;max-height:calc(100vh - var(--nh) - 120px)}
+.ep h3{font-size:1rem;margin-bottom:var(--md)}
+.ef{margin-bottom:var(--md)}
+.ef label{display:block;font-size:.8rem;font-weight:600;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.ef input,.ef select,.ef textarea{width:100%}
+.ef textarea{resize:vertical;min-height:80px}
+.ts{display:flex;gap:var(--sm);flex-wrap:wrap;margin-bottom:var(--md)}
+.tb{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 16px;border-radius:var(--r);border:1px solid var(--bd);background:var(--sf);cursor:pointer;transition:all var(--t);font-size:.75rem;color:var(--tx2);min-width:80px}
+.tb:hover{border-color:var(--p);color:var(--p)}
+.tb.on{border-color:var(--p);background:var(--pl);color:var(--p);font-weight:600}
+.tb .ti{font-size:1.2rem}
+.ol{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.or{display:flex;align-items:center;gap:6px}
+.or input{flex:1}
+.brs{border:1px solid var(--bd);border-radius:var(--r);padding:var(--md);margin-top:var(--md)}
+.brs h{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sm)}
+.brs h h4{font-size:.9rem}
+.brr{display:flex;flex-direction:column;gap:8px}
+.br{display:grid;grid-template-columns:1fr auto 1fr 1fr;gap:6px;align-items:center;padding:8px;background:var(--bg);border-radius:var(--r);font-size:.8rem}
+.br input,.br select{font-size:.8rem;padding:4px 8px}
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--xl);color:var(--tx3);text-align:center}
+.es .ic{font-size:2.5rem;margin-bottom:var(--md)}
+.es p{font-size:.9rem}
+.tc{max-width:700px;margin:0 auto;width:100%;flex:1;display:flex;flex-direction:column}
+.tbar{display:flex;align-items:center;gap:var(--sm);padding:var(--sm) var(--md);background:var(--wb);border-radius:var(--r);margin-bottom:var(--md);font-size:.875rem;font-weight:600;color:var(--w)}
+.tbar svg{flex-shrink:0}
+.tbar .tp{flex:1;height:6px;background:rgba(245,158,11,.2);border-radius:3px;overflow:hidden}
+.tbar .tp .tf{height:100%;background:var(--w);transition:width 1s linear;border-radius:3px}
+.tbar.ug{background:var(--db);color:var(--d)}.tbar.ug .tp .tf{background:var(--d)}
+.pbar{display:flex;align-items:center;gap:var(--sm);margin-bottom:var(--lg);font-size:.8rem;color:var(--tx2)}
+.pbar .pt{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
+.pbar .pt .pf{height:100%;background:var(--p);border-radius:2px;transition:width .3s ease}
+.qc{background:var(--sf);border-radius:var(--rl);padding:var(--xl);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);margin-bottom:var(--lg);animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.qc .qct{font-size:1.125rem;font-weight:600;margin-bottom:var(--md)}
+.qc .qcd{font-size:.85rem;color:var(--tx2);margin-bottom:var(--lg)}
+.og{display:flex;flex-direction:column;gap:10px}
+.olb{display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;transition:all var(--t);font-size:.9rem}
+.olb:hover{border-color:var(--p);background:var(--pb)}
+.olb.on{border-color:var(--p);background:var(--pl);font-weight:500}
+.olb input[type="radio"],.olb input[type="checkbox"]{width:18px;height:18px;accent-color:var(--p)}
+.sc{padding:var(--md) 0}
+.sc input[type="range"]{width:100%;height:6px;-webkit-appearance:none;appearance:none;background:var(--bd);border-radius:3px;outline:none;border:none;padding:0}
+.sc input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--p);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06)}
+.svd{text-align:center;font-size:1.25rem;font-weight:700;color:var(--p);margin-top:var(--sm)}
+.sls{display:flex;justify-content:space-between;font-size:.75rem;color:var(--tx3);margin-top:4px}
+.tif textarea{width:100%;min-height:100px;resize:vertical;font-size:.95rem;line-height:1.5}
+.tn{display:flex;justify-content:space-between;gap:var(--md);margin-top:var(--md)}
+.rc{max-width:900px;margin:0 auto;width:100%;flex:1}
+.rh{text-align:center;margin-bottom:var(--xl)}
+.rh h1{font-size:1.5rem;margin-bottom:4px}
+.rh p{color:var(--tx2);font-size:.9rem}
+.rd{background:var(--sf);border-radius:var(--rl);padding:var(--lg);margin-bottom:var(--md);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06)}
+.rd h4{font-size:.95rem;margin-bottom:var(--md);padding-bottom:var(--sm);border-bottom:1px solid var(--bd)}
+.rd .cc{position:relative;height:220px;width:100%}
+.rd .sr{display:flex;gap:var(--lg);margin-top:var(--md)}
+.sb{flex:1;text-align:center;padding:var(--sm);background:var(--bg);border-radius:var(--r)}
+.sb .sv{font-size:1.25rem;font-weight:700;color:var(--p)}
+.sb .sl{font-size:.75rem;color:var(--tx3)}
+.trs{max-height:200px;overflow-y:auto}
+.tri{padding:8px 12px;border-bottom:1px solid var(--bd);font-size:.85rem;line-height:1.5}
+.tri:last-child{border-bottom:none}
+.rcn{display:inline-block;background:var(--pl);color:var(--p);padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600;margin-left:6px}
+.ttc{position:fixed;top:calc(var(--nh) + var(--md));right:var(--md);z-index:1000;display:flex;flex-direction:column;gap:var(--sm)}
+.tt{padding:12px 20px;border-radius:var(--r);background:var(--sf);box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);font-size:.875rem;font-weight:500;animation:ti .3s ease;max-width:350px}
+.tt.ok{border-left:4px solid var(--ok)}.tt.er{border-left:4px solid var(--d)}.tt.inf{border-left:4px solid var(--p)}
+@keyframes ti{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:var(--md)}
+.mo.on{display:flex}
+.ml{background:var(--sf);border-radius:var(--rl);padding:var(--xl);max-width:500px;width:100%;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);max-height:80vh;overflow-y:auto}
+.ml h3{margin-bottom:var(--md)}
+.ma{display:flex;justify-content:flex-end;gap:var(--sm);margin-top:var(--lg)}
+.sl{display:flex;flex-direction:column;gap:var(--md)}
+.si{display:flex;align-items:center;gap:var(--md);padding:var(--md);background:var(--sf);border-radius:var(--rl);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);cursor:pointer;transition:all var(--t)}
+.si:hover{box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)}
+.si .sif{flex:1}
+.si .sit{font-weight:600;font-size:.95rem}
+.si .sim{font-size:.8rem;color:var(--tx3)}
+.si .sia{display:flex;gap:var(--sm)}
+@media(max-width:639px){.nav{padding:0 var(--sm);flex-wrap:wrap;height:auto;gap:6px}.nb{font-size:1rem}.nt{order:3;width:100%;justify-content:center;margin-top:4px}.na{order:2}.vw{padding:var(--sm)}.br{grid-template-columns:1fr}.tbar{flex-direction:column;text-align:center}.tn{flex-direction:column}.tn .btn{width:100%;justify-content:center}.sr{flex-direction:column}}
+@media(min-width:640px) and (max-width:1023px){.bl{grid-template-columns:240px 1fr}}
+@media(min-width:1024px){.vw{max-width:1200px;margin:0 auto;width:100%}}
+.hid{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="nav">
+<span class="nb">&#128202; 问卷构建工具</span><div class="ns"></div>
+<div class="nt">
+<button class="ntb on" data-v="surveys">问卷列表</button>
+<button class="ntb" data-v="build">构建</button>
+<button class="ntb" data-v="take">填写</button>
+<button class="ntb" data-v="results">结果</button>
+</div>
+<div class="ns"></div>
+<div class="na"><button class="btn bsm bs" id="bNew">+ 新建</button></div>
+</nav>
+<div class="ttc" id="toastC"></div>
+<div class="vw on" id="vSurveys"><div class="rc"><div class="rh"><h1>我的问卷</h1><p>选择一个问卷进行编辑、填写或查看结果</p></div><div class="sl" id="surveysL"></div></div></div>
+<div class="vw" id="vBuild">
+<div class="sh" id="sHeader">
+<div class="fd"><label>问卷标题</label><input type="text" id="sTitle" placeholder="输入问卷标题..."></div>
+<div class="fd"><label>问卷描述</label><textarea id="sDesc" placeholder="输入问卷描述..."></textarea></div>
+<div class="ssr">
+<div class="fd"><label>时间限制（分钟，0=无限制）</label><input type="number" id="sTimeLimit" min="0" value="0" step="1"></div>
+<div class="fd"><label>测验模式</label><select id="sIsQuiz"><option value="false">否</option><option value="true">是</option></select></div>
+</div></div>
+<div class="bl">
+<div class="pn"><div class="ph"><h3>问题列表</h3><button class="btn bsm bp" id="bAddQ">+ 添加问题</button></div><div class="pb" id="qList"></div></div>
+<div class="ep" id="qEditor"><div class="es" id="eEmpty"><div class="ic">&#128221;</div><p>选择一个问题进行编辑，或添加新问题</p></div></div>
+</div></div>
+<div class="vw" id="vTake"><div class="tc" id="takeC"><div class="es"><div class="ic">&#128196;</div><p>请先在构建视图中创建问卷并添加问题</p></div></div></div>
+<div class="vw" id="vResults"><div class="rc" id="resC"><div class="es"><div class="ic">&#128202;</div><p>暂无结果数据，请先填写并提交问卷</p></div></div></div>
+<div class="mo" id="shareM">
+<div class="ml">
+<h3>分享问卷</h3>
+<p style="color:var(--tx2);font-size:.85rem;margin-bottom:var(--md)">复制以下链接分享给其他人填写：</p>
+<div style="display:flex;gap:8px"><input type="text" id="shareLink" readonly style="flex:1;font-size:.8rem"><button class="btn bp bsm" id="bCopyLink">复制</button></div>
+<div class="ma"><button class="btn bs" onclick="document.getElementById('shareM').classList.remove('on')">关闭</button></div>
+</div></div>
+</div>
+<script>
+// ========== UTILITIES ==========
+function gid(a){return document.getElementById(a)}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,9)}
+function db(fn,d){var t;return function(){clearTimeout(t);t=setTimeout(function(){fn.apply(this,arguments)},d)}}
+function ft(s){var m=Math.floor(s/60),r=s%60;return('0'+m).slice(-2)+':'+('0'+r).slice(-2)}
+function toast(m,ty){var c=gid('toastC'),d=document.createElement('div');d.className='tt '+(ty||'inf');d.textContent=m;c.appendChild(d);setTimeout(function(){d.style.opacity='0';d.style.transform='translateX(40px)';setTimeout(function(){d.remove()},300)},3000)}
+function eh(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+var TL={single:'单选',multiple:'多选',text:'文本',slider:'滑块'};
+var OPS=[{v:'equals',l:'等于'},{v:'contains',l:'包含'},{v:'greater_than',l:'大于'},{v:'less_than',l:'小于'}];
+// ========== STORAGE ==========
+function lS(){try{return JSON.parse(localStorage.getItem('survey_builder_current'))||null}catch(e){return null}}
+function sS(s){localStorage.setItem('survey_builder_current',JSON.stringify(s))}
+function lSurveys(){try{return JSON.parse(localStorage.getItem('survey_builder_surveys'))||[]}catch(e){return []}}
+function sSurveys(l){localStorage.setItem('survey_builder_surveys',JSON.stringify(l))}
+function lRes(){try{return JSON.parse(localStorage.getItem('survey_builder_results'))||[]}catch(e){return []}}
+function sRes(l){localStorage.setItem('survey_builder_results',JSON.stringify(l))}
+function sProg(sid,a,rt){localStorage.setItem('survey_progress_'+sid,JSON.stringify({a:a,r:rt,t:Date.now()}))}
+function lProg(sid){try{return JSON.parse(localStorage.getItem('survey_progress_'+sid))||null}catch(e){return null}}
+function cProg(sid){localStorage.removeItem('survey_progress_'+sid)}
+// ========== DATA ==========
+function nSurvey(){return{id:genId(),title:'新问卷',desc:'',stl:{timeLimit:0,isQuiz:false},qs:[],res:[]}}
+function nQ(type){var b={id:genId(),title:'新问题',desc:'',req:true,br:{on:false,rs:[],dNext:0}};if(type==='single'||type==='multiple')return Object.assign({},b,{type:type,opts:['选项A','选项B','选项C']});if(type==='text')return Object.assign({},b,{type:'text',mxL:500,ml:false});if(type==='slider')return Object.assign({},b,{type:'slider',mn:0,mx:100,st:1,dft:50,unit:''});return b}
+// ========== URL ==========
+function encHash(s){return encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(s)))))}
+function decHash(h){try{return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(h.replace(/^survey=/,''))))))}catch(e){return null}}
+// ========== STATE ==========
+var curS=null;var selQId=null;var curTI=0;var tInt=null;var remT=0;var chts=[];
+// ========== INIT ==========
+function init(){
+  var h=window.location.hash;
+  if(h&&h.indexOf('#survey=')===0){
+    var sv=decHash(h);
+    if(sv){curS=sv;sS(curS);toast('已从链接加载问卷','ok');sw('take');return}
+  }
+  var sv=lS();
+  if(sv){curS=sv}else{curS=nSurvey();sS(curS)}
+  rSL();bNav();bBuild();bTake();bRes();
+}
+// ========== NAV ==========
+function sw(vn){
+  document.querySelectorAll('.ntb').forEach(function(t){t.classList.toggle('on',t.dataset.v===vn)});
+  document.querySelectorAll('.vw').forEach(function(v){v.classList.toggle('on',v.id==='v'+vn.charAt(0).toUpperCase()+vn.slice(1))});
+  if(vn==='surveys')rSL();if(vn==='build')rBuild();if(vn==='take')rTake();if(vn==='results')rRes();
+}
+function bNav(){
+  document.querySelectorAll('.ntb').forEach(function(t){t.addEventListener('click',function(){sw(t.dataset.v)})});
+  gid('bNew').addEventListener('click',function(){curS=nSurvey();sS(curS);selQId=null;toast('已创建新问卷','ok');sw('build')});
+}
+// ========== SURVEYS LIST ==========
+function rSL(){
+  var list=gid('surveysL'),svs=lSurveys(),hasC=curS&&curS.qs&&curS.qs.length>0;
+  list.innerHTML='';
+  if(hasC)list.appendChild(sItem(curS,true));
+  svs.forEach(function(s){list.appendChild(sItem(s,false))});
+  if(!hasC&&svs.length===0)list.innerHTML='<div class="es"><div class="ic">&#128196;</div><p>还没有问卷，点击"新建"创建一个</p></div>';
+}
+function sItem(survey,isC){
+  var d=document.createElement('div');d.className='si';
+  d.innerHTML='<div class="sif"><div class="sit">'+eh(survey.title)+'</div><div class="sim">'+(survey.qs?survey.qs.length:0)+' 个问题 | '+(survey.res?survey.res.length:0)+' 条结果</div></div><div class="sia"><button class="btn bsm bp si-e">编辑</button><button class="btn bsm bok si-t">填写</button><button class="btn bsm bs si-r">结果</button>'+(isC?'':'<button class="btn bsm bd si-d">删除</button>')+'</div>';
+  d.querySelector('.si-e').addEventListener('click',function(e){e.stopPropagation();lSurveyById(survey.id);sw('build')});
+  d.querySelector('.si-t').addEventListener('click',function(e){e.stopPropagation();lSurveyById(survey.id);sw('take')});
+  d.querySelector('.si-r').addEventListener('click',function(e){e.stopPropagation();lSurveyById(survey.id);sw('results')});
+  if(!isC)d.querySelector('.si-d').addEventListener('click',function(e){e.stopPropagation();if(confirm('确定删除此问卷？')){sSurveys(lSurveys().filter(function(x){return x.id!==survey.id}));toast('已删除','ok');rSL()}});
+  return d;
+}
+function lSurveyById(id){var s=lSurveys().find(function(x){return x.id===id});if(s){curS=s;sS(curS)}}
+// ========== BUILD ==========
+function rBuild(){
+  gid('sTitle').value=curS.title||'';
+  gid('sDesc').value=curS.desc||'';
+  gid('sTimeLimit').value=curS.stl?curS.stl.timeLimit:0;
+  gid('sIsQuiz').value=curS.stl&&curS.stl.isQuiz?'true':'false';
+  rQL();rEd();
+}
+function bBuild(){
+  gid('sTitle').addEventListener('input',db(function(){curS.title=gid('sTitle').value;sS(curS)},300));
+  gid('sDesc').addEventListener('input',db(function(){curS.desc=gid('sDesc').value;sS(curS)},300));
+  gid('sTimeLimit').addEventListener('input',db(function(){if(!curS.stl)curS.stl={timeLimit:0,isQuiz:false};curS.stl.timeLimit=parseInt(gid('sTimeLimit').value)||0;sS(curS)},300));
+  gid('sIsQuiz').addEventListener('change',db(function(){if(!curS.stl)curS.stl={timeLimit:0,isQuiz:false};curS.stl.isQuiz=gid('sIsQuiz').value==='true';sS(curS)},300));
+  gid('bAddQ').addEventListener('click',function(){showTP()});
+}
+function showTP(){
+  var ed=gid('qEditor');
+  var h='<h3>选择问题类型</h3><div class="ts">';
+  [['single','单选','&#9677;'],['multiple','多选','&#9745;'],['text','文本','&#128221;'],['slider','滑块','&#128296;']].forEach(function(t){h+='<button class="tb" data-t="'+t[0]+'"><span class="ti">'+t[2]+'</span><span>'+t[1]+'</span></button>'});
+  h+='</div>';
+  ed.innerHTML=h;
+  ed.querySelectorAll('.tb').forEach(function(b){b.addEventListener('click',function(){var q=nQ(b.dataset.t);curS.qs.push(q);selQId=q.id;sS(curS);toast('已添加问题','ok');rQL();rEd()})});
+}
+function rQL(){
+  var list=gid('qList'),qs=curS.qs||[];
+  if(qs.length===0){list.innerHTML='<div class="es"><div class="ic">&#128221;</div><p>暂无问题<br>点击上方"添加问题"开始</p></div>';return}
+  list.innerHTML='';
+  qs.forEach(function(q,idx){
+    var d=document.createElement('div');
+    d.className='qi'+(selQId===q.id?' on':'');
+    d.innerHTML='<div class="qn">'+(idx+1)+'</div><div class="qif"><div class="qt">'+eh(q.title)+'</div><div class="qtp">'+(TL[q.type]||q.type)+'</div></div><div class="qa"><button class="bi" title="上移" data-a="up">&#9650;</button><button class="bi" title="下移" data-a="down">&#9660;</button><button class="bi" title="复制" data-a="copy">&#128203;</button><button class="bi" title="删除" data-a="del">&#128465;</button></div>';
+    d.addEventListener('click',function(e){if(!e.target.closest('.bi')){selQId=q.id;rQL();rEd()}});
+    d.querySelectorAll('.bi').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();hQA(b.dataset.a,q.id)})});
+    list.appendChild(d);
+  });
+}
+function hQA(a,id){
+  var qs=curS.qs,idx=qs.findIndex(function(q){return q.id===id});if(idx<0)return;
+  if(a==='up'&&idx>0){var tmp=qs[idx];qs[idx]=qs[idx-1];qs[idx-1]=tmp;toast('已上移','inf')}
+  if(a==='down'&&idx<qs.length-1){var tmp=qs[idx];qs[idx]=qs[idx+1];qs[idx+1]=tmp;toast('已下移','inf')}
+  if(a==='copy'){var c=JSON.parse(JSON.stringify(qs[idx]));c.id=genId();c.title+=' (副本)';qs.splice(idx+1,0,c);selQId=c.id;toast('已复制','ok')}
+  if(a==='del'){if(confirm('确定删除此问题？')){qs.splice(idx,1);if(selQId===id)selQId=null;toast('已删除','inf')}}
+  sS(curS);rQL();rEd();
+}
+function rEd(){
+  var ed=gid('qEditor');
+  if(!selQId){ed.innerHTML='<div class="es"><div class="ic">&#128221;</div><p>选择一个问题进行编辑，或添加新问题</p></div>';return}
+  var q=curS.qs.find(function(x){return x.id===selQId});if(!q){selQId=null;rEd();return}
+  var ts='<div class="ef"><label>问题类型</label><div class="ts">';
+  [['single','单选','&#9677;'],['multiple','多选','&#9745;'],['text','文本','&#128221;'],['slider','滑块','&#128296;']].forEach(function(t){ts+='<button class="tb '+(q.type===t[0]?'on':'')+'" data-t="'+t[0]+'"><span class="ti">'+t[2]+'</span><span>'+t[1]+'</span></button>'});
+  ts+='</div></div>';
+  var td='<div class="ef"><label>问题标题</label><input type="text" id="eqT" value="'+eh(q.title)+'"></div>';
+  td+='<div class="ef"><label>问题描述</label><textarea id="eqD" placeholder="可选描述...">'+eh(q.desc||'')+'</textarea></div>';
+  td+='<div class="ef"><label><input type="checkbox" id="eqR" '+(q.req?'checked:''')+'> 必填</label></div>';
+  var tf='';
+  if(q.type==='single'||q.type==='multiple'){
+    tf='<div class="ef"><label>选项列表</label><div class="ol" id="eqO">';
+    (q.opts||[]).forEach(function(o,i){tf+='<div class="or"><span style="font-size:.8rem;color:var(--tx3);width:20px">'+(i+1)+'.</span><input type="text" value="'+eh(o)+'" data-i="'+i+'"><button class="bi bsm" data-a="remO" data-i="'+i+'">&#128465;</button></div>'});
+    tf+='</div><button class="btn bsm bs" style="margin-top:8px" id="bAddO">+ 添加选项</button></div>';
+  }else if(q.type==='text'){
+    tf='<div class="ef"><label>最大字符数</label><input type="number" id="eqMxL" value="'+(q.mxL||500)+'" min="1" max="10000"></div>';
+    tf+='<div class="ef"><label><input type="checkbox" id="eqMl" '+(q.ml?'checked:''')+'> 多行文本</label></div>';
+  }else if(q.type==='slider'){
+    tf='<div class="ef"><label>最小值</label><input type="number" id="eqMn" value="'+(q.mn||0)+'"></div>';
+    tf+='<div class="ef"><label>最大值</label><input type="number" id="eqMx" value="'+(q.mx||100)+'"></div>';
+    tf+='<div class="ef"><label>步长</label><input type="number" id="eqSt" value="'+(q.st||1)+'" min="1"></div>';
+    tf+='<div class="ef"><label>默认值</label><input type="number" id="eqDft" value="'+(q.dft||50)+'"></div>';
+    tf+='<div class="ef"><label>单位</label><input type="text" id="eqUnit" value="'+eh(q.unit||'')+'" placeholder="如：分、元..."></div>';
+  }
+  var br='<div class="brs"><div class="brs h"><h4>分支逻辑</h4><label style="font-size:.8rem"><input type="checkbox" id="eqBrOn" '+(q.br&&q.br.on?'checked:''')+'> 启用</label></div>';
+  br+='<div id="brRules">'+rBR(q)+'</div>';
+  br+='<button class="btn bsm bs" style="margin-top:8px" id="bAddBr">+ 添加规则</button></div>';
+  ed.innerHTML=ts+td+tf+br;
+  ed.querySelectorAll('.tb[data-t]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var nt=b.dataset.t;if(nt===q.type)return;
+      var nq=nQ(nt);nq.id=q.id;nq.title=q.title;nq.desc=q.desc;nq.req=q.req;nq.br=q.br;
+      var ix=curS.qs.findIndex(function(x){return x.id===q.id});if(ix>=0)curS.qs[ix]=nq;
+      sS(curS);rQL();rEd();
+    });
+  });
+  gid('eqT').addEventListener('input',db(function(){q.title=gid('eqT').value;sS(curS);rQL()},300));
+  gid('eqD').addEventListener('input',db(function(){q.desc=gid('eqD').value;sS(curS)},300));
+  gid('eqR').addEventListener('change',function(){q.req=gid('eqR').checked;sS(curS)});
+  if(q.type==='single'||q.type==='multiple'){
+    gid('eqO').querySelectorAll('input[type="text"]').forEach(function(inp){
+      inp.addEventListener('input',db(function(){q.opts[parseInt(inp.dataset.i)]=inp.value;sS(curS)},300));
+    });
+    gid('eqO').querySelectorAll('button[data-a="remO"]').forEach(function(b){
+      b.addEventListener('click',function(){q.opts.splice(parseInt(b.dataset.i),1);sS(curS);rEd()});
+    });
+    gid('bAddO').addEventListener('click',function(){q.opts.push('新选项');sS(curS);rEd()});
+  }
+  if(q.type==='text'){
+    gid('eqMxL').addEventListener('input',db(function(){q.mxL=parseInt(gid('eqMxL').value)||500;sS(curS)},300));
+    gid('eqMl').addEventListener('change',function(){q.ml=gid('eqMl').checked;sS(curS)});
+  }
+  if(q.type==='slider'){
+    ['Mn','Mx','St','Dft'].forEach(function(k){
+      gid('eq'+k).addEventListener('input',db(function(){q[k.toLowerCase()]=parseFloat(gid('eq'+k).value)||0;sS(curS)},300));
+    });
+    gid('eqUnit').addEventListener('input',db(function(){q.unit=gid('eqUnit').value;sS(curS)},300));
+  }
+  gid('eqBrOn').addEventListener('change',function(){
+    if(!q.br)q.br={on:false,rs:[],dNext:0};
+    q.br.on=gid('eqBrOn').checked;sS(curS);rEd();
+  });
+  gid('bAddBr').addEventListener('click',function(){
+    if(!q.br)q.br={on:false,rs:[],dNext:0};
+    q.br.rs.push({qId:'',op:'equals',val:'',tgt:''});sS(curS);rEd();
+  });
+  gid('brRules').querySelectorAll('.br').forEach(function(re){bRE(re,q)});
+  var dn=gid('brDN');if(dn)dn.addEventListener('change',db(function(){q.br.dNext=dn.value;sS(curS)},300));
+}
+function rBR(q){
+  if(!q.br||!q.br.rs||q.br.rs.length===0)return '<p style="font-size:.8rem;color:var(--tx3)">暂无分支规则</p>';
+  var h='';
+  q.br.rs.forEach(function(rule,ri){
+    h+='<div class="br" data-ri="'+ri+'">';
+    h+='<select class="bsrc"><option value="">选择问题</option>';
+    (curS.qs||[]).forEach(function(x){if(x.id!==q.id)h+='<option value="'+x.id+'" '+(rule.qId===x.id?'selected':'')+'>'+eh(x.title)+'</option>'});
+    h+='</select>';
+    h+='<select class="bop">';
+    OPS.forEach(function(op){h+='<option value="'+op.v+'" '+(rule.op===op.v?'selected':'')+'>'+op.l+'</option>'});
+    h+='</select>';
+    h+='<input type="text" class="bval" value="'+eh(rule.val||'')+'" placeholder="比较值">';
+    h+='<select class="btgt"><option value="">下一题</option>';
+    (curS.qs||[]).forEach(function(x){if(x.id!==q.id)h+='<option value="'+x.id+'" '+(rule.tgt===x.id?'selected':'')+'>'+eh(x.title)+'</option>'});
+    h+='<option value="end" '+(rule.tgt==='end'?'selected':'')+'>&#10006; 结束</option>';
+    h+='</select>';
+    h+='<button class="bi bsm br-rm" title="删除">&#128465;</button>';
+    h+='</div>';
+  });
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem"><label>默认跳转：</label>';
+  h+='<select id="brDN"><option value="0">下一题</option>';
+  (curS.qs||[]).forEach(function(x){if(x.id!==q.id)h+='<option value="'+x.id+'" '+(q.br&&q.br.dNext===x.id?'selected':'')+'>'+eh(x.title)+'</option>'});
+  h+='<option value="end" '+(q.br&&q.br.dNext==='end'?'selected':'')+'>&#10006; 结束</option>';
+  h+='</select></div>';
+  return h;
+}
+function bRE(re,q){
+  var ri=parseInt(re.dataset.ri);
+  re.querySelector('.bsrc').addEventListener('change',db(function(){q.br.rs[ri].qId=re.querySelector('.bsrc').value;sS(curS)},300));
+  re.querySelector('.bop').addEventListener('change',db(function(){q.br.rs[ri].op=re.querySelector('.bop').value;sS(curS)},300));
+  re.querySelector('.bval').addEventListener('input',db(function(){q.br.rs[ri].val=re.querySelector('.bval').value;sS(curS)},300));
+  re.querySelector('.btgt').addEventListener('change',db(function(){q.br.rs[ri].tgt=re.querySelector('.btgt').value;sS(curS)},300));
+  re.querySelector('.br-rm').addEventListener('click',function(){q.br.rs.splice(ri,1);sS(curS);rEd()});
+}
+// ========== TAKE ==========
+function rTake(){
+  var c=gid('takeC');
+  if(!curS||!curS.qs||curS.qs.length===0){
+    c.innerHTML='<div class="es"><div class="ic">&#128196;</div><p>请先在构建视图中创建问卷并添加问题</p></div>';
+    stopT();return;
+  }
+  var pg=lProg(curS.id);
+  curTI=0;remT=curS.stl&&curS.stl.timeLimit?curS.stl.timeLimit*60:0;
+  if(pg&&pg.a){
+    for(var i=0;i<curS.qs.length;i++){if(!pg.a[curS.qs[i].id]){curTI=i;break}else if(i===curS.qs.length-1)curTI=i}
+    remT=pg.r||remT;
+  }
+  rCQ();
+}
+function rCQ(){
+  var c=gid('takeC'),qs=curS.qs;
+  if(!qs||qs.length===0){c.innerHTML='<div class="es"><div class="ic">&#128196;</div><p>请先在构建视图中创建问卷并添加问题</p></div>';return}
+  if(curTI>=qs.length){submitS();return}
+  var q=qs[curTI];
+  var pg=lProg(curS.id);
+  var ans=pg&&pg.a?pg.a:{};
+  var sv=ans[q.id];
+  var h='';
+  if(curTI===0){
+    h+='<div style="text-align:center;margin-bottom:var(--lg)"><h2 style="font-size:1.25rem">'+eh(curS.title)+'</h2>';
+    if(curS.desc)h+='<p style="color:var(--tx2);font-size:.85rem">'+eh(curS.desc)+'</p>';
+    h+='</div>';
+  }
+  if(curS.stl&&curS.stl.timeLimit>0){
+    var ug=remT<=60;
+    h+='<div class="tbar'+(ug?' ug':'')+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>';
+    h+='<span id="timerD">'+ft(remT)+'</span>';
+    h+='<div class="tp"><div class="tf" id="timerF" style="width:'+(remT/(curS.stl.timeLimit*60)*100)+'%"></div></div>';
+    if(!tInt)startT();
+    h+='</div>';
+  }
+  var an=0,tt=qs.length;
+  for(var i=0;i<qs.length;i++){if(ans[qs[i].id])an++}
+  h+='<div class="pbar"><span>'+an+' / '+tt+' 已答</span><div class="pt"><div class="pf" style="width:'+(an/tt*100)+'%"></div></div></div>';
+  h+='<div class="qc" id="currentQC">';
+  h+='<div class="qct">'+(curTI+1)+'. '+eh(q.title)+'</div>';
+  if(q.desc)h+='<div class="qcd">'+eh(q.desc)+'</div>';
+  if(q.type==='single'){
+    h+='<div class="og">';
+    (q.opts||[]).forEach(function(opt){
+      var ch=sv===opt?'checked':'',sl=sv===opt?'on':'';
+      h+='<label class="olb '+sl+'"><input type="radio" name="q_'+q.id+'" value="'+eh(opt)+'" '+ch+'><span>'+eh(opt)+'</span></label>';
+    });
+    h+='</div>';
+  }else if(q.type==='multiple'){
+    h+='<div class="og">';
+    var sa=sv&&(sv instanceof Array)?sv:(sv?[sv]:[]);
+    (q.opts||[]).forEach(function(opt){
+      var ch=sa.indexOf(opt)>=0?'checked':'',sl=sa.indexOf(opt)>=0?'on':'';
+      h+='<label class="olb '+sl+'"><input type="checkbox" name="q_'+q.id+'" value="'+eh(opt)+'" '+ch+'><span>'+eh(opt)+'</span></label>';
+    });
+    h+='</div>';
+  }else if(q.type==='text'){
+    h+='<div class="tif"><textarea id="textA_'+q.id+'" placeholder="请输入您的回答..." '+(q.ml?'':'style="height:60px"')+' maxlength="'+(q.mxL||500)+'">'+eh(sv||'')+'</textarea></div>';
+  }else if(q.type==='slider'){
+    var slv=sv!==undefined&&!isNaN(parseFloat(sv))?parseFloat(sv):(q.dft||0);
+    h+='<div class="sc"><input type="range" id="slA_'+q.id+'" min="'+(q.mn||0)+'" max="'+(q.mx||100)+'" step="'+(q.st||1)+'" value="'+slv+'">';
+    h+='<div class="svd" id="slD_'+q.id+'">'+slv+(q.unit?' '+q.unit:'')+'</div>';
+    h+='<div class="sls"><span>'+eh(String(q.mn||0))+'</span><span>'+eh(String(q.mx||100))+'</span></div></div>';
+    // Bind slider
+    setTimeout(function(){
+      var inp=document.getElementById('slA_'+q.id);
+      if(inp)inp.addEventListener('input',function(){
+        document.getElementById('slD_'+q.id).textContent=this.value+(q.unit?' '+q.unit:'');
+        saveCurrentAnswer();
+      });
+    },0);
+  }
+  // Nav buttons
+  var hasPrev=curTI>0;
+  var isLast=curTI===qs.length-1;
+  // Check if branching might skip next
+  var nextLabel=isLast?'提交':'下一题';
+  h+='<div class="tn">';
+  if(hasPrev)h+='<button class="btn bs" id="btnPrev">← 上一题</button>';
+  else h+='<div></div>';
+  h+='<button class="btn bp" id="btnNext">'+nextLabel+' →</button>';
+  if(!hasPrev)h+='<div></div>';
+  h+='</div></div>';
+  c.innerHTML=h;
+  // Bind events
+  var qcEl=document.getElementById('currentQC');
+  if(qcEl){
+    qcEl.querySelectorAll('input[type="radio"]').forEach(function(inp){
+      inp.addEventListener('change',saveCurrentAnswer);
+    });
+    qcEl.querySelectorAll('input[type="checkbox"]').forEach(function(inp){
+      inp.addEventListener('change',saveCurrentAnswer);
+    });
+    qcEl.querySelectorAll('textarea').forEach(function(inp){
+      inp.addEventListener('input',db(saveCurrentAnswer,500));
+    });
+  }
+  var btnNext=gid('btnNext');
+  if(btnNext)btnNext.addEventListener('click',function(){evalBranchAndNext()});
+  var btnPrev=gid('btnPrev');
+  if(btnPrev)btnPrev.addEventListener('click',function(){if(curTI>0){curTI--;rCQ()}});
+}
+function saveCurrentAnswer(){
+  if(!curS||!curS.qs||curTI>=curS.qs.length)return;
+  var q=curS.qs[curTI];
+  var ans={};
+  var pg=lProg(curS.id);
+  if(pg&&pg.a)ans=pg.a;
+  if(q.type==='single'){
+    var sel=document.querySelector('input[name="q_'+q.id+'"]:checked');
+    ans[q.id]=sel?sel.value:'';
+  }else if(q.type==='multiple'){
+    var sels=document.querySelectorAll('input[name="q_'+q.id+'"]:checked');
+    ans[q.id]=Array.prototype.map.call(sels,function(x){return x.value});
+  }else if(q.type==='text'){
+    var ta=document.getElementById('textA_'+q.id);
+    ans[q.id]=ta?ta.value:'';
+  }else if(q.type==='slider'){
+    var sl=document.getElementById('slA_'+q.id);
+    ans[q.id]=sl?parseFloat(sl.value):null;
+  }
+  sProg(curS.id,ans,remT);
+}
+function evalBranchAndNext(){
+  saveCurrentAnswer();
+  var q=curS.qs[curTI];
+  var nextIdx=curTI+1;
+  if(q.br&&q.br.on&&q.br.rs&&q.br.rs.length>0){
+    var pg=lProg(curS.id);
+    var ans=pg&&pg.a?pg.a:{};
+    for(var i=0;i<q.br.rs.length;i++){
+      var rule=q.br.rs[i];
+      if(evalCond(rule,ans)){
+        if(rule.tgt==='end'){submitS();return}
+        var ti=curS.qs.findIndex(function(x){return x.id===rule.tgt});
+        if(ti>=0){nextIdx=ti;break}
+      }
+    }
+    if(q.br.dNext&&q.br.dNext!=='0'){
+      if(q.br.dNext==='end'){submitS();return}
+      var di=curS.qs.findIndex(function(x){return x.id===q.br.dNext});
+      if(di>=0)nextIdx=di;
+    }
+  }
+  curTI=nextIdx;
+  if(curTI>=curS.qs.length){submitS();return}
+  rCQ();
+}
+function evalCond(rule,ans){
+  if(!rule.qId||!rule.op)return false;
+  var ansVal=ans[rule.qId];
+  if(ansVal===undefined||ansVal===null)return false;
+  var cmpVal=rule.val;
+  switch(rule.op){
+    case'equals':return String(ansVal)===String(cmpVal);
+    case'contains':return String(ansVal).indexOf(String(cmpVal))>=0;
+    case'greater_than':return parseFloat(ansVal)>parseFloat(cmpVal);
+    case'less_than':return parseFloat(ansVal)<parseFloat(cmpVal);
+  }
+  return false;
+}
+// ========== TIMER ==========
+function startT(){
+  if(tInt)return;
+  tInt=setInterval(function(){
+    remT--;
+    if(remT<=0){remT=0;stopT();submitS();return}
+    var td=gid('timerD');
+    if(td)td.textContent=ft(remT);
+    var tf=gid('timerF');
+    if(tf)tf.style.width=(remT/(curS.stl.timeLimit*60)*100)+'%';
+    var tb=td?td.closest('.tbar'):null;
+    if(tb&&remT<=60){tb.classList.add('ug')}
+    saveCurrentAnswer();
+  },1000);
+}
+function stopT(){
+  if(tInt){clearInterval(tInt);tInt=null}
+}
+// ========== SUBMIT ==========
+function submitS(){
+  stopT();
+  var pg=lProg(curS.id);
+  var ans=pg&&pg.a?pg.a:{};
+  // Validate required
+  var missing=[];
+  curS.qs.forEach(function(q){
+    if(q.req){
+      var v=ans[q.id];
+      if(v===undefined||v===null||v===''||(Array.isArray(v)&&v.length===0))missing.push(q.title);
+    }
+  });
+  if(missing.length>0){
+    toast('请完成必填题：'+missing.join('、'),'er');
+    return;
+  }
+  // Save result
+  var result={id:genId(),surveyId:curS.id,submittedAt:new Date().toISOString(),answers:ans};
+  var results=lRes();
+  results.push(result);
+  sRes(results);
+  // Also save to survey
+  if(!curS.res)curS.res=[];
+  curS.res.push(result);
+  sS(curS);
+  cProg(curS.id);
+  toast('提交成功！','ok');
+  sw('results');
+}
+// ========== RESULTS ==========
+function rRes(){
+  var c=gid('resC');
+  if(!curS||!curS.qs||curS.qs.length===0){
+    c.innerHTML='<div class="es"><div class="ic">&#128202;</div><p>暂无结果数据</p></div>';return;
+  }
+  var results=lRes().filter(function(r){return r.surveyId===curS.id});
+  if(results.length===0){
+    c.innerHTML='<div class="es"><div class="ic">&#128202;</div><p>暂无结果数据，请先填写并提交问卷</p></div>';return;
+  }
+  // Destroy old charts
+  chts.forEach(function(ch){if(ch)ch.destroy()});
+  chts=[];
+  var h='<div class="rh"><h1>'+eh(curS.title)+' - 结果</h1><p>共 '+results.length+' 条回复</p></div>';
+  curS.qs.forEach(function(q){
+    h+='<div class="rd"><h4>'+(curS.qs.indexOf(q)+1)+'. '+eh(q.title)+' <span class="rcn">'+results.length+' 条回复</span></h4>';
+    if(q.type==='single'){
+      var counts={};
+      results.forEach(function(r){
+        var v=r.answers&&r.answers[q.id]?r.answers[q.id]:'(未回答)';
+        counts[v]=(counts[v]||0)+1;
+      });
+      var labels=Object.keys(counts),data=Object.values(counts);
+      var cid='chart_'+q.id;
+      h+='<div class="cc"><canvas id="'+cid+'"></canvas></div>';
+      h+='<div class="sr">';
+      labels.forEach(function(l,i){
+        h+='<div class="sb"><div class="sv">'+data[i]+'</div><div class="sl">'+eh(l)+'</div></div>';
+      });
+      h+='</div>';
+      // Chart will be created after DOM insert
+      (function(qid,lbls,dt,canvasId){
+        setTimeout(function(){
+          var ctx=document.getElementById(canvasId);
+          if(ctx){var ch=new Chart(ctx,{type:'doughnut',data:{labels:lbls,datasets:[{data:dt,backgroundColor:['#6366f1','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:12}}}}}});chts.push(ch)}
+        },100);
+      })(q.id,labels,data,cid);
+    }else if(q.type==='multiple'){
+      var counts={};
+      results.forEach(function(r){
+        var arr=r.answers&&r.answers[q.id]?r.answers[q.id]:[];
+        (arr||[]).forEach(function(v){counts[v]=(counts[v]||0)+1});
+      });
+      var labels=Object.keys(counts),data=Object.values(counts);
+      var cid='chart_'+q.id;
+      h+='<div class="cc"><canvas id="'+cid+'"></canvas></div>';
+      h+='<div class="sr">';
+      labels.forEach(function(l,i){
+        h+='<div class="sb"><div class="sv">'+data[i]+'</div><div class="sl">'+eh(l)+'</div></div>';
+      });
+      h+='</div>';
+      (function(qid,lbls,dt,canvasId){
+        setTimeout(function(){
+          var ctx=document.getElementById(canvasId);
+          if(ctx){var ch=new Chart(ctx,{type:'bar',data:{labels:lbls,datasets:[{label:'选择次数',data:dt,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{ticks:{font:{size:11}}}},plugins:{legend:{display:false}}}});chts.push(ch)}
+        },100);
+      })(q.id,labels,data,cid);
+    }else if(q.type==='slider'){
+      var vals=[];
+      results.forEach(function(r){var v=r.answers&&r.answers[q.id];if(v!==undefined&&v!==null&&!isNaN(v))vals.push(parseFloat(v))});
+      var mn=vals.length?Math.min.apply(null,vals):0;
+      var mx=vals.length?Math.max.apply(null,vals):0;
+      var avg=vals.length?(vals.reduce(function(a,b){return a+b},0)/vals.length):0;
+      h+='<div class="sr"><div class="sb"><div class="sv">'+mn.toFixed(1)+'</div><div class="sl">最小值</div></div><div class="sb"><div class="sv">'+avg.toFixed(1)+'</div><div class="sl">平均值</div></div><div class="sb"><div class="sv">'+mx.toFixed(1)+'</div><div class="sl">最大值</div></div></div>';
+      var cid='chart_'+q.id;
+      h+='<div class="cc"><canvas id="'+cid+'"></canvas></div>';
+      (function(qid,canvasId){
+        setTimeout(function(){
+          var ctx=document.getElementById(canvasId);
+          if(!ctx)return;
+          // Build histogram
+          var bins=10;
+          var qObj=curS.qs.find(function(x){return x.id===qid});
+          var range=(qObj?qObj.mx:100)-(qObj?qObj.mn:0);
+          var stepSize=range/bins||1;
+          var histLabels=[];
+          var histData=new Array(bins).fill(0);
+          for(var bi=0;bi<bins;bi++){
+            var start=(qObj?qObj.mn:0)+bi*stepSize;
+            var end=start+stepSize;
+            histLabels.push(start.toFixed(0)+'-'+end.toFixed(0));
+          }
+          vals.forEach(function(v){
+            var idx=Math.min(Math.floor((v-(qObj?qObj.mn:0))/stepSize),bins-1);
+            if(idx>=0&&idx<bins)histData[idx]++;
+          });
+          var ch=new Chart(ctx,{type:'bar',data:{labels:histLabels,datasets:[{label:'频次',data:histData,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{ticks:{font:{size:10},maxRotation:45}}},plugins:{legend:{display:false}}}});chts.push(ch);
+        },100);
+      })(q.id,cid);
+    }else if(q.type==='text'){
+      h+='<div class="trs">';
+      results.forEach(function(r){
+        var v=r.answers&&r.answers[q.id];
+        if(v)h+='<div class="tri">'+eh(String(v))+'</div>';
+      });
+      if(h.indexOf('<div class="tri">')<0)h+='<div class="tri" style="color:var(--tx3)">暂无文本回答</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  c.innerHTML=h;
+}
+// ========== SHARE ==========
+function showShare(){
+  var hash='#survey='+encHash(curS);
+  var url=window.location.origin+window.location.pathname+hash;
+  gid('shareLink').value=url;
+  gid('shareM').classList.add('on');
+}
+// Add share button to build view
+(function(){
+  var panelHeader=document.querySelector('#vBuild .ph');
+  if(panelHeader){
+    var btn=document.createElement('button');
+    btn.className='btn bsm bs';
+    btn.textContent='分享';
+    btn.style.marginLeft='auto';
+    btn.addEventListener('click',showShare);
+    panelHeader.appendChild(btn);
+  }
+  gid('bCopyLink').addEventListener('click',function(){
+    var link=gid('shareLink').value;
+    navigator.clipboard.writeText(link).then(function(){toast('链接已复制','ok')}).catch(function(){
+      gid('shareLink').select();document.execCommand('copy');toast('链接已复制','ok');
+    });
+  });
+})();
+// ========== START ==========
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
