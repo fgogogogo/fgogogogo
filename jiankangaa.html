@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 健康管理助手</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 50%, #a78bfa 100%);
+  color: white;
+  padding: 20px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.nav-link:hover, .nav-link.active {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.user-name { font-weight: 600; font-size: 14px; }
+.user-role { font-size: 12px; opacity: 0.75; }
+
+/* ===== MAIN ===== */
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+/* ===== HEALTH SCORE CARD ===== */
+.score-section {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.score-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.score-card::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));
+  border-radius: 50%;
+}
+
+.score-circle {
+  position: relative;
+  width: 180px; height: 180px;
+}
+
+.score-circle svg { transform: rotate(-90deg); }
+
+.score-circle .track {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 12;
+}
+
+.score-circle .progress {
+  fill: none;
+  stroke: url(#scoreGradient);
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 452;
+  stroke-dashoffset: 452;
+  transition: stroke-dashoffset 2s ease;
+}
+
+.score-value {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.score-number {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.score-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.score-level {
+  margin-top: 16px;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.score-level.excellent { background: #d1fae5; color: #065f46; }
+.score-level.good { background: #dbeafe; color: #1e40af; }
+.score-level.warning { background: #fef3c7; color: #92400e; }
+
+.score-desc {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ===== STATUS CARDS ===== */
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.status-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.status-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.status-icon.heart { background: #fee2e2; }
+.status-icon.pressure { background: #dbeafe; }
+.status-icon.oxygen { background: #e0e7ff; }
+.status-icon.steps { background: #d1fae5; }
+.status-icon.sleep { background: #fdf4ff; }
+.status-icon.weight { background: #fff7ed; }
+
+.status-info h3 {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-info .value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.status-info .unit {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.status-info .trend {
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trend.up { color: var(--success); }
+.trend.down { color: var(--danger); }
+.trend.stable { color: var(--text-secondary); }
+
+/* ===== CHARTS GRID ===== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.chart-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.chart-card.full { grid-column: 1 / -1; }
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.chart-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.chart-tab {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chart-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-container {
+  position: relative;
+  height: 280px;
+}
+
+/* ===== HEALTH PLAN SECTION ===== */
+.plan-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.plan-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+
+.plan-card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-item:last-child { border-bottom: none; }
+
+.plan-check {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.plan-check.done { background: #d1fae5; }
+.plan-check.pending { background: #fef3c7; }
+.plan-check.important { background: #fee2e2; }
+
+.plan-content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.plan-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.plan-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== AI GENERATOR ===== */
+.ai-generator {
+  background: linear-gradient(135deg, #f0f0ff 0%, #faf5ff 100%);
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid #e0e0ff;
+}
+
+.ai-generator h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ai-input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.ai-input:focus {
+  border-color: var(--primary);
+}
+
+.ai-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--primary), #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.ai-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+
+.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ai-result {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  min-height: 160px;
+  display: none;
+}
+
+.ai-result.visible { display: block; }
+
+.ai-result-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-result-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.ai-result-content .tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+.ai-result-content .tag-exercise { background: #dbeafe; color: #1e40af; }
+.ai-result-content .tag-diet { background: #d1fae5; color: #065f46; }
+.ai-result-content .tag-sleep { background: #fdf4ff; color: #86198f; }
+.ai-result-content .tag-mental { background: #fff7ed; color: #9a3412; }
+
+.ai-loading {
+  display: none;
+  text-align: center;
+  padding: 30px;
+}
+
+.ai-loading.visible { display: block; }
+
+.ai-loading .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+.ai-loading p { color: var(--text-secondary); font-size: 14px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== TIMELINE ===== */
+.timeline-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+}
+
+.timeline-section h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-dot {
+  position: absolute;
+  left: -32px;
+  top: 4px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  z-index: 1;
+}
+
+.timeline-dot.heart { background: #fee2e2; color: var(--danger); }
+.timeline-dot.exercise { background: #d1fae5; color: var(--success); }
+.timeline-dot.meal { background: #fff7ed; color: #f59e0b; }
+.timeline-dot.sleep { background: #e0e7ff; color: var(--primary); }
+.timeline-dot.med { background: #fdf4ff; color: #a855f7; }
+
+.timeline-content {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.timeline-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.timeline-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.timeline-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ===== RISK ASSESSMENT ===== */
+.risk-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+}
+
+.risk-section h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.risk-item {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+}
+
+.risk-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.risk-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.risk-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1.5s ease;
+}
+
+.risk-bar-fill.low { background: var(--success); }
+.risk-bar-fill.medium { background: var(--warning); }
+.risk-bar-fill.high { background: var(--danger); }
+
+.risk-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ===== REAL-TIME PULSE ===== */
+.pulse-dot {
+  width: 8px; height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.5); }
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .score-section { grid-template-columns: 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .plan-section { grid-template-columns: 1fr; }
+  .risk-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .header { padding: 16px 20px; }
+  .main { padding: 20px 16px; }
+  .nav-links { display: none; }
+  .status-cards { grid-template-columns: repeat(2, 1fr); }
+  .risk-grid { grid-template-columns: 1fr 1fr; }
+  .ai-input-group { flex-direction: column; }
+  .header-inner { flex-wrap: wrap; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">❤️</div>
+      <span>AI 健康管理助手</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#" class="nav-link active">总览</a>
+      <a href="#" class="nav-link">健康数据</a>
+      <a href="#" class="nav-link">健康方案</a>
+      <a href="#" class="nav-link">报告</a>
+      <a href="#" class="nav-link">设置</a>
+    </nav>
+    <div class="user-info">
+      <div>
+        <div class="user-name">李明</div>
+        <div class="user-role">会员用户 · 已连接 3 台设备</div>
+      </div>
+      <div class="avatar">李</div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HEALTH SCORE + STATUS -->
+  <section class="score-section">
+    <!-- Health Score -->
+    <div class="score-card">
+      <div class="score-circle">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <defs>
+            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#6366f1"/>
+              <stop offset="100%" style="stop-color:#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="90" cy="90" r="72"/>
+          <circle class="progress" id="scoreProgress" cx="90" cy="90" r="72"/>
+        </svg>
+        <div class="score-value">
+          <div class="score-number" id="scoreNumber">0</div>
+          <div class="score-label">综合健康评分</div>
+        </div>
+      </div>
+      <div class="score-level excellent" id="scoreLevel">优秀</div>
+      <div class="score-desc" id="scoreDesc">各项指标均在正常范围内，<br>请继续保持良好生活习惯</div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="status-cards">
+      <div class="status-card">
+        <div class="status-icon heart">❤️</div>
+        <div class="status-info">
+          <h3>心率</h3>
+          <div><span class="value" id="hrValue">--</span> <span class="unit">BPM</span></div>
+          <div class="trend stable"><span class="pulse-dot"></span>实时监测中</div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon pressure">💧</div>
+        <div class="status-info">
+          <h3>血压</h3>
+          <div><span class="value" id="bpValue">--</span> <span class="unit">mmHg</span></div>
+          <div class="trend up">正常范围</div>
+        </div>
+           </div>
+      <div class="status-card">
+        <div class="status-icon oxygen">🫁</div>
+        <div class="status-info">
+          <h3>血氧</h3>
+          <div><span class="value" id="spo2Value">--</span> <span class="unit">%</span></div>
+          <div class="trend up">优秀</div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon steps">🚶</div>
+        <div class="status-info">
+          <h3>今日步数</h3>
+          <div><span class="value" id="stepsValue">--</span> <span class="unit">步</span></div>
+          <div class="trend up">目标 78%</div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon sleep">😴</div>
+        <div class="status-info">
+          <h3>睡眠时长</h3>
+          <div><span class="value" id="sleepValue">--</span> <span class="unit">小时</span></div>
+          <div class="trend up">质量良好</div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon weight">⚖️</div>
+        <div class="status-info">
+          <h3>体重</h3>
+          <div><span class="value" id="weightValue">--</span> <span class="unit">kg</span></div>
+          <div class="trend down">本周 -0.3kg</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">心率趋势 (7天)</h3>
+        <div class="chart-tabs">
+          <button class="chart-tab" onclick="updateHeartRateChart('day')">日</button>
+          <button class="chart-tab active" onclick="updateHeartRateChart('week')">周</button>
+          <button class="chart-tab" onclick="updateHeartRateChart('month')">月</button>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="heartRateChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">血压变化 (7天)</h3>
+        <div class="chart-tabs">
+          <button class="chart-tab" onclick="updateBpChart('day')">日</button>
+          <button class="chart-tab active" onclick="updateBpChart('week')">周</button>
+          <button class="chart-tab" onclick="updateBpChart('month')">月</button>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="bpChart"></canvas></div>
+    </div>
+
+    <div class="chart-card full">
+      <div class="chart-header">
+        <h3 class="chart-title">活动与睡眠概览</h3>
+        <div class="chart-tabs">
+          <button class="chart-tab" onclick="updateActivityChart('week')">周</button>
+          <button class="chart-tab active" onclick="updateActivityChart('month')">月</button>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="activityChart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- HEALTH PLAN -->
+  <section class="plan-section">
+    <div class="plan-card">
+      <h2>📋 今日健康方案</h2>
+      <div class="plan-item">
+        <div class="plan-check done">✅</div>
+        <div class="plan-content">
+          <h4>晨间饮水</h4>
+          <p>起床后饮用 300ml 温开水，帮助启动新陈代谢</p>
+          <div class="plan-time">⏰ 06:30 - 已完成</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check done">✅</div>
+        <div class="plan-content">
+          <h4>有氧运动</h4>
+          <p>30分钟慢跑或快走，保持心率在120-140 BPM</p>
+          <div class="plan-time">⏰ 07:00 - 已完成 · 消耗 320 千卡</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check pending">⏳</div>
+        <div class="plan-content">
+          <h4>健康午餐</h4>
+          <p>糙米饭 + 清蒸鱼 + 西兰花，控制盐分摄入</p>
+          <div class="plan-time">⏰ 12:00 - 待执行</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check pending">⏳</div>
+        <div class="plan-content">
+          <h4>午间休息</h4>
+          <p>进行15-20分钟冥想或浅睡眠，缓解疲劳</p>
+          <div class="plan-time">⏰ 13:00 - 待执行</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check important">⚠️</div>
+        <div class="plan-content">
+          <h4>血压监测</h4>
+          <p>下午测量血压，记录数据用于趋势分析</p>
+          <div class="plan-time">⏰ 15:00 - 重要 · 请及时执行</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <h2>🎯 本周健康目标</h2>
+      <div class="plan-item">
+        <div class="plan-check done">✅</div>
+        <div class="plan-content">
+          <h4>每日步数 ≥ 8000 步</h4>
+          <p>已完成 5/7 天，继续保持</p>
+          <div class="plan-time">📊 完成进度 71%</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check done">✅</div>
+        <div class="plan-content">
+          <h4>每日睡眠 ≥ 7 小时</h4>
+          <p>平均睡眠 7.2 小时，睡眠质量优秀</p>
+          <div class="plan-time">📊 完成进度 100%</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check pending">⏳</div>
+        <div class="plan-content">
+          <h4>减少钠摄入 < 2000mg/天</h4>
+          <p>本周平均 2200mg，需继续控制盐分</p>
+          <div class="plan-time">📊 完成进度 57%</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check pending">⏳</div>
+        <div class="plan-content">
+          <h4>每周运动 5 次</h4>
+          <p>已完成 3 次，还剩 2 次瑜伽或力量训练</p>
+          <div class="plan-time">📊 完成进度 60%</div>
+        </div>
+      </div>
+      <div class="plan-item">
+        <div class="plan-check done">✅</div>
+        <div class="plan-content">
+          <h4>每日饮水 ≥ 2000ml</h4>
+          <p>已连续 6 天达标，身体水分充足</p>
+          <div class="plan-time">📊 完成进度 86%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI HEALTH PLAN GENERATOR -->
+  <section class="plan-section">
+    <div class="ai-generator">
+      <h2>🤖 AI 智能健康方案生成器</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+        输入您的健康需求，AI 将基于您的实时身体数据为您生成个性化健康方案
+      </p>
+      <div class="ai-input-group">
+        <input type="text" class="ai-input" id="aiInput"
+          placeholder="例如：我想改善睡眠质量 / 帮我制定减脂计划 / 最近总是感觉很疲惫..."
+          onkeydown="if(event.key==='Enter')generateHealthPlan()">
+        <button class="ai-btn" onclick="generateHealthPlan()">生成方案</button>
+      </div>
+      <div class="ai-loading" id="aiLoading">
+        <div class="spinner"></div>
+        <p>AI 正在分析您的健康数据，生成个性化方案...</p>
+      </div>
+      <div class="ai-result" id="aiResult">
+        <div class="ai-result-title">💡 AI 智能建议</div>
+        <div class="ai-result-content" id="aiResultContent"></div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <h2>📊 风险评估</h2>
+      <div class="risk-grid">
+        <div class="risk-item">
+          <div class="risk-icon">🫀</div>
+          <div class="risk-label">心血管风险</div>
+          <div class="risk-bar"><div class="risk-bar-fill low" id="riskHeart" style="width:0%"></div></div>
+          <div class="risk-value" style="color:var(--success)">低风险</div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🍬</div>
+          <div class="risk-label">代谢风险</div>
+          <div class="risk-bar"><div class="risk-bar-fill low" id="riskMetabolism" style="width:0%"></div></div>
+          <div class="risk-value" style="color:var(--success)">低风险</div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">💤</div>
+          <div class="risk-label">疲劳指数</div>
+          <div class="risk-bar"><div class="risk-bar-fill medium" id="riskFatigue" style="width:0%"></div></div>
+          <div class="risk-value" style="color:var(--warning)">中等</div>
+        </div>
+        <div class="risk-item">
+          <div class="risk-icon">🧠</div>
+          <div class="risk-label">精神压力</div>
+          <div class="risk-bar"><div class="risk-bar-fill low" id="riskStress" style="width:0%"></div></div>
+          <div class="risk-value" style="color:var(--success)">低风险</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="timeline-section">
+    <h2>📈 今日健康时间线</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot heart">❤️</div>
+        <div class="timeline-content">
+          <div class="timeline-time">06:30</div>
+          <div class="timeline-text">心率监测 - 静息心率 62 BPM</div>
+          <div class="timeline-detail">心率变异性优秀，睡眠恢复充分</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot exercise">🏃</div>
+        <div class="timeline-content">
+          <div class="timeline-time">07:00</div>
+          <div class="timeline-text">晨间运动 - 慢跑 5 公里</div>
+          <div class="timeline-detail">平均心率 128 BPM，消耗 320 千卡</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot meal">🍽️</div>
+        <div class="timeline-content">
+          <div class="timeline-time">08:00</div>
+          <div class="timeline-text">早餐记录</div>
+          <div class="timeline-detail">燕麦粥 + 鸡蛋 + 牛奶，约 450 千卡</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot heart">❤️</div>
+        <div class="timeline-content">
+          <div class="timeline-time">10:00</div>
+          <div class="timeline-text">血压测量</div>
+          <div class="timeline-detail">118/76 mmHg，处于正常范围</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot med">💊</div>
+        <div class="timeline-content">
+          <div class="timeline-time">12:30</div>
+          <div class="timeline-text">补充维生素</div>
+          <div class="timeline-detail">维生素D + Omega-3，按计划服用</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot sleep">😴</div>
+        <div class="timeline-content">
+          <div class="timeline-time">13:00</div>
+          <div class="timeline-text">午休提醒</div>
+          <div class="timeline-detail">建议进行15-20分钟休息，缓解上午疲劳</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  AI 健康管理助手 · 数据仅供健康参考，如有不适请及时就医 · 2026
+</footer>
+
+<script>
+// ========== GLOBAL STATE ==========
+const healthData = {
+  heartRate: 72,
+  bloodPressure: { systolic: 118, diastolic: 76 },
+  spo2: 98,
+  steps: 6240,
+  sleep: 7.2,
+  weight: 68.5,
+  temperature: 36.5,
+  score: 87
+};
+
+// Chart instances
+let heartRateChart, bpChart, activityChart;
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+  animateScore();
+  updateRealtimeData();
+  animateRiskBars();
+  startRealtimeSimulation();
+});
+
+// ========== HEALTH SCORE ANIMATION ==========
+function animateScore() {
+  const score = healthData.score;
+  const progress = document.getElementById('scoreProgress');
+  const numberEl = document.getElementById('scoreNumber');
+  const circumference = 2 * Math.PI * 72;
+  const offset = circumference - (score / 100) * circumference;
+
+  // Animate progress ring
+  setTimeout(() => {
+    progress.style.strokeDashoffset = offset;
+  }, 300);
+
+  // Animate number
+  let current = 0;
+  const step = score / 60;
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= score) {
+      current = score;
+      clearInterval(timer);
+    }
+    numberEl.textContent = Math.round(current);
+  }, 30);
+}
+
+// ========== REALTIME DATA SIMULATION ==========
+function updateRealtimeData() {
+  document.getElementById('hrValue').textContent = healthData.heartRate;
+  document.getElementById('bpValue').textContent =
+    `${healthData.bloodPressure.systolic}/${healthData.bloodPressure.diastolic}`;
+  document.getElementById('spo2Value').textContent = healthData.spo2;
+  document.getElementById('stepsValue').textContent = healthData.steps.toLocaleString();
+  document.getElementById('sleepValue').textContent = healthData.sleep.toFixed(1);
+  document.getElementById('weightValue').textContent = healthData.weight;
+}
+
+function startRealtimeSimulation() {
+  setInterval(() => {
+    // Simulate heart rate variation
+    const variation = Math.floor(Math.random() * 6) - 3;
+    healthData.heartRate = Math.max(60, Math.min(100, 72 + variation));
+    document.getElementById('hrValue').textContent = healthData.heartRate;
+
+    // Simulate step increment
+    if (Math.random() > 0.7) {
+      healthData.steps += Math.floor(Math.random() * 50);
+      document.getElementById('stepsValue').textContent = healthData.steps.toLocaleString();
+    }
+
+    // Simulate SpO2 variation
+    if (Math.random() > 0.95) {
+      healthData.spo2 = Math.max(96, Math.min(100, healthData.spo2 + (Math.random() > 0.5 ? 1 : -1)));
+      document.getElementById('spo2Value').textContent = healthData.spo2;
+    }
+  }, 3000);
+}
+
+// ========== CHARTS ==========
+const chartColors = {
+  primary: 'rgba(99, 102, 241, 1)',
+  primaryBg: 'rgba(99, 102, 241, 0.1)',
+  success: 'rgba(16, 185, 129, 1)',
+  successBg: 'rgba(16, 185, 129, 0.1)',
+  warning: 'rgba(245, 158, 11, 1)',
+  warningBg: 'rgba(245, 158, 11, 0.1)',
+  danger: 'rgba(239, 68, 68, 1)',
+  dangerBg: 'rgba(239, 68, 68, 0.1)',
+  info: 'rgba(6, 182, 212, 1)',
+  infoBg: 'rgba(6, 182, 212, 0.1)',
+};
+
+function initCharts() {
+  // Heart Rate Chart
+  const hrCtx = document.getElementById('heartRateChart').getContext('2d');
+  heartRateChart = new Chart(hrCtx, {
+    type: 'line',
+    data: {
+      labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      datasets: [{
+        label: '平均心率',
+        data: [72, 75, 68, 74, 71, 69, 72],
+        borderColor: chartColors.danger,
+        backgroundColor: chartColors.dangerBg,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: getChartOptions('BPM', 50, 100)
+  });
+
+  // Blood Pressure Chart
+  const bpCtx = document.getElementById('bpChart').getContext('2d');
+  bpChart = new Chart(bpCtx, {
+    type: 'line',
+    data: {
+      labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      datasets: [{
+        label: '收缩压',
+        data: [120, 118, 122, 116, 119, 117, 118],
+        borderColor: chartColors.info,
+        backgroundColor: chartColors.infoBg,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2,
+      }, {
+        label: '舒张压',
+        data: [78, 75, 80, 74, 77, 75, 76],
+        borderColor: chartColors.primary,
+        backgroundColor: chartColors.primaryBg,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2,
+      }]
+    },
+    options: getChartOptions('mmHg', 60, 140)
+  });
+
+  // Activity Chart
+  const actCtx = document.getElementById('activityChart').getContext('2d');
+  activityChart = new Chart(actCtx, {
+    type: 'bar',
+    data: {
+      labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      datasets: [{
+        label: '步数 (千步)',
+        data: [8.2, 6.5, 9.1, 7.8, 8.5, 10.2, 6.2],
+        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+        borderRadius: 8,
+        barPercentage: 0.6,
+      }, {
+        label: '睡眠 (小时)',
+        data: [7.5, 6.8, 7.2, 8.0, 7.0, 7.8, 7.2],
+        backgroundColor: 'rgba(168, 85, 247, 0.7)',
+        borderRadius: 8,
+        barPercentage: 0.6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } },
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+        x: { grid: { display: false } },
+      }
+    }
+  });
+}
+
+function getChartOptions(unit, min, max) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      y: {
+        min: min,
+        max: max,
+        grid: { color: 'rgba(0,0,0,0.04)' },
+        ticks: { callback: v => v + ' ' + unit },
+      },
+      x: { grid: { display: false } },
+    },
+    interaction: { intersect: false, mode: 'index' },
+  };
+}
+
+// Chart update functions
+function updateHeartRateChart(period) {
+  updateChartTabs(event.target);
+  const data = period === 'day'
+    ? { labels: ['06:00','09:00','12:00','15:00','18:00','21:00'], data: [62,78,82,75,80,68] }
+    : period === 'week'
+    ? { labels: ['周一','周二','周三','周四','周五','周六','周日'], data: [72,75,68,74,71,69,72] }
+    : { labels: ['第1周','第2周','第3周','第4周'], data: [74,72,70,71] };
+  heartRateChart.data.labels = data.labels;
+  heartRateChart.data.datasets[0].data = data.data;
+  heartRateChart.update();
+}
+
+function updateBpChart(period) {
+  updateChartTabs(event.target);
+  const datasets = period === 'day'
+    ? {
+        labels: ['06:00','09:00','12:00','15:00','18:00','21:00'],
+        sys: [115,120,125,118,122,116],
+        dia: [75,78,82,76,79,74]
+      }
+    : period === 'week'
+    ? {
+        labels: ['周一','周二','周三','周四','周五','周六','周日'],
+        sys: [120,118,122,116,119,117,118],
+        dia: [78,75,80,74,77,75,76]
+      }
+    : {
+        labels: ['第1周','第2周','第3周','第4周'],
+        sys: [122,120,118,118],
+        dia: [79,77,76,76]
+      };
+  bpChart.data.labels = datasets.labels;
+  bpChart.data.datasets[0].data = datasets.sys;
+  bpChart.data.datasets[1].data = datasets.dia;
+  bpChart.update();
+}
+
+function updateActivityChart(period) {
+  updateChartTabs(event.target);
+  const data = period === 'week'
+    ? { labels: ['周一','周二','周三','周四','周五','周六','周日'], steps: [8.2,6.5,9.1,7.8,8.5,10.2,6.2], sleep: [7.5,6.8,7.2,8.0,7.0,7.8,7.2] }
+    : { labels: ['第1周','第2周','第3周','第4周'], steps: [7.8,8.1,7.5,8.3], sleep: [7.1,7.3,7.0,7.4] };
+  activityChart.data.labels = data.labels;
+  activityChart.data.datasets[0].data = data.steps;
+  activityChart.data.datasets[1].data = data.sleep;
+  activityChart.update();
+}
+
+function updateChartTabs(btn) {
+  btn.parentElement.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ========== RISK BARS ==========
+function animateRiskBars() {
+  setTimeout(() => {
+    document.getElementById('riskHeart').style.width = '18%';
+    document.getElementById('riskMetabolism').style.width = '25%';
+    document.getElementById('riskFatigue').style.width = '45%';
+    document.getElementById('riskStress').style.width = '22%';
+  }, 500);
+}
+
+// ========== AI HEALTH PLAN GENERATOR ==========
+const healthPlans = {
+  '睡眠': {
+    title: '改善睡眠质量方案',
+    content: `
+      <p><strong>📊 您的睡眠数据分析：</strong></p>
+      <p>当前平均睡眠时长 7.2 小时，深度睡眠占比 23%，睡眠效率 89%。建议从以下几个方面优化：</p>
+      <br>
+      <p><strong>🌙 睡前准备（21:00-22:30）</strong></p>
+      <p>• 21:00 起减少蓝光接触，调暗室内灯光</p>
+      <p>• 21:30 进行 10 分钟拉伸或冥想练习</p>
+      <p>• 22:00 前完成最后一次饮水（不超过 100ml）</p>
+      <p>• 卧室温度保持在 18-22°C</p>
+      <br>
+      <p><strong>🛏️ 睡眠环境优化</strong></p>
+      <p>• 使用遮光窗帘，确保完全黑暗环境</p>
+      <p>• 播放白噪音或 432Hz 频率音乐辅助入睡</p>
+      <p>• 枕头高度建议保持在 10-12cm</p>
+      <br>
+      <p><strong>💊 营养补充建议</strong></p>
+      <p>• 睡前 1 小时可适量补充镁（200mg）</p>
+      <p>• 避免下午 3 点后摄入咖啡因</p>
+      <p>• 晚餐避免高蛋白和高脂肪食物</p>
+      <br>
+      <p><strong>📈 预期效果：</strong>持续执行 2 周后，预计深度睡眠占比提升至 30%+，入睡时间缩短 15 分钟</p>
+    `
+  },
+  '减脂': {
+    title: '科学减脂健康方案',
+    content: `
+      <p><strong>📊 您的身体数据分析：</strong></p>
+      <p>当前体重 68.5kg，BMI 22.1（正常范围），体脂率约 18%。目标建议：减脂 3-5kg，将体脂率降至 15%。</p>
+      <br>
+      <p><strong>🥗 饮食方案</strong></p>
+      <p><span class="tag tag-diet">热量缺口</span> 每日摄入 1800-2000 千卡，创造 300-500 千卡热量缺口</p>
+      <p><span class="tag tag-diet">蛋白质</span> 每日 120g 蛋白质（约 1.5g/kg 体重）</p>
+      <p><span class="tag tag-diet">碳水</span> 优先选择糙米、燕麦、红薯等低GI碳水</p>
+      <p><span class="tag tag-diet">脂肪</span> 控制在 50-60g，以橄榄油、坚果、鱼类为主</p>
+      <br>
+      <p><strong>🏃 运动方案</strong></p>
+      <p><span class="tag tag-exercise">有氧</span> 每周 4-5 次，每次 30-40 分钟（慢跑、游泳、骑行）</p>
+      <p><span class="tag tag-exercise">HIIT</span> 每周 2 次，每次 20 分钟高强度间歇训练</p>
+      <p><span class="tag tag-exercise">力量</span> 每周 2-3 次，重点训练大肌群</p>
+      <br>
+      <p><strong>📅 每日时间安排</strong></p>
+      <p>07:00 - 晨间空腹有氧 30 分钟</p>
+      <p>12:00 - 健康午餐（糙米+鸡胸+蔬菜）</p>
+      <p>18:00 - 力量训练 45 分钟</p>
+      <p>19:30 - 轻晚餐（沙拉+少量蛋白）</p>
+      <br>
+      <p><strong>📈 预期效果：</strong>坚持执行 4 周，预计减重 2-3kg，体脂率下降 2-3%</p>
+    `
+  },
+  '疲惫': {
+    title: '缓解疲劳与精力恢复方案',
+    content: `
+      <p><strong>📊 您的疲劳数据分析：</strong></p>
+      <p>当前疲劳指数中等（45%），主要表现为下午精力下降、睡眠恢复不充分。心率变异性偏低，说明自主神经恢复能力有待提升。</p>
+      <br>
+      <p><strong>🌅 早晨唤醒方案（06:30-07:30）</strong></p>
+      <p>• 起床后立即拉开窗帘，接触自然光 5-10 分钟</p>
+      <p>• 进行 5 分钟的深呼吸练习（4-7-8 呼吸法）</p>
+      <p>• 饮用 300ml 温开水 + 半个柠檬汁</p>
+      <br>
+      <p><strong>⚡ 下午精力管理（14:00-16:00）</strong></p>
+      <p>• 14:00 进行 10 分钟功率小睡（Power Nap）</p>
+      <p>• 避免高糖零食，选择坚果或黑巧克力</p>
+      <p>• 每小时起身活动 3-5 分钟，促进血液循环</p>
+      <br>
+      <p><strong>🧘 晚间恢复方案</strong></p>
+      <p>• 19:00 进行 20 分钟轻度瑜伽或拉伸</p>
+      <p>• 20:00 温水泡脚 15 分钟（促进血液循环）</p>
+      <p>• 21:30 开始远离电子设备</p>
+      <br>
+      <p><strong>🍎 营养建议</strong></p>
+      <p>• 增加 B 族维生素摄入（全谷物、瘦肉、蛋类）</p>
+      <p>• 适量补充铁元素和镁</p>
+      <p>• 每日保证 2000ml 饮水量</p>
+      <br>
+      <p><strong>📈 预期效果：</strong>1 周内精力水平提升 20%，2 周内疲劳指数降至 25% 以下</p>
+    `
+  },
+  '运动': {
+    title: '个性化运动训练方案',
+    content: `
+      <p><strong>📊 您的体能数据分析：</strong></p>
+      <p>当前心肺功能良好，静息心率 62 BPM。有氧能力中上水平，力量基础偏弱。建议制定均衡的训练计划。</p>
+      <br>
+      <p><strong>📅 周训练计划</strong></p>
+      <p><strong>周一 - 有氧基础</strong> 慢跑 5km + 核心训练 15 分钟</p>
+      <p><strong>周二 - 上肢力量</strong> 俯卧撑 4×12 + 引体向上 3×8 + 哑铃推举 4×12</p>
+      <p><strong>周三 - 主动恢复</strong> 瑜伽 45 分钟或散步 30 分钟</p>
+      <p><strong>周四 - 下肢力量</strong> 深蹲 4×15 + 弓步蹲 3×12 + 提踵 4×20</p>
+      <p><strong>周五 - HIIT 训练</strong> 20 分钟高强度间歇（波比跳、登山跑、高抬腿）</p>
+      <p><strong>周六 - 户外活动</strong> 骑行或游泳 60 分钟</p>
+      <p><strong>周日 - 完全休息</strong> 充分恢复</p>
+      <br>
+      <p><strong>💪 强度控制</strong></p>
+      <p>有氧运动心率控制在 120-140 BPM（最大心率的 65-75%）</p>
+      <p>力量训练每组间隔 60-90 秒</p>
+      <p>HIIT 间歇比为 30 秒运动 : 30 秒休息</p>
+      <br>
+      <p><strong>📈 预期效果：</strong>4 周后最大摄氧量提升 5-8%，力量提升 15-20%</p>
+    `
+  },
+  '饮食': {
+    title: '均衡饮食营养方案',
+    content: `
+      <p><strong>📊 您的营养数据分析：</strong></p>
+      <p>当前蛋白质摄入偏少（约 1.0g/kg），碳水化合物比例偏高，钠摄入略超标。需要优化宏量营养素配比。</p>
+      <br>
+      <p><strong>🍽️ 每日营养目标</strong></p>
+      <p><span class="tag tag-diet">热量</span> 2000-2200 千卡（维持体重）</p>
+      <p><span class="tag tag-diet">蛋白质</span> 100-120g（占比 20-25%）</p>
+      <p><span class="tag tag-diet">碳水化合物</span> 250-280g（占比 45-50%）</p>
+      <p><span class="tag tag-diet">脂肪</span> 55-65g（占比 25-30%）</p>
+      <p><span class="tag tag-diet">膳食纤维</span> 25-30g</p>
+      <br>
+      <p><strong>🥣 推荐食谱</strong></p>
+      <p><strong>早餐：</strong>燕麦粥 + 水煮蛋 2 个 + 牛奶 250ml + 蓝莓 50g</p>
+      <p><strong>午餐：</strong>糙米饭 150g + 清蒸鲈鱼 150g + 蒜蓉西兰花 + 紫菜汤</p>
+      <p><strong>加餐：</strong>希腊酸奶 + 坚果 30g</p>
+      <p><strong>晚餐：</strong>杂粮饭 100g + 鸡胸肉沙拉 + 番茄鸡蛋汤</p>
+      <br>
+      <p><strong>⚠️ 需要注意</strong></p>
+      <p>• 每日食盐控制在 5g 以内</p>
+      <p>• 增加深色蔬菜和水果摄入</p>
+      <p>• 减少加工食品和含糖饮料</p>
+      <br>
+      <p><strong>📈 预期效果：</strong>2 周内营养摄入达到平衡标准，精力水平明显提升</p>
+    `
+  }
+};
+
+function generateHealthPlan() {
+  const input = document.getElementById('aiInput').value.trim();
+  if (!input) {
+    alert('请输入您的健康需求');
+    return;
+  }
+
+  const loading = document.getElementById('aiLoading');
+  const result = document.getElementById('aiResult');
+  const content = document.getElementById('aiResultContent');
+
+  // Show loading
+  loading.classList.add('visible');
+  result.classList.remove('visible');
+
+  // Determine which plan to show
+  let planKey = null;
+  const keywords = {
+    '睡眠': ['睡眠', '失眠', '休息', '熬夜', '睡不醒', '作息'],
+    '减脂': ['减脂', '减肥', '瘦身', '体重', '脂肪', '减重', '肚子', '瘦'],
+    '疲惫': ['疲惫', '疲劳', '累', '没精神', '精力', '乏力', '困', '累'],
+    '运动': ['运动', '健身', '锻炼', '跑步', '训练', '肌肉', '体能'],
+    '饮食': ['饮食', '营养', '吃', '食物', '食谱', '减肥餐', '膳食', '补充']
+  };
+
+  for (const [key, words] of Object.entries(keywords)) {
+    if (words.some(w => input.includes(w))) {
+      planKey = key;
+      break;
+    }
+  }
+
+  // Simulate AI processing time
+  setTimeout(() => {
+    loading.classList.remove('visible');
+
+    if (planKey && healthPlans[planKey]) {
+      const plan = healthPlans[planKey];
+      content.innerHTML = plan.content;
+    } else {
+      // Default comprehensive plan
+      content.innerHTML = `
+        <p><strong>📊 综合健康评估</strong></p>
+        <p>根据您当前的身体数据，为您生成以下综合健康建议：</p>
+        <br>
+        <p><span class="tag tag-exercise">运动</span> 每周保持 4-5 次有氧运动，每次 30 分钟以上</p>
+        <p><span class="tag tag-diet">饮食</span> 控制每日热量摄入在 2000 千卡左右，增加蛋白质比例</p>
+        <p><span class="tag tag-sleep">睡眠</span> 保证每晚 7-8 小时睡眠，23:00 前入睡</p>
+        <p><span class="tag tag-mental">心理</span> 每天进行 10 分钟冥想，管理压力水平</p>
+        <br>
+        <p><strong>💡 个性化建议：</strong></p>
+        <p>• 您的心率处于理想范围（72 BPM），继续保持</p>
+        <p>• 血压正常但建议每周监测 2-3 次</p>
+        <p>• 今日步数目标完成 78%，建议下午再散步 30 分钟</p>
+        <p>• 睡眠质量良好，可尝试将入睡时间提前至 22:30</p>
+        <br>
+        <p>您可以输入更具体的需求，如"改善睡眠"、"科学减脂"、"运动计划"等，获取更详细的方案。</p>
+      `;
+    }
+
+    result.classList.add('visible');
+  }, 1500 + Math.random() * 1000);
+}
+
+// ========== NAVIGATION ==========
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
