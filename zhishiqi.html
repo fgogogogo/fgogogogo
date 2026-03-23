@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>指示剂变色实验模拟器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1a30 100%);
+    min-height: 100vh;
+    color: #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .app-container {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1100px;
+  }
+
+  /* === 控制面板 === */
+  .control-panel {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px;
+    min-width: 320px;
+    backdrop-filter: blur(10px);
+  }
+
+  .control-panel h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #8ecae6;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 12px;
+  }
+
+  .section { margin-bottom: 24px; }
+
+  .section label {
+    display: block;
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+
+  .option-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .option-btn {
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: #ccc;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+  }
+
+  .option-btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .option-btn.active {
+    background: rgba(100,180,255,0.2);
+    border-color: #64b4ff;
+    color: #8ecae6;
+    box-shadow: 0 0 12px rgba(100,180,255,0.3);
+  }
+
+  .option-btn.indicator-btn.active {
+    background: rgba(255,200,100,0.2);
+    border-color: #ffc864;
+    color: #ffd78c;
+    box-shadow: 0 0 12px rgba(255,200,100,0.3);
+  }
+
+  .mix-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 2px;
+  }
+
+  .mix-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(78,205,196,0.4);
+  }
+
+  .mix-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    background: transparent;
+    color: #999;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .reset-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+  }
+
+  /* === 试管区域 === */
+  .tube-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .tube-wrapper {
+    position: relative;
+    width: 140px;
+    height: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+
+  /* 试管 */
+  .tube {
+    width: 80px;
+    height: 220px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top: none;
+    border-radius: 0 0 40px 40px;
+    position: relative;
+    background: rgba(255,255,255,0.03);
+    overflow: hidden;
+  }
+
+  /* 试管液面 */
+  .tube-liquid {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    border-radius: 0 0 37px 37px;
+    transition: background-color 2s ease;
+  }
+
+  /* 液体波纹效果 */
+  .tube-liquid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -20%;
+    right: -20%;
+    height: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* 试管壁高光 */
+  .tube::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    width: 8px;
+    height: 80%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  /* 液体摇晃动画 */
+  @keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(3deg); }
+    30% { transform: rotate(-2deg); }
+    45% { transform: rotate(2deg); }
+    60% { transform: rotate(-1deg); }
+    75% { transform: rotate(1deg); }
+  }
+
+  .shaking {
+    animation: shake 0.6s ease-in-out;
+  }
+
+  /* 气泡效果 */
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    animation: rise 1.2s ease-in forwards;
+  }
+
+  @keyframes rise {
+    0% {
+      opacity: 0.8;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-80px) scale(0.5);
+    }
+  }
+
+  /* 液滴 */
+  .droplet {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    width: 10px;
+    height: 14px;
+    border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+    background: rgba(255,255,255,0.3);
+    animation: drop 0.8s ease-in forwards;
+  }
+
+  @keyframes drop {
+    0% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(180px); opacity: 0; }
+  }
+
+  /* 结果信息区 */
+  .result-panel {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 24px;
+    min-width: 340px;
+    max-width: 420px;
+    backdrop-filter: blur(10px);
+    transition: all 0.5s ease;
+  }
+
+  .result-panel h3 {
+    font-size: 16px;
+    color: #8ecae6;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .result-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .result-content.visible {
+    display: block;
+    opacity: 1;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+
+  .result-label {
+    color: #888;
+    min-width: 80px;
+  }
+
+  .result-value {
+    color: #e0e0e0;
+  }
+
+  .result-value.color-text {
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .principle-box {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(100,180,255,0.08);
+    border: 1px solid rgba(100,180,255,0.2);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #b8d4e8;
+  }
+
+  .principle-box .formula {
+    font-family: 'Courier New', monospace;
+    background: rgba(0,0,0,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 2px 0;
+  }
+
+  .hint-text {
+    color: #666;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* 标签 */
+  .tube-label {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  /* 装饰元素 */
+  .bench-surface {
+    width: 160px;
+    height: 8px;
+    background: linear-gradient(90deg, #555, #777, #555);
+    border-radius: 4px;
+    margin-top: -4px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .app-container {
+      flex-direction: column;
+      align-items: center;
+    }
+    .control-panel, .result-panel {
+      min-width: 280px;
+      max-width: 340px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- 控制面板 -->
+  <div class="control-panel">
+    <h2>实验控制台</h2>
+
+    <div class="section">
+      <label>选择指示剂</label>
+      <div class="option-grid" id="indicator-grid">
+        <button class="option-btn indicator-btn" data-val="litmus">石蕊</button>
+        <button class="option-btn indicator-btn" data-val="phenol">酚酞</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>选择溶液</label>
+      <div class="option-grid" id="solution-grid">
+        <button class="option-btn" data-val="vinegar">醋（酸性）</button>
+        <button class="option-btn" data-val="limewater">石灰水（碱性）</button>
+        <button class="option-btn" data-val="saltwater">盐水（中性）</button>
+      </div>
+    </div>
+
+    <button class="mix-btn" id="mixBtn" disabled>混合反应</button>
+    <button class="reset-btn" id="resetBtn">重置实验</button>
+  </div>
+
+  <!-- 试管展示区 -->
+  <div class="tube-area">
+    <div class="tube-wrapper" id="tubeWrapper">
+      <div class="tube" id="tube">
+        <div class="tube-liquid" id="tubeLiquid"></div>
+      </div>
+    </div>
+    <div class="bench-surface"></div>
+    <div class="tube-label" id="tubeLabel">请选择指示剂和溶液</div>
+  </div>
+
+  <!-- 结果面板 -->
+  <div class="result-panel">
+    <h3>实验结果</h3>
+    <div class="hint-text" id="hintText">请选择指示剂和溶液后点击"混合反应"</div>
+    <div class="result-content" id="resultContent">
+      <div class="result-row">
+        <span class="result-label">指示剂：</span>
+        <span class="result-value" id="resIndicator">-</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">溶液：</span>
+        <span class="result-value" id="resSolution">-</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">溶液性质：</span>
+        <span class="result-value" id="resNature">-</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">变色结果：</span>
+        <span class="result-value color-text" id="resColor">-</span>
+      </div>
+      <div class="principle-box" id="principleBox"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== 数据配置 =====
+const data = {
+  indicators: {
+    litmus: {
+      name: '石蕊',
+      baseColor: 'rgba(180,140,120,0.6)',   // 紫色
+      acidColor: '#c0392b',                 // 红色（遇酸）
+      baseResultColor: '#2980b9',           // 蓝色（遇碱）
+      neutralColor: 'rgba(180,140,120,0.6)', // 紫色（中性）
+    },
+    phenol: {
+      name: '酚酞',
+      baseColor: 'rgba(245,245,245,0.4)',   // 无色/近白
+      acidColor: 'rgba(245,245,245,0.4)',   // 无色（遇酸）
+      baseResultColor: '#e74c3c',           // 红色（遇碱）
+      neutralColor: 'rgba(245,245,245,0.4)', // 无色（中性）
+    }
+  },
+  solutions: {
+    vinegar: {
+      name: '醋（醋酸溶液）',
+      nature: '酸性 (pH ≈ 2.5)',
+      type: 'acid'
+    },
+    limewater: {
+      name: '石灰水（氢氧化钙溶液）',
+      nature: '碱性 (pH ≈ 12)',
+      type: 'base'
+    },
+    saltwater: {
+      name: '盐水（氯化钠溶液）',
+      nature: '中性 (pH ≈ 7)',
+      type: 'neutral'
+    }
+  },
+  // 变色原理
+  principles: {
+    'litmus_acid': {
+      title: '石蕊遇酸变红',
+      text: '石蕊是从地衣类植物中提取的天然色素，主要成分为石蕊精。<br><br>在酸性环境中，石蕊分子中的共轭体系发生改变，其结构从紫色形式转变为红色醌式结构。<br><br><span class="formula">H⁺ + 石蕊(紫) → 石蕊(红)</span><br><br>氢离子(H⁺)与石蕊分子结合，使其电子云重新分布，吸收波长发生改变，从而呈现红色。'
+    },
+    'litmus_base': {
+      title: '石蕊遇碱变蓝',
+      text: '在碱性环境中，氢氧根离子(OH⁻)与石蕊分子作用，促使石蕊形成另一种醌式结构。<br><br><span class="formula">OH⁻ + 石蕊(紫) → 石蕊(蓝)</span><br><br>石蕊分子失去质子后形成共振稳定的负离子结构，最大吸收波长红移，呈现出蓝色。'
+    },
+    'litmus_neutral': {
+      title: '石蕊在中性溶液中不变色',
+      text: '在中性溶液(pH ≈ 7)中，没有足够的H⁺或OH⁻来改变石蕊分子的结构。<br><br>石蕊保持其天然的紫色状态，不会发生明显的颜色变化。'
+    },
+    'phenol_base': {
+      title: '酚酞遇碱变红',
+      text: '酚酞是一种有机弱酸指示剂，分子式为C₂₀H₁₄O₄。<br><br>在碱性条件下，酚酞分子内酯环打开，形成醌式结构的红色二钠盐。<br><br><span class="formula">酚酞(无色) + 2OH⁻ → 酚酞(红色) + 2H₂O</span><br><br>酚酞的变色范围是 pH 8.2 ~ 10.0，在此区间内由无色逐渐变为红色。'
+    },
+    'phenol_acid_neutral': {
+      title: '酚酞在酸性/中性溶液中无色',
+      text: '酚酞在酸性或中性溶液(pH < 8.2)中以内酯形式存在，分子呈闭合环状结构。<br><br>这种结构没有共轭双键系统，对可见光没有吸收，因此呈现无色。<br><br><span class="formula">酚酞(无色) + H⁺ → 不反应（保持无色）</span>'
+    }
+  }
+};
+
+// ===== 状态 =====
+let selectedIndicator = null;
+let selectedSolution = null;
+let hasMixed = false;
+
+// ===== DOM =====
+const indicatorGrid = document.getElementById('indicator-grid');
+const solutionGrid = document.getElementById('solution-grid');
+const mixBtn = document.getElementById('mixBtn');
+const resetBtn = document.getElementById('resetBtn');
+const tube = document.getElementById('tube');
+const tubeLiquid = document.getElementById('tubeLiquid');
+const tubeWrapper = document.getElementById('tubeWrapper');
+const tubeLabel = document.getElementById('tubeLabel');
+const hintText = document.getElementById('hintText');
+const resultContent = document.getElementById('resultContent');
+const principleBox = document.getElementById('principleBox');
+
+// ===== 初始化试管液体颜色 =====
+function initTube() {
+  tubeLiquid.style.backgroundColor = 'rgba(200,200,200,0.15)';
+}
+
+// ===== 选择指示剂 =====
+indicatorGrid.querySelectorAll('.option-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (hasMixed) return;
+    indicatorGrid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedIndicator = btn.dataset.val;
+
+    // 预览颜色
+    const ind = data.indicators[selectedIndicator];
+    tubeLiquid.style.backgroundColor = ind.baseColor;
+    tubeLabel.textContent = `${ind.name}溶液`;
+    updateMixBtn();
+  });
+});
+
+// ===== 选择溶液 =====
+solutionGrid.querySelectorAll('.option-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (hasMixed) return;
+    solutionGrid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSolution = btn.dataset.val;
+    updateMixBtn();
+  });
+});
+
+// ===== 更新混合按钮状态 =====
+function updateMixBtn() {
+  mixBtn.disabled = !(selectedIndicator && selectedSolution);
+}
+
+// ===== 混合反应 =====
+mixBtn.addEventListener('click', () => {
+  if (!selectedIndicator || !selectedSolution) return;
+
+  const ind = data.indicators[selectedIndicator];
+  const sol = data.solutions[selectedSolution];
+  const tubeRect = tube.getBoundingClientRect();
+
+  // 1. 摇晃动画
+  tube.classList.add('shaking');
+  tubeLabel.textContent = '混合中...';
+
+  // 2. 液滴效果
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      const drop = document.createElement('div');
+      drop.className = 'droplet';
+      drop.style.left = `${30 + Math.random() * 40}%`;
+      drop.style.animationDelay = `${Math.random() * 0.3}s`;
+      tube.appendChild(drop);
+      setTimeout(() => drop.remove(), 1000);
+    }, i * 120);
+  }
+
+  // 3. 气泡效果
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = 3 + Math.random() * 6;
+      bubble.style.width = size + 'px';
+      bubble.style.height = size + 'px';
+      bubble.style.left = `${10 + Math.random() * 60}px`;
+      bubble.style.bottom = `${10 + Math.random() * 80}px`;
+      bubble.style.animationDelay = `${Math.random() * 0.5}s`;
+      tubeLiquid.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 2000);
+    }, i * 150);
+  }
+
+  // 4. 颜色过渡（1.5秒后开始变色，过渡2秒）
+  setTimeout(() => {
+    let targetColor;
+    switch (sol.type) {
+      case 'acid':
+        targetColor = ind.acidColor;
+        break;
+      case 'base':
+        targetColor = ind.baseResultColor;
+        break;
+      default:
+        targetColor = ind.neutralColor;
+    }
+    tubeLiquid.style.backgroundColor = targetColor;
+  }, 500);
+
+  // 5. 显示结果
+  setTimeout(() => {
+    tube.classList.remove('shaking');
+    showResult(selectedIndicator, selectedSolution);
+    hasMixed = true;
+    mixBtn.disabled = true;
+  }, 3000);
+});
+
+// ===== 显示结果 =====
+function showResult(indKey, solKey) {
+  const ind = data.indicators[indKey];
+  const sol = data.solutions[solKey];
+
+  hintText.style.display = 'none';
+  resultContent.classList.add('visible');
+
+  document.getElementById('resIndicator').textContent = ind.name;
+  document.getElementById('resSolution').textContent = sol.name;
+  document.getElementById('resNature').textContent = sol.nature;
+
+  // 变色结果
+  let colorResult, colorHex;
+  if (indKey === 'litmus') {
+    if (sol.type === 'acid') {
+      colorResult = '红色';
+      colorHex = '#c0392b';
+    } else if (sol.type === 'base') {
+      colorResult = '蓝色';
+      colorHex = '#2980b9';
+    } else {
+      colorResult = '紫色（不变）';
+      colorHex = '#9b6b8b';
+    }
+  } else {
+    if (sol.type === 'base') {
+      colorResult = '红色';
+      colorHex = '#e74c3c';
+    } else {
+      colorResult = '无色（不变）';
+      colorHex = '#ccc';
+    }
+  }
+
+  const resColorEl = document.getElementById('resColor');
+  resColorEl.innerHTML = `<span class="color-dot" style="background:${colorHex}"></span>${colorResult}`;
+
+  // 变色原理
+  let principleKey;
+  if (indKey === 'litmus') {
+    if (sol.type === 'acid') principleKey = 'litmus_acid';
+    else if (sol.type === 'base') principleKey = 'litmus_base';
+    else principleKey = 'litmus_neutral';
+  } else {
+    if (sol.type === 'base') principleKey = 'phenol_base';
+    else principleKey = 'phenol_acid_neutral';
+  }
+
+  const principle = data.principles[principleKey];
+  principleBox.innerHTML = `<strong>${principle.title}</strong><br>${principle.text}`;
+
+  tubeLabel.textContent = `反应完成：${colorResult}`;
+}
+
+// ===== 重置 =====
+resetBtn.addEventListener('click', () => {
+  selectedIndicator = null;
+  selectedSolution = null;
+  hasMixed = false;
+
+  indicatorGrid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+  solutionGrid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+
+  tubeLiquid.style.backgroundColor = 'rgba(200,200,200,0.15)';
+  tubeLabel.textContent = '请选择指示剂和溶液';
+
+  hintText.style.display = 'block';
+  resultContent.classList.remove('visible');
+  principleBox.innerHTML = '';
+
+  mixBtn.disabled = true;
+});
+
+// 初始化
+initTube();
+</script>
+
+</body>
+</html>
