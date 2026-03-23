@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>618年中大促 - 限时狂欢</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:#f5f5f5;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+
+/* === 颜色变量 === */
+:root{
+  --red:#e63946;
+  --red-dark:#c1121f;
+  --red-light:#ff4d5a;
+  --gold:#ffd700;
+  --gold-dark:#d4a400;
+  --gold-light:#ffe55c;
+  --bg:#1a0a0a;
+  --card-bg:#fff;
+  --text-primary:#333;
+  --text-secondary:#666;
+}
+
+/* === 通用 === */
+.section-title{position:relative;text-align:center;padding:30px 20px 20px}
+.section-title h2{font-size:28px;color:var(--red);font-weight:900;letter-spacing:2px}
+.section-title .en{font-size:13px;color:var(--gold-dark);text-transform:uppercase;letter-spacing:4px;margin-top:4px}
+.section-title::after{content:'';display:block;width:60px;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:10px auto 0;border-radius:2px}
+
+/* ========== 头部横幅 ========== */
+.hero{position:relative;min-height:380px;background:linear-gradient(135deg,#c1121f 0%,#e63946 40%,#ff4d5a 70%,#ffd700 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-direction:column;text-align:center;padding:40px 20px}
+
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 70%,rgba(255,215,0,0.15) 0%,transparent 50%),radial-gradient(circle at 70% 30%,rgba(255,255,255,0.1) 0%,transparent 40%);animation:heroFloat 6s ease-in-out infinite}
+@keyframes heroFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(-2%,-2%)}}
+
+/* 金粉粒子 */
+.hero .particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero .particles span{position:absolute;width:4px;height:4px;background:var(--gold);border-radius:50%;opacity:0;animation:particle 3s ease-in-out infinite}
+.hero .particles span:nth-child(1){left:10%;animation-delay:0s}
+.hero .particles span:nth-child(2){left:25%;animation-delay:.5s}
+.hero .particles span:nth-child(3){left:40%;animation-delay:1s}
+.hero .particles span:nth-child(4){left:55%;animation-delay:1.5s}
+.hero .particles span:nth-child(5){left:70%;animation-delay:2s}
+.hero .particles span:nth-child(6){left:85%;animation-delay:2.5s}
+@keyframes particle{0%{opacity:0;transform:translateY(0) scale(0)}30%{opacity:1;transform:translateY(-30px) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(0)}}
+
+.hero-content{position:relative;z-index:2}
+.hero-badge{display:inline-block;background:var(--gold);color:var(--red-dark);padding:6px 20px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;box-shadow:0 2px 8px rgba(255,215,0,0.4)}
+.hero h1{font-size:42px;color:#fff;font-weight:900;letter-spacing:4px;text-shadow:0 2px 20px rgba(0,0,0,0.3),0 0 40px rgba(255,215,0,0.3);line-height:1.2}
+.hero .subtitle{color:rgba(255,255,255,0.9);font-size:16px;margin-top:12px;letter-spacing:2px}
+.hero .sale-tag{display:inline-block;background:var(--gold);color:var(--red-dark);padding:4px 16px;border-radius:4px;font-size:14px;font-weight:800;margin-top:16px;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+.hero .sale-tag del{text-decoration:none;color:var(--red-dark);opacity:0.6;font-size:12px}
+
+/* ========== 倒计时 ========== */
+.countdown-wrap{position:relative;z-index:2;margin-top:28px}
+.countdown-label{color:rgba(255,255,255,0.85);font-size:14px;margin-bottom:10px;letter-spacing:2px}
+.countdown{display:flex;gap:8px;justify-content:center}
+.countdown-item{display:flex;flex-direction:column;align-items:center}
+.countdown-item .num{width:52px;height:56px;background:rgba(0,0,0,0.35);border:2px solid rgba(255,215,0,0.5);border-radius:10px;color:#fff;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;font-family:'Courier New',monospace;box-shadow:inset 0 2px 8px rgba(0,0,0,0.3),0 0 15px rgba(255,215,0,0.15)}
+.countdown-item .unit{color:rgba(255,255,255,0.6);font-size:11px;margin-top:4px;letter-spacing:1px}
+.countdown .sep{font-size:28px;color:var(--gold);font-weight:900;line-height:56px;opacity:0.8}
+
+/* ========== 活动规则 ========== */
+.rules{background:#fff;padding:25px 20px;margin:-30px 16px 0;position:relative;z-index:3;border-radius:16px;box-shadow:0 4px 20px rgba(230,57,70,0.12)}
+.rules h3{font-size:18px;color:var(--red);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.rules h3::before{content:'⏰';font-size:18px}
+.rules ul{list-style:none}
+.rules li{padding:6px 0;padding-left:18px;font-size:14px;color:var(--text-secondary);line-height:1.8;position:relative}
+.rules li::before{content:'✓';position:absolute;left:0;color:var(--gold-dark);font-weight:700;font-size:13px}
+
+/* ========== 秒杀专区 ========== */
+.flash-sale{padding:10px 0 30px}
+.flash-header{display:flex;align-items:center;justify-content:center;gap:12px;padding:20px 0 10px}
+.flash-header .icon{font-size:28px}
+.flash-header h2{font-size:24px;color:var(--red);font-weight:900;letter-spacing:2px}
+.flash-header .fire{color:var(--red-light);font-size:20px;animation:fireAnim 0.8s ease-in-out infinite alternate}
+@keyframes fireAnim{from{transform:scale(1)}to{transform:scale(1.15)}}
+
+.product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 10px}
+.product-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);transition:all .3s ease;position:relative;cursor:pointer}
+.product-card:active{transform:scale(0.97)}
+.product-card .img-wrap{position:relative;aspect-ratio:1;overflow:hidden;background:#f8f8f8}
+.product-card .img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.product-card:hover .img-wrap img{transform:scale(1.06)}
+.product-card .flash-tag{position:absolute;top:6px;left:6px;background:linear-gradient(135deg,var(--red),var(--red-light));color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;z-index:2}
+.product-card .discount-badge{position:absolute;top:6px;right:6px;background:var(--gold);color:var(--red-dark);font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:2}
+.product-card .info{padding:8px}
+.product-card .name{font-size:13px;color:var(--text-primary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:36px}
+.product-card .price-row{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+.product-card .now{font-size:18px;color:var(--red);font-weight:900}
+.product-card .now small{font-size:11px}
+.product-card .orig{font-size:12px;color:#bbb;text-decoration:line-through}
+.product-card .progress-wrap{margin-top:6px}
+.product-card .progress-bar{height:4px;background:#fee;border-radius:2px;overflow:hidden}
+.product-card .progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--red),var(--red-light));border-radius:2px;transition:width 1s}
+.product-card .progress-text{font-size:10px;color:#bbb;margin-top:2px}
+.product-card .btn-buy{display:block;width:100%;margin-top:8px;background:linear-gradient(135deg,var(--red),var(--red-light));color:#fff;border:none;padding:7px 0;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.product-card .btn-buy:hover{box-shadow:0 4px 12px rgba(230,57,70,0.4)}
+.product-card .btn-buy:active{transform:scale(0.96)}
+
+/* ========== 分区活动 ========== */
+.zones{padding:10px 0 30px;background:linear-gradient(180deg,#fff 0%,#fff5f5 100%)}
+.zone-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin:0 16px 14px;cursor:pointer;transition:all .3s}
+.zone-card:active{transform:scale(0.98)}
+.zone-card .zone-banner{position:relative;padding:24px 20px;display:flex;align-items:center;justify-content:space-between}
+.zone-card .zone-banner.z-full{background:linear-gradient(135deg,#c1121f 0%,#e63946 50%,#ffd700 100%);color:#fff}
+.zone-card .zone-banner.z-gold{background:linear-gradient(135deg,#d4a400 0%,#ffd700 50%,#ffe55c 100%);color:var(--red-dark)}
+.zone-card .zone-banner.z-purple{background:linear-gradient(135deg,#6a0dad 0%,#8b3fb8 50%,#c77dff 100%);color:#fff}
+.zone-banner h3{font-size:20px;font-weight:900;letter-spacing:1px}
+.zone-banner p{font-size:13px;opacity:0.85;margin-top:4px}
+.zone-banner .arrow{font-size:24px;opacity:0.6}
+.zone-items{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}
+.zone-items .zone-item{background:#f9f9f9;border-radius:10px;padding:10px;text-align:center;transition:all .2s}
+.zone-items .zone-item:active{background:#fff0f0}
+.zone-items .zone-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;margin-bottom:6px}
+.zone-items .zone-item .z-name{font-size:12px;color:var(--text-primary);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.zone-items .zone-item .z-price{font-size:14px;color:var(--red);font-weight:800;margin-top:2px}
+.zone-items .zone-item .z-price small{font-size:10px}
+
+/* ========== 优惠券领取区 ========== */
+.coupon-section{padding:10px 16px 30px}
+.coupon-header{text-align:center;padding:20px 0 16px}
+.coupon-header h2{font-size:24px;color:var(--red);font-weight:900;letter-spacing:2px}
+.coupon-header p{font-size:13px;color:var(--text-secondary);margin-top:6px}
+.coupon-list{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.coupon-list::-webkit-scrollbar{display:none}
+.coupon-item{flex-shrink:0;width:140px;background:linear-gradient(135deg,#fff 0%,#fff5f0 100%);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(230,57,70,0.1);border:1.5px dashed var(--red);position:relative;cursor:pointer;transition:all .3s}
+.coupon-item:active{transform:scale(0.96)}
+.coupon-item .c-left{background:linear-gradient(135deg,var(--red),var(--red-light));color:#fff;padding:14px 10px;text-align:center;position:relative}
+.coupon-item .c-left .amount{font-size:30px;font-weight:900;line-height:1}
+.coupon-item .c-left .amount small{font-size:14px}
+.coupon-item .c-left .condition{font-size:10px;opacity:0.85;margin-top:2px}
+.coupon-item .c-right{padding:10px;text-align:center}
+.coupon-item .c-right .c-title{font-size:12px;color:var(--text-primary);font-weight:600;line-height:1.4}
+.coupon-item .c-right .c-date{font-size:10px;color:#bbb;margin-top:4px}
+.coupon-item .c-btn{display:block;margin:6px 8px 8px;background:var(--gold);color:var(--red-dark);border:none;padding:5px 0;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px}
+.coupon-item .c-btn:active{background:var(--gold-dark)}
+.coupon-item.received .c-left{background:#ccc}
+.coupon-item.received .c-btn{background:#ddd;color:#999;cursor:not-allowed}
+
+/* 优惠券锯齿边缘 */
+.coupon-item::before,.coupon-item::after{content:'';position:absolute;width:12px;height:12px;background:#f5f5f5;border-radius:50%}
+.coupon-item::before{left:-6px;top:50%;transform:translateY(-50%)}
+.coupon-item::after{right:-6px;top:50%;transform:translateY(-50%)}
+
+/* ========== 售后提示 ========== */
+.service{background:#fff;margin:0 16px 20px;border-radius:16px;padding:24px 20px;box-shadow:0 2px 10px rgba(0,0,0,0.04)}
+.service h3{font-size:18px;color:var(--red);margin-bottom:16px;text-align:center;font-weight:900}
+.service-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}
+.service-item{cursor:pointer}
+.service-item .s-icon{font-size:32px;margin-bottom:6px}
+.service-item .s-label{font-size:12px;color:var(--text-secondary);font-weight:600}
+.service .note{margin-top:18px;padding-top:16px;border-top:1px solid #f0f0f0;font-size:12px;color:#bbb;text-align:center;line-height:1.8}
+
+/* ========== 底部 CTA ========== */
+.bottom-cta{position:fixed;bottom:0;left:0;right:0;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,0.1);padding:10px 16px;display:flex;gap:10px;align-items:center;z-index:100}
+.bottom-cta .total{flex:1;font-size:14px;color:var(--text-secondary)}
+.bottom-cta .total b{color:var(--red);font-size:22px;font-weight:900}
+.bottom-cta .btn-checkout{background:linear-gradient(135deg,var(--red),var(--red-light));color:#fff;border:none;padding:12px 36px;border-radius:24px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:2px;transition:all .2s;white-space:nowrap}
+.bottom-cta .btn-checkout:hover{box-shadow:0 4px 16px rgba(230,57,70,0.4)}
+.bottom-cta .btn-checkout:active{transform:scale(0.96)}
+
+/* ========== 返回顶部 ========== */
+.back-top{position:fixed;right:16px;bottom:80px;width:40px;height:40px;background:var(--red);color:#fff;border:none;border-radius:50%;font-size:18px;cursor:pointer;box-shadow:0 2px 10px rgba(230,57,70,0.3);z-index:99;opacity:0;transition:all .3s;display:flex;align-items:center;justify-content:center}
+.back-top.show{opacity:1}
+
+/* ========== 页脚 ========== */
+footer{background:var(--red-dark);color:rgba(255,255,255,0.7);text-align:center;padding:20px;font-size:12px;padding-bottom:70px}
+
+/* ========== 闪光动画 ========== */
+.shine{position:relative;overflow:hidden}
+.shine::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:shine 2.5s ease-in-out infinite}
+@keyframes shine{0%{left:-100%}50%,100%{left:150%}}
+
+/* ========== 气泡动画 ========== */
+.bubble{position:absolute;border-radius:50%;background:rgba(255,215,0,0.12);animation:floatBubble 8s ease-in-out infinite}
+@keyframes floatBubble{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.1)}}
+
+/* ========== 响应式 ========== */
+@media(max-width:480px){
+  .hero{min-height:300px;padding:30px 16px}
+  .hero h1{font-size:30px;letter-spacing:2px}
+  .hero .subtitle{font-size:14px}
+  .product-grid{grid-template-columns:repeat(2,1fr)}
+  .countdown-item .num{width:42px;height:46px;font-size:22px}
+  .zone-items{grid-template-columns:repeat(3,1fr)}
+  .service-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .section-title h2{font-size:22px}
+  .coupon-item{width:130px}
+  .flash-header h2{font-size:20px}
+}
+
+@media(min-width:768px){
+  .hero{min-height:420px}
+  .hero h1{font-size:52px}
+  .product-grid{grid-template-columns:repeat(4,1fr);gap:14px}
+  .product-card .name{font-size:14px}
+  .product-card .now{font-size:20px}
+  .countdown-item .num{width:60px;height:64px;font-size:32px}
+  .zone-items{grid-template-columns:repeat(4,1fr)}
+  .service-grid{grid-template-columns:repeat(4,1fr)}
+  .coupon-item{width:160px}
+}
+
+@media(min-width:1024px){
+  .container{max-width:1200px;margin:0 auto}
+  .hero h1{font-size:60px}
+  .product-grid{grid-template-columns:repeat(4,1fr);gap:16px}
+  .product-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+  .coupon-list{flex-wrap:wrap;justify-content:center}
+}
+
+/* ========== 脉冲动画 ========== */
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,0.4)}50%{box-shadow:0 0 0 10px rgba(230,57,70,0)}}
+
+/* 滚动条美化 */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--red-light);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ========== 头部横幅 ========== -->
+<section class="hero">
+  <div class="particles">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🔥 全场低至1折起</div>
+    <h1>618 年中大促</h1>
+    <p class="subtitle">限时狂欢 · 史无前例的折扣盛宴</p>
+    <div class="sale-tag">
+      <del>¥999</del> &nbsp; <span style="font-size:20px">¥99</span> &nbsp; 起
+    </div>
+    <div class="countdown-wrap">
+      <div class="countdown-label">⏳ 距活动结束还剩</div>
+      <div class="countdown" id="countdown">
+        <div class="countdown-item"><div class="num" id="d">00</div><div class="unit">天</div></div>
+        <div class="sep">:</div>
+        <div class="countdown-item"><div class="num" id="h">00</div><div class="unit">时</div></div>
+        <div class="sep">:</div>
+        <div class="countdown-item"><div class="num" id="m">00</div><div class="unit">分</div></div>
+        <div class="sep">:</div>
+        <div class="countdown-item"><div class="num" id="s">00</div><div class="unit">秒</div></div>
+      </div>
+    </div>
+  </div>
+  <!-- 装饰气泡 -->
+  <div class="bubble" style="width:80px;height:80px;top:10%;left:5%"></div>
+  <div class="bubble" style="width:50px;height:50px;top:60%;right:8%;animation-delay:2s"></div>
+  <div class="bubble" style="width:60px;height:60px;top:30%;right:15%;animation-delay:4s"></div>
+</section>
+
+<!-- ========== 活动规则 ========== -->
+<section class="rules">
+  <h3>活动规则</h3>
+  <ul>
+    <li>活动时间：2026年6月1日 — 2026年6月18日 23:59:59</li>
+    <li>全场商品参与满减优惠，满200减30，满500减80</li>
+    <li>秒杀商品每日10:00/14:00/20:00准时开抢，先到先得</li>
+    <li>优惠券可与满减叠加使用，每单限用1张</li>
+    <li>活动期间订单享受7天无理由退换货</li>
+  </ul>
+</section>
+
+<!-- ========== 秒杀专区 ========== -->
+<section class="flash-sale">
+  <div class="flash-header">
+    <span class="fire">🔥</span>
+    <h2>限时秒杀</h2>
+    <span class="fire">🔥</span>
+  </div>
+  <div class="product-grid">
+    <!-- 产品1 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash1/300/300" alt="爆款手机" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-65%</span>
+      </div>
+      <div class="info">
+        <div class="name">旗舰5G智能手机 12GB+256GB</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>1299</span>
+          <span class="orig">¥3699</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:78%"></div></div>
+          <div class="progress-text">已抢78%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品2 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash2/300/300" alt="无线耳机" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-72%</span>
+      </div>
+      <div class="info">
+        <div class="name">主动降噪无线蓝牙耳机</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>199</span>
+          <span class="orig">¥699</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:92%"></div></div>
+          <div class="progress-text">已抢92%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品3 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash3/300/300" alt="平板电脑" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-58%</span>
+      </div>
+      <div class="info">
+        <div class="name">超薄高性能平板电脑</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>1599</span>
+          <span class="orig">¥3799</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:65%"></div></div>
+          <div class="progress-text">已抢65%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品4 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash4/300/300" alt="智能手表" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-60%</span>
+      </div>
+      <div class="info">
+        <div class="name">智能运动健康手表</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>399</span>
+          <span class="orig">¥999</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:81%"></div></div>
+          <div class="progress-text">已抢81%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品5 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash5/300/300" alt="机械键盘" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-55%</span>
+      </div>
+      <div class="info">
+        <div class="name">RGB机械游戏键盘 青轴</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>179</span>
+          <span class="orig">¥399</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:56%"></div></div>
+          <div class="progress-text">已抢56%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品6 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash6/300/300" alt="扫地机器人" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-62%</span>
+      </div>
+      <div class="info">
+        <div class="name">智能扫地机器人 全自动</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>899</span>
+          <span class="orig">¥2399</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:73%"></div></div>
+          <div class="progress-text">已抢73%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品7 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash7/300/300" alt="电动牙刷" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-68%</span>
+      </div>
+      <div class="info">
+        <div class="name">声波电动牙刷 礼盒套装</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>129</span>
+          <span class="orig">¥399</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:88%"></div></div>
+          <div class="progress-text">已抢88%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+    <!-- 产品8 -->
+    <div class="product-card shine">
+      <div class="img-wrap">
+        <img src="https://picsum.photos/seed/flash8/300/300" alt="充电宝" loading="lazy">
+        <span class="flash-tag">秒杀中</span>
+        <span class="discount-badge">-50%</span>
+      </div>
+      <div class="info">
+        <div class="name">20000mAh大容量充电宝</div>
+        <div class="price-row">
+          <span class="now"><small>¥</small>79</span>
+          <span class="orig">¥159</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:94%"></div></div>
+          <div class="progress-text">已抢94%</div>
+        </div>
+        <button class="btn-buy pulse">立即抢购</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 分区活动 ========== -->
+<section class="zones">
+  <div class="section-title">
+    <h2>专区活动</h2>
+    <div class="en">Zone Activities</div>
+  </div>
+
+  <!-- 专区1 -->
+  <div class="zone-card">
+    <div class="zone-banner z-full">
+      <div>
+        <h3>📱 数码爆款</h3>
+        <p>全场低至5折起 | 限时直降</p>
+      </div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="zone-items">
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone1a/200/200" alt="" loading="lazy">
+        <div class="z-name">旗舰手机Pro</div>
+        <div class="z-price"><small>¥</small>2199</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone1b/200/200" alt="" loading="lazy">
+        <div class="z-name">游戏笔记本</div>
+        <div class="z-price"><small>¥</small>4599</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone1c/200/200" alt="" loading="lazy">
+        <div class="z-name">4K显示器</div>
+        <div class="z-price"><small>¥</small>1299</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 专区2 -->
+  <div class="zone-card">
+    <div class="zone-banner z-gold">
+      <div>
+        <h3>🏠 居家好物</h3>
+        <p>满299减60 | 买二送一</p>
+      </div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="zone-items">
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone2a/200/200" alt="" loading="lazy">
+        <div class="z-name">智能空气净化器</div>
+        <div class="z-price"><small>¥</small>699</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone2b/200/200" alt="" loading="lazy">
+        <div class="z-name">多功能料理机</div>
+        <div class="z-price"><small>¥</small>299</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone2c/200/200" alt="" loading="lazy">
+        <div class="z-name">四件套床品</div>
+        <div class="z-price"><small>¥</small>199</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 专区3 -->
+  <div class="zone-card">
+    <div class="zone-banner z-purple">
+      <div>
+        <h3>💄 美妆护肤</h3>
+        <p>第二件半价 | 满399赠礼</p>
+      </div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="zone-items">
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone3a/200/200" alt="" loading="lazy">
+        <div class="z-name">明星精华液</div>
+        <div class="z-price"><small>¥</small>329</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone3b/200/200" alt="" loading="lazy">
+        <div class="z-name">气垫BB霜</div>
+        <div class="z-price"><small>¥</small>159</div>
+      </div>
+      <div class="zone-item">
+        <img src="https://picsum.photos/seed/zone3c/200/200" alt="" loading="lazy">
+        <div class="z-name">防晒喷雾套装</div>
+        <div class="z-price"><small>¥</small>89</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 优惠券领取区 ========== -->
+<section class="coupon-section">
+  <div class="coupon-header">
+    <h2>🎫 领券中心</h2>
+    <p>优惠券可与满减叠加，省更多</p>
+  </div>
+  <div class="coupon-list">
+    <div class="coupon-item" onclick="claimCoupon(this)">
+      <div class="c-left">
+        <div class="amount"><small>¥</small>50</div>
+        <div class="condition">满299可用</div>
+      </div>
+      <div class="c-right">
+        <div class="c-title">新人专享券</div>
+        <div class="c-date">06.01-06.18</div>
+        <button class="c-btn" onclick="event.stopPropagation();claimCoupon(this.closest('.coupon-item'))">立即领取</button>
+      </div>
+    </div>
+    <div class="coupon-item" onclick="claimCoupon(this)">
+      <div class="c-left">
+        <div class="amount"><small>¥</small>100</div>
+        <div class="condition">满599可用</div>
+      </div>
+      <div class="c-right">
+        <div class="c-title">爆款加码券</div>
+        <div class="c-date">06.01-06.18</div>
+        <button class="c-btn" onclick="event.stopPropagation();claimCoupon(this.closest('.coupon-item'))">立即领取</button>
+      </div>
+    </div>
+    <div class="coupon-item" onclick="claimCoupon(this)">
+      <div class="c-left">
+        <div class="amount"><small>¥</small>200</div>
+        <div class="condition">满999可用</div>
+      </div>
+      <div class="c-right">
+        <div class="c-title">大额神券</div>
+        <div class="c-date">06.01-06.18</div>
+        <button class="c-btn" onclick="event.stopPropagation();claimCoupon(this.closest('.coupon-item'))">立即领取</button>
+      </div>
+    </div>
+    <div class="coupon-item" onclick="claimCoupon(this)">
+      <div class="c-left">
+        <div class="amount"><small>¥</small>30</div>
+        <div class="condition">满199可用</div>
+      </div>
+      <div class="c-right">
+        <div class="c-title">日常福利券</div>
+        <div class="c-date">06.01-06.18</div>
+        <button class="c-btn" onclick="event.stopPropagation();claimCoupon(this.closest('.coupon-item'))">立即领取</button>
+      </div>
+    </div>
+    <div class="coupon-item" onclick="claimCoupon(this)">
+      <div class="c-left">
+        <div class="amount"><small>¥</small>500</div>
+        <div class="condition">满1999可用</div>
+      </div>
+      <div class="c-right">
+        <div class="c-title">至尊神券</div>
+        <div class="c-date">06.01-06.18</div>
+        <button class="c-btn" onclick="event.stopPropagation();claimCoupon(this.closest('.coupon-item'))">立即领取</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 售后服务 ========== -->
+<section class="service">
+  <h3>🛡️ 售后保障</h3>
+  <div class="service-grid">
+    <div class="service-item">
+      <div class="s-icon">🚚</div>
+      <div class="s-label">极速发货</div>
+    </div>
+    <div class="service-item">
+      <div class="s-icon">🔄</div>
+      <div class="s-label">7天无理由</div>
+    </div>
+    <div class="service-item">
+      <div class="s-icon">✅</div>
+      <div class="s-label">正品保证</div>
+    </div>
+    <div class="service-item">
+      <div class="s-icon">📞</div>
+      <div class="s-label">24h客服</div>
+    </div>
+  </div>
+  <div class="note">
+    活动期间所有商品均享受7天无理由退换货服务<br>
+    如有质量问题，请联系客服处理，我们将第一时间为您解决
+  </div>
+</section>
+
+<!-- ========== 底部 CTA ========== -->
+<div class="bottom-cta">
+  <div class="total">预估合计：<b>¥0</b></div>
+  <button class="btn-checkout" onclick="alert('请先添加商品到购物车')">去结算(0)</button>
+</div>
+
+<!-- ========== 返回顶部 ========== -->
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ========== 页脚 ========== -->
+<footer>
+  <p>© 2026 大促商城 · 618年中大促专题页</p>
+  <p style="margin-top:6px;opacity:0.6">本活动最终解释权归平台所有</p>
+</footer>
+
+<script>
+// ========== 倒计时 ==========
+(function(){
+  // 设定结束时间：2026年6月18日23:59:59
+  var endTime = new Date('2026-06-18T23:59:59').getTime();
+
+  function updateCountdown(){
+    var now = Date.now();
+    var diff = endTime - now;
+    if(diff <= 0){
+      document.getElementById('d').textContent='00';
+      document.getElementById('h').textContent='00';
+      document.getElementById('m').textContent='00';
+      document.getElementById('s').textContent='00';
+      return;
+    }
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('d').textContent = pad(d);
+    document.getElementById('h').textContent = pad(h);
+    document.getElementById('m').textContent = pad(m);
+    document.getElementById('s').textContent = pad(s);
+  }
+  function pad(n){return n < 10 ? '0'+n : ''+n}
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+})();
+
+// ========== 优惠券领取 ==========
+function claimCoupon(el){
+  if(el.classList.contains('received')) return;
+  el.classList.add('received');
+  var btn = el.querySelector('.c-btn');
+  btn.textContent = '已领取';
+  // 简单的领取成功动画
+  el.style.transform = 'scale(1.05)';
+  setTimeout(function(){el.style.transform = ''}, 200);
+}
+
+// ========== 返回顶部按钮显示/隐藏 ==========
+(function(){
+  var btn = document.getElementById('backTop');
+  window.addEventListener('scroll', function(){
+    if(window.scrollY > 300){
+      btn.classList.add('show');
+    }else{
+      btn.classList.remove('show');
+    }
+  });
+})();
+
+// ========== 秒杀进度条动画 ==========
+(function(){
+  var bars = document.querySelectorAll('.progress-bar .fill');
+  bars.forEach(function(bar){
+    var w = bar.style.width;
+    bar.style.width = '0%';
+    setTimeout(function(){
+      bar.style.width = w;
+    }, 300);
+  });
+})();
+
+// ========== 产品卡片点击效果 ==========
+document.querySelectorAll('.product-card').forEach(function(card){
+  card.addEventListener('click', function(e){
+    if(e.target.tagName !== 'BUTTON'){
+      // 模拟跳转
+      var name = this.querySelector('.name').textContent;
+      console.log('查看商品：' + name);
+    }
+  });
+});
+
+// ========== 分区活动点击 ==========
+document.querySelectorAll('.zone-card').forEach(function(zone){
+  zone.addEventListener('click', function(){
+    var title = this.querySelector('h3').textContent;
+    console.log('进入专区：' + title);
+  });
+});
+</script>
+</body>
+</html>
