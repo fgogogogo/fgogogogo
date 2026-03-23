@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>电子鱼缸</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    background: linear-gradient(135deg, #0c1a2a, #1a3a5c, #0c1a2a);
+  }
+  #container {
+    width: 95%; max-width: 960px;
+    aspect-ratio: 16 / 10;
+  }
+  svg { width: 100%; height: 100%; }
+  .click-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.5);
+    font-size: 14px;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="container">
+  <svg id="tank" viewBox="0 0 960 600" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <!-- 玻璃渐变 -->
+      <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
+        <stop offset="30%" stop-color="#ffffff" stop-opacity="0.04"/>
+        <stop offset="70%" stop-color="#ffffff" stop-opacity="0.02"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.15"/>
+      </linearGradient>
+
+      <!-- 水的渐变 -->
+      <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1a6b8a"/>
+        <stop offset="40%" stop-color="#0d4f6b"/>
+        <stop offset="80%" stop-color="#0a3a52"/>
+        <stop offset="100%" stop-color="#062838"/>
+      </linearGradient>
+
+      <!-- 鱼缸边框渐变 -->
+      <linearGradient id="tankBorder" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#6a8ba0"/>
+        <stop offset="50%" stop-color="#9cc0d6"/>
+        <stop offset="100%" stop-color="#6a8ba0"/>
+      </linearGradient>
+
+      <!-- 气泡渐变 -->
+      <radialGradient id="bubbleGrad">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+        <stop offset="60%" stop-color="#ffffff" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+
+      <!-- 鱼身渐变 - 大鱼 -->
+      <linearGradient id="fishBodyBig" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffcc00"/>
+        <stop offset="30%" stop-color="#ffa500"/>
+        <stop offset="70%" stop-color="#ff8c00"/>
+        <stop offset="100%" stop-color="#cc6600"/>
+      </linearGradient>
+
+      <!-- 鱼身渐变 - 小鱼 -->
+      <linearGradient id="fishBodySmall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffe066"/>
+        <stop offset="30%" stop-color="#ffb733"/>
+        <stop offset="70%" stop-color="#ff9900"/>
+        <stop offset="100%" stop-color="#e68a00"/>
+      </linearGradient>
+
+      <!-- 玻璃反光斜纹 -->
+      <linearGradient id="glassShine" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+
+      <!-- 饲料渐变 -->
+      <radialGradient id="foodGrad">
+        <stop offset="0%" stop-color="#fff4cc"/>
+        <stop offset="50%" stop-color="#ffcc00"/>
+        <stop offset="100%" stop-color="#cc9900"/>
+      </radialGradient>
+
+      <!-- 石头渐变 -->
+      <radialGradient id="stone1" cx="30%" cy="30%">
+        <stop offset="0%" stop-color="#8b6914"/>
+        <stop offset="100%" stop-color="#4a3000"/>
+      </radialGradient>
+      <radialGradient id="stone2" cx="30%" cy="30%">
+        <stop offset="0%" stop-color="#7a5c10"/>
+        <stop offset="100%" stop-color="#3d2800"/>
+      </radialGradient>
+      <radialGradient id="stone3" cx="30%" cy="30%">
+        <stop offset="0%" stop-color="#6b4f0c"/>
+        <stop offset="100%" stop-color="#331f00"/>
+      </radialGradient>
+
+      <!-- 水草渐变 -->
+      <linearGradient id="weedGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#1a4a2a"/>
+        <stop offset="60%" stop-color="#2d8a4a"/>
+        <stop offset="100%" stop-color="#45c060"/>
+      </linearGradient>
+      <linearGradient id="weedGrad2" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#0d3520"/>
+        <stop offset="60%" stop-color="#1f6a38"/>
+        <stop offset="100%" stop-color="#2ea050"/>
+      </linearGradient>
+
+      <!-- 裁剪路径 -->
+      <clipPath id="tankClip">
+        <rect x="0" y="0" width="960" height="600"/>
+      </clipPath>
+    </defs>
+
+    <!-- ===== 鱼缸外框 ===== -->
+    <!-- 外层金属边框 -->
+    <rect x="0" y="0" width="960" height="600" rx="16" ry="16"
+          fill="url(#tankBorder)" stroke="#3a5068" stroke-width="3"/>
+    <!-- 内部水区域 -->
+    <rect x="8" y="8" width="944" height="584" rx="12" ry="12"
+          fill="url(#waterGrad)"/>
+
+    <!-- ===== 玻璃反光效果 ===== -->
+    <!-- 左侧斜光 -->
+    <polygon points="8,8 100,8 40,592 8,592"
+             fill="url(#glassShine)" opacity="0.6"/>
+    <!-- 顶部横光 -->
+    <polygon points="8,8 944,8 920,60 60,60"
+             fill="url(#glassGrad)" opacity="0.5"/>
+    <!-- 右下角微光 -->
+    <polygon points="880,8 952,8 952,120 860,120"
+             fill="url(#glassGrad)" opacity="0.25"/>
+
+    <!-- ===== 光斑效果 ===== -->
+    <circle cx="160" cy="80" r="35" fill="#ffffff" opacity="0.06"/>
+    <circle cx="780" cy="100" r="28" fill="#ffffff" opacity="0.05"/>
+    <circle cx="480" cy="120" r="20" fill="#ffffff" opacity="0.04"/>
+
+    <!-- ===== 沙底 ===== -->
+    <ellipse cx="480" cy="570" rx="440" ry="28" fill="#2a4a3a" opacity="0.6"/>
+    <ellipse cx="480" cy="565" rx="430" ry="22" fill="#3d6a52" opacity="0.5"/>
+    <ellipse cx="480" cy="560" rx="420" ry="18" fill="#5a8a68" opacity="0.4"/>
+
+    <!-- ===== 石头 ===== -->
+    <ellipse cx="200" cy="555" rx="55" ry="25" fill="url(#stone1)"/>
+    <ellipse cx="320" cy="560" rx="40" ry="18" fill="url(#stone2)"/>
+    <ellipse cx="700" cy="555" rx="50" ry="22" fill="url(#stone3)"/>
+    <ellipse cx="800" cy="562" rx="35" ry="15" fill="url(#stone1)"/>
+    <ellipse cx="120" cy="565" rx="28" ry="12" fill="url(#stone2)"/>
+
+    <!-- ===== 水草 ===== -->
+    <!-- 水草1 - 左侧 -->
+    <g class="weed" transform="translate(250, 575)">
+      <path d="M0,0 Q-12,-40 -5,-80 Q2,-120 -8,-160 Q-15,-200 0,-240"
+            fill="none" stroke="url(#weedGrad)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M5,-20 Q20,-40 15,-70 Q10,-100 25,-130"
+            fill="none" stroke="url(#weedGrad)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M-3,-80 Q-20,-100 -15,-130 Q-10,-160 -25,-190"
+            fill="none" stroke="url(#weedGrad)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- 水草2 - 右侧 -->
+    <g class="weed" transform="translate(720, 575)">
+      <path d="M0,0 Q15,-45 8,-90 Q0,-140 12,-190"
+            fill="none" stroke="url(#weedGrad2)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-8,-30 Q-22,-55 -15,-95 Q-8,-140 -20,-180"
+            fill="none" stroke="url(#weedGrad2)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M3,-90 Q20,-110 12,-150 Q5,-190 18,-220"
+            fill="none" stroke="url(#weedGrad2)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- 水草3 - 中间 -->
+    <g class="weed" transform="translate(480, 575)">
+      <path d="M0,0 Q10,-50 0,-100 Q-10,-150 5,-200"
+            fill="none" stroke="url(#weedGrad)" stroke-width="5" stroke-linecap="round"/>
+      <path d="M-5,-50 Q-18,-80 -8,-120 Q2,-160 -10,-200"
+            fill="none" stroke="url(#weedGrad)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- 水草4 - 左2 -->
+    <g class="weed" transform="translate(150, 575)">
+      <path d="M0,0 Q-8,-30 -3,-70 Q2,-110 -10,-150"
+            fill="none" stroke="url(#weedGrad2)" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <!-- ===== 饲料层 ===== -->
+    <g id="foodLayer" clip-path="url(#tankClip)"></g>
+
+    <!-- ===== 鱼层 ===== -->
+    <g id="fishLayer" clip-path="url(#tankClip)"></g>
+
+    <!-- ===== 气泡层 ===== -->
+    <g id="bubbleLayer" clip-path="url(#tankClip)"></g>
+
+    <!-- ===== 前层玻璃效果 ===== -->
+    <rect x="8" y="8" width="944" height="584" rx="12" ry="12"
+          fill="url(#glassGrad)" opacity="0.15"/>
+    <!-- 前层斜光 -->
+    <polygon points="780,8 952,8 952,400 860,8"
+             fill="url(#glassShine)" opacity="0.12"/>
+  </svg>
+</div>
+<div class="click-hint">点击鱼缸任意位置投放饲料</div>
+
+<script>
+// ========== 配置 ==========
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const TANK_W = 944;
+const TANK_H = 584;
+const TANK_X = 8;
+const TANK_Y = 8;
+
+// ========== 鱼类 ==========
+class Fish {
+  constructor(config) {
+    this.id = config.id;
+    this.x = config.x;
+    this.y = config.y;
+    this.scale = config.scale;
+    this.vx = config.vx;
+    this.vy = config.vy;
+    this.maxSpeed = config.maxSpeed;
+    this.wanderAngle = Math.random() * Math.PI * 2;
+    this.wanderTimer = 0;
+    this.facingRight = true;
+    this.tailPhase = 0;
+    this.bodyGrad = config.bodyGrad;
+    this.eyesColor = config.eyesColor || '#1a1a1a';
+    this.eyesHighlight = config.eyesHighlight || '#ffffff';
+    this.state = 'wander'; // wander | chase | eat
+    this.targetX = 0;
+    this.targetY = 0;
+    this.targetFood = null;
+    this.eatProgress = 0;
+    this.baseScale = config.scale;
+    this.eatScale = 1;
+  }
+
+  createSVG() {
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.id = `fish-${this.id}`;
+    g.setAttribute('transform', `translate(${this.x},${this.y}) scale(${this.scale}, ${this.scale})`);
+
+    // --- 尾巴 ---
+    const tailG = document.createElementNS(SVG_NS, 'g');
+    tailG.id = `fish-tail-${this.id}`;
+
+    // 尾鳍主体
+    const tail = document.createElementNS(SVG_NS, 'path');
+    tail.setAttribute('d', 'M -12,0 Q -35,-12 -45,-25 Q -40,-8 -48,0 Q -40,8 -45,25 Q -35,12 -12,0');
+    tail.setAttribute('fill', this.bodyGrad);
+    tail.setAttribute('opacity', '0.9');
+    tailG.appendChild(tail);
+
+    // 尾鳍装饰纹路
+    const tailStripe = document.createElementNS(SVG_NS, 'path');
+    tailStripe.setAttribute('d', 'M -14,-2 Q -30,-8 -38,-15');
+    tailStripe.setAttribute('fill', 'none');
+    tailStripe.setAttribute('stroke', '#ffffff');
+    tailStripe.setAttribute('stroke-width', '0.8');
+    tailStripe.setAttribute('opacity', '0.3');
+    tailG.appendChild(tailStripe);
+
+    const tailStripe2 = document.createElementNS(SVG_NS, 'path');
+    tailStripe2.setAttribute('d', 'M -14,2 Q -30,8 -38,15');
+    tailStripe2.setAttribute('fill', 'none');
+    tailStripe2.setAttribute('stroke', '#ffffff');
+    tailStripe2.setAttribute('stroke-width', '0.8');
+    tailStripe2.setAttribute('opacity', '0.3');
+    tailG.appendChild(tailStripe2);
+
+    g.appendChild(tailG);
+
+    // --- 身体 ---
+    const body = document.createElementNS(SVG_NS, 'path');
+    body.setAttribute('d',
+      'M -12,0 ' +
+      'C -12,-22 10,-32 35,-28 ' +
+      'C 55,-25 65,-15 70,0 ' +
+      'C 65,15 55,25 35,28 ' +
+      'C 10,32 -12,22 -12,0 Z'
+    );
+    body.setAttribute('fill', this.bodyGrad);
+    g.appendChild(body);
+
+    // 身体高光
+    const bodyHighlight = document.createElementNS(SVG_NS, 'path');
+    bodyHighlight.setAttribute('d',
+      'M -5,-5 C 5,-18 25,-25 40,-22 C 45,-18 48,-12 48,-5 C 40,-10 25,-15 -5,-5 Z'
+    );
+    bodyHighlight.setAttribute('fill', '#ffffff');
+    bodyHighlight.setAttribute('opacity', '0.2');
+    g.appendChild(bodyHighlight);
+
+    // --- 鳞片纹理 ---
+    const scaleGroup = document.createElementNS(SVG_NS, 'g');
+    scaleGroup.setAttribute('opacity', '0.12');
+    for (let i = 0; i < 6; i++) {
+      const sx = -4 + i * 9;
+      const sy = 4 * Math.sin(i * 0.8);
+      const s = document.createElementNS(SVG_NS, 'ellipse');
+      s.setAttribute('cx', sx);
+      s.setAttribute('cy', sy);
+      s.setAttribute('rx', '5');
+      s.setAttribute('ry', '6');
+      s.setAttribute('fill', 'none');
+      s.setAttribute('stroke', '#ffffff');
+      s.setAttribute('stroke-width', '0.6');
+      scaleGroup.appendChild(s);
+    }
+    g.appendChild(scaleGroup);
+
+    // --- 背鳍 ---
+    const dorsalFin = document.createElementNS(SVG_NS, 'path');
+    dorsalFin.setAttribute('d', 'M 10,-26 C 15,-45 25,-52 35,-55 C 30,-48 28,-42 30,-26');
+    dorsalFin.setAttribute('fill', this.bodyGrad);
+    dorsalFin.setAttribute('opacity', '0.85');
+    g.appendChild(dorsalFin);
+
+    // --- 腹鳍 ---
+    const pelvicFin = document.createElementNS(SVG_NS, 'path');
+    pelvicFin.setAttribute('d', 'M 15,22 C 10,32 5,38 10,42 C 15,40 20,35 25,22');
+    pelvicFin.setAttribute('fill', this.bodyGrad);
+    pelvicFin.setAttribute('opacity', '0.85');
+    g.appendChild(pelvicFin);
+
+    // --- 胸鳍 ---
+    const pectoralFin = document.createElementNS(SVG_NS, 'path');
+    pectoralFin.setAttribute('d', 'M 30,16 C 20,28 15,38 22,42 C 28,38 32,30 35,16');
+    pectoralFin.setAttribute('fill', this.bodyGrad);
+    pectoralFin.setAttribute('opacity', '0.8');
+    g.appendChild(pectoralFin);
+
+    // --- 眼睛 ---
+    const eyeGroup = document.createElementNS(SVG_NS, 'g');
+    eyeGroup.id = `fish-eye-${this.id}`;
+
+    // 眼白
+    const eyeWhite = document.createElementNS(SVG_NS, 'circle');
+    eyeWhite.setAttribute('cx', '52');
+    eyeWhite.setAttribute('cy', '-4');
+    eyeWhite.setAttribute('r', '7');
+    eyeWhite.setAttribute('fill', '#f0e8d8');
+    g.appendChild(eyeWhite);
+
+    // 瞳孔
+    const pupil = document.createElementNS(SVG_NS, 'circle');
+    pupil.setAttribute('cx', '54');
+    pupil.setAttribute('cy', '-4');
+    pupil.setAttribute('r', '4.5');
+    pupil.setAttribute('fill', this.eyesColor);
+    eyeGroup.appendChild(pupil);
+
+    // 眼睛高光
+    const eyeHighlight = document.createElementNS(SVG_NS, 'circle');
+    eyeHighlight.setAttribute('cx', '55.5');
+    eyeHighlight.setAttribute('cy', '-5.5');
+    eyeHighlight.setAttribute('r', '1.8');
+    eyeHighlight.setAttribute('fill', this.eyesHighlight);
+    eyeGroup.appendChild(eyeHighlight);
+
+    // 第二个高光
+    const eyeHighlight2 = document.createElementNS(SVG_NS, 'circle');
+    eyeHighlight2.setAttribute('cx', '52.5');
+    eyeHighlight2.setAttribute('cy', '-2');
+    eyeHighlight2.setAttribute('r', '0.8');
+    eyeHighlight2.setAttribute('fill', this.eyesHighlight);
+    eyeHighlight2.setAttribute('opacity', '0.6');
+    eyeGroup.appendChild(eyeHighlight2);
+
+    g.appendChild(eyeGroup);
+
+    // --- 嘴巴 ---
+    const mouth = document.createElementNS(SVG_NS, 'path');
+    mouth.setAttribute('d', 'M 68,-1 C 72,0 73,2 70,4 C 67,3 66,1 68,-1 Z');
+    mouth.setAttribute('fill', '#cc6600');
+    mouth.setAttribute('opacity', '0.7');
+    g.appendChild(mouth);
+
+    // --- 鳃 ---
+    const gill = document.createElementNS(SVG_NS, 'path');
+    gill.setAttribute('d', 'M 42,-6 Q 40,0 42,6');
+    gill.setAttribute('fill', 'none');
+    gill.setAttribute('stroke', '#aa4400');
+    gill.setAttribute('stroke-width', '0.8');
+    gill.setAttribute('opacity', '0.5');
+    g.appendChild(gill);
+
+    return g;
+  }
+
+  setDirection(right) {
+    this.facingRight = right;
+  }
+
+  updateTail(phase) {
+    this.tailPhase = phase;
+    const tail = document.getElementById(`fish-tail-${this.id}`);
+    if (!tail) return;
+    // 尾鳍摆动幅度随速度增加
+    const wag = Math.sin(phase) * 12;
+    tail.setAttribute('transform', `rotate(${wag}, -12, 0)`);
+  }
+
+  setEyeLookAt(targetX, targetY) {
+    const eyeGroup = document.getElementById(`fish-eye-${this.id}`);
+    if (!eyeGroup) return;
+
+    const dir = this.facingRight ? 1 : -1;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // 瞳孔偏移量
+    const offsetX = dir * Math.min(2, Math.max(-1, dx / dist * 2));
+    const offsetY = Math.min(1.5, Math.max(-1.5, dy / dist * 1.5));
+
+    const pupil = eyeGroup.children[0];
+    const hl1 = eyeGroup.children[1];
+    const hl2 = eyeGroup.children[2];
+
+    const basePX = dir > 0 ? 54 : 50;
+    pupil.setAttribute('cx', basePX + offsetX);
+    pupil.setAttribute('cy', -4 + offsetY);
+
+    hl1.setAttribute('cx', basePX + offsetX + 1.5);
+    hl1.setAttribute('cy', -5.5 + offsetY - 0.5);
+  }
+
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
+    const el = document.getElementById(`fish-${this.id}`);
+    if (!el) return;
+    const sx = this.facingRight ? this.scale * this.eatScale : -this.scale * this.eatScale;
+    el.setAttribute('transform', `translate(${x},${y}) scale(${sx}, ${this.scale * this.eatScale})`);
+  }
+}
+
+// ========== 饲料类 ==========
+class Food {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vy = 0.3 + Math.random() * 0.3; // 下沉速度
+    this.radius = 3 + Math.random() * 2;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.05 + Math.random() * 0.04;
+    this.alive = true;
+    this.eaten = false;
+  }
+
+  createSVG() {
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.id = `food-${this.id || this.x}-${this.y}`;
+    g.setAttribute('transform', `translate(${this.x},${this.y})`);
+
+    // 椭圆形饲料
+    const pellet = document.createElementNS(SVG_NS, 'ellipse');
+    pellet.setAttribute('rx', this.radius);
+    pellet.setAttribute('ry', this.radius * 0.6);
+    pellet.setAttribute('fill', 'url(#foodGrad)');
+    pellet.setAttribute('stroke', '#cc8800');
+    pellet.setAttribute('stroke-width', '0.5');
+    pellet.setAttribute('opacity', '0.9');
+    g.appendChild(pellet);
+
+    // 高光
+    const hl = document.createElementNS(SVG_NS, 'ellipse');
+    hl.setAttribute('rx', this.radius * 0.4);
+    hl.setAttribute('ry', this.radius * 0.2);
+    hl.setAttribute('cx', -this.radius * 0.3);
+    hl.setAttribute('cy', -this.radius * 0.15);
+    hl.setAttribute('fill', '#ffffff');
+    hl.setAttribute('opacity', '0.5');
+    g.appendChild(hl);
+
+    return g;
+  }
+
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
+    const el = document.getElementById(`food-${this.id || this.x}-${this.y}`);
+    if (el) {
+      el.setAttribute('transform', `translate(${x},${y})`);
+    }
+  }
+}
+
+// ========== 气泡类 ==========
+class Bubble {
+  constructor() {
+    this.x = 100 + Math.random() * (TANK_W - 200);
+    this.y = TANK_H - 50 + Math.random() * 30;
+    this.radius = 1 + Math.random() * 3;
+    this.vy = -0.3 - Math.random() * 0.5;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.wobblePhase = Math.random() * Math.PI * 2;
+    this.alive = true;
+  }
+
+  createSVG() {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', this.x);
+    c.setAttribute('cy', this.y);
+    c.setAttribute('r', this.radius);
+    c.setAttribute('fill', 'url(#bubbleGrad)');
+    c.id = `bubble-${this.x}-${this.y}`;
+    return c;
+  }
+
+  update(cx, cy, r) {
+    const el = document.getElementById(`bubble-${this.x}-${this.y}`);
+    if (!el) return;
+    el.setAttribute('cx', cx);
+    el.setAttribute('cy', cy);
+    el.setAttribute('r', r);
+  }
+}
+
+// ========== 游戏管理器 ==========
+class FishTankGame {
+  constructor() {
+    this.svg = document.getElementById('tank');
+    this.fishLayer = document.getElementById('fishLayer');
+    this.foodLayer = document.getElementById('foodLayer');
+    this.bubbleLayer = document.getElementById('bubbleLayer');
+
+    this.fishes = [];
+    this.foods = [];
+    this.bubbles = [];
+
+    this.initFish();
+    this.initBubbles();
+    this.bindEvents();
+    this.loop();
+  }
+
+  initFish() {
+    // 大鱼
+    const bigFish = new Fish({
+      id: 'big',
+      x: 350,
+      y: 300,
+      scale: 1.3,
+      vx: 0.8,
+      vy: 0.4,
+      maxSpeed: 2.5,
+      bodyGrad: 'url(#fishBodyBig)',
+      eyesColor: '#1a1a1a',
+      eyesHighlight: '#ffffff',
+    });
+    bigFish.state = 'wander';
+    bigFish.wanderAngle = 0.3;
+    this.fishes.push(bigFish);
+    this.fishLayer.appendChild(bigFish.createSVG());
+
+    // 小鱼
+    const smallFish = new Fish({
+      id: 'small',
+      x: 600,
+      y: 200,
+      scale: 0.75,
+      vx: 0.6,
+      vy: 0.3,
+      maxSpeed: 2.0,
+      bodyGrad: 'url(#fishBodySmall)',
+      eyesColor: '#1a1a1a',
+      eyesHighlight: '#ffffff',
+    });
+    smallFish.state = 'wander';
+    smallFish.wanderAngle = -0.5;
+    this.fishes.push(smallFish);
+    this.fishLayer.appendChild(smallFish.createSVG());
+  }
+
+  initBubbles() {
+    // 创建初始气泡
+    for (let i = 0; i < 8; i++) {
+      const b = new Bubble();
+      b.y = 100 + Math.random() * (TANK_H - 150);
+      this.bubbles.push(b);
+      this.bubbleLayer.appendChild(b.createSVG());
+    }
+  }
+
+  bindEvents() {
+    this.svg.addEventListener('click', (e) => {
+      const rect = this.svg.getBoundingClientRect();
+      const scaleX = 960 / rect.width;
+      const scaleY = 600 / rect.height;
+      const svgX = (e.clientX - rect.left) * scaleX;
+      const svgY = (e.clientY - rect.top) * scaleY;
+
+      // 检查是否在鱼缸内
+      if (svgX < TANK_X || svgX > TANK_X + TANK_W || svgY < TANK_Y || svgY > TANK_Y + TANK_H) {
+        return;
+      }
+
+      this.dropFood(svgX, svgY);
+    });
+  }
+
+  dropFood(x, y) {
+    const count = 4 + Math.floor(Math.random() * 4); // 4-7颗
+    for (let i = 0; i < count; i++) {
+      const fx = x + (Math.random() - 0.5) * 40;
+      const fy = y + (Math.random() - 0.5) * 20;
+      const food = new Food(fx, fy);
+      this.foods.push(food);
+      this.foodLayer.appendChild(food.createSVG());
+    }
+  }
+
+  findNearestFood(fish) {
+    let nearest = null;
+    let minDist = Infinity;
+    for (const food of this.foods) {
+      if (!food.alive) continue;
+      const dx = food.x - fish.x;
+      const dy = food.y - fish.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = food;
+      }
+    }
+    return nearest;
+  }
+
+  updateFish(fish, dt) {
+    const margin = 50;
+    const topMargin = 60;
+    const bottomMargin = 100;
+
+    if (fish.state === 'wander') {
+      // 随机漫游
+      fish.wanderTimer -= dt;
+      if (fish.wanderTimer <= 0) {
+        fish.wanderAngle += (Math.random() - 0.5) * 0.8;
+        fish.wanderTimer = 1000 + Math.random() * 3000;
+      }
+
+      // 向边界反弹
+      const center = { x: TANK_W / 2, y: TANK_H / 2 };
+      const dx = center.x - fish.x;
+      const dy = center.y - fish.y;
+      const distToCenter = Math.sqrt(dx * dx + dy * dy);
+
+      // 边界回避
+      let avoidX = 0, avoidY = 0;
+      if (fish.x < margin) avoidX = 1;
+      if (fish.x > TANK_W - margin) avoidX = -1;
+      if (fish.y < topMargin) avoidY = 1;
+      if (fish.y > TANK_H - bottomMargin) avoidY = -1;
+
+      // 结合漫游角度和边界回避
+      const targetAngle = fish.wanderAngle + (avoidX !== 0 || avoidY !== 0 ? Math.atan2(avoidY, avoidX) * 0.3 : 0);
+
+      let speed = fish.maxSpeed * 0.3;
+      fish.vx = Math.cos(targetAngle) * speed + avoidX * 0.5;
+      fish.vy = Math.sin(targetAngle) * speed + avoidY * 0.5;
+
+      // 检查是否有食物
+      const nearestFood = this.findNearestFood(fish);
+      if (nearestFood) {
+        const fdist = Math.sqrt((nearestFood.x - fish.x) ** 2 + (nearestFood.y - fish.y) ** 2);
+        if (fdist < 300) {
+          fish.state = 'chase';
+          fish.targetFood = nearestFood;
+        }
+      }
+
+    } else if (fish.state === 'chase') {
+      // 追逐食物
+      if (!fish.targetFood || !fish.targetFood.alive) {
+        fish.state = 'wander';
+        fish.targetFood = null;
+        return;
+      }
+
+      const dx = fish.targetFood.x - fish.x;
+      const dy = fish.targetFood.y - fish.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 15) {
+        // 吃到食物
+        fish.state = 'eat';
+        fish.eatProgress = 0;
+        fish.targetFood.alive = false;
+        fish.targetFood.eaten = true;
+        return;
+      }
+
+      const speed = fish.maxSpeed * 0.9;
+      fish.vx = (dx / dist) * speed;
+      fish.vy = (dy / dist) * speed;
+
+    } else if (fish.state === 'eat') {
+      // 吃食动作
+      fish.eatProgress += dt;
+      // 吃食时张嘴缩身效果
+      fish.eatScale = 1 + Math.sin(fish.eatProgress * 0.008) * 0.05;
+      fish.vx *= 0.95;
+      fish.vy *= 0.95;
+
+      if (fish.eatProgress > 800) {
+        fish.state = 'wander';
+        fish.eatProgress = 0;
+        fish.eatScale = 1;
+        fish.targetFood = null;
+      }
+    }
+
+    // 限速
+    const speed = Math.sqrt(fish.vx * fish.vx + fish.vy * fish.vy);
+    if (speed > fish.maxSpeed) {
+      fish.vx = (fish.vx / speed) * fish.maxSpeed;
+      fish.vy = (fish.vy / speed) * fish.maxSpeed;
+    }
+
+    // 更新位置
+    fish.x += fish.vx;
+    fish.y += fish.vy;
+
+    // 边界约束
+    fish.x = Math.max(margin, Math.min(TANK_W - margin, fish.x));
+    fish.y = Math.max(topMargin, Math.min(TANK_H - bottomMargin, fish.y));
+
+    // 朝向
+    if (Math.abs(fish.vx) > 0.05) {
+      fish.setDirection(fish.vx > 0);
+    }
+
+    // 眼睛看方向
+    let eyeTargetX = fish.x + (fish.facingRight ? 50 : -50);
+    let eyeTargetY = fish.y - 5;
+    if (fish.state === 'chase' && fish.targetFood) {
+      eyeTargetX = fish.targetFood.x;
+      eyeTargetY = fish.targetFood.y;
+    }
+    fish.setEyeLookAt(eyeTargetX, eyeTargetY);
+
+    fish.updatePosition(fish.x, fish.y);
+  }
+
+  updateFood(food, dt) {
+    if (!food.alive) return;
+
+    // 下沉
+    food.wobble += food.wobbleSpeed;
+    food.y += food.vy;
+    food.x += Math.sin(food.wobble) * 0.3;
+
+    // 边界约束
+    food.y = Math.min(TANK_H - 20, food.y);
+    food.x = Math.max(TANK_X + 10, Math.min(TANK_X + TANK_W - 10, food.x));
+
+    food.updatePosition(food.x, food.y);
+  }
+
+  updateBubble(bubble, dt) {
+    if (!bubble.alive) return;
+
+    bubble.wobblePhase += 0.03;
+    bubble.x += bubble.vx + Math.sin(bubble.wobblePhase) * 0.15;
+    bubble.y += bubble.vy;
+
+    if (bubble.y < 50 || bubble.x < TANK_X || bubble.x > TANK_X + TANK_W) {
+      bubble.alive = false;
+      return;
+    }
+
+    bubble.update(bubble.x, bubble.y, bubble.radius);
+  }
+
+  loop() {
+    const now = Date.now();
+    const dt = 16; // 约60fps
+
+    // 更新鱼
+    for (const fish of this.fishes) {
+      this.updateFish(fish, dt);
+      // 尾鳍动画
+      const tailSpeed = fish.state === 'chase' ? 0.15 : 0.06;
+      fish.updateTail(fish.tailPhase + tailSpeed);
+    }
+
+    // 更新饲料
+    for (const food of this.foods) {
+      this.updateFood(food, dt);
+    }
+
+    // 更新气泡
+    for (const bubble of this.bubbles) {
+      this.updateBubble(bubble, dt);
+    }
+
+    // 清理死掉的元素
+    this.cleanup();
+
+    // 随机产生新气泡
+    if (Math.random() < 0.015) {
+      const b = new Bubble();
+      this.bubbles.push(b);
+      this.bubbleLayer.appendChild(b.createSVG());
+    }
+
+    requestAnimationFrame(() => this.loop());
+  }
+
+  cleanup() {
+    // 清理被吃的饲料
+    for (let i = this.foods.length - 1; i >= 0; i--) {
+      if (!this.foods[i].alive) {
+        const el = document.getElementById(`food-${this.foods[i].x}-${this.foods[i].y}`);
+        if (el) el.remove();
+        this.foods.splice(i, 1);
+      }
+    }
+
+    // 清理消失的气泡
+    for (let i = this.bubbles.length - 1; i >= 0; i--) {
+      if (!this.bubbles[i].alive) {
+        const el = document.getElementById(`bubble-${this.bubbles[i].x}-${this.bubbles[i].y}`);
+        if (el) el.remove();
+        this.bubbles.splice(i, 1);
+      }
+    }
+  }
+}
+
+// ========== 启动 ==========
+window.addEventListener('DOMContentLoaded', () => {
+  new FishTankGame();
+});
+</script>
+</body>
+</html>
