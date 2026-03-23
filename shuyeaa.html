@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风吹树叶</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    overflow: hidden;
+    background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 40%, #C8E6C9 70%, #A5D6A7 100%);
+    min-height: 100vh;
+    font-family: system-ui, sans-serif;
+  }
+
+  /* 风粒子效果 */
+  .wind-particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wind-particle {
+    position: absolute;
+    width: 2px;
+    height: 1px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    opacity: 0;
+  }
+
+  /* 地面 */
+  .ground {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15vh;
+    background: linear-gradient(to bottom, #5D8A4A 0%, #4A7A38 50%, #3D6B30 100%);
+    z-index: 1;
+  }
+
+  /* 树干 */
+  .tree-trunk {
+    position: fixed;
+    bottom: 15vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  /* 枝条容器 */
+  .branch {
+    position: absolute;
+    transform-origin: left bottom;
+    will-change: transform;
+  }
+
+  .branch-stem {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 8px;
+    background: linear-gradient(to right, #6B4226, #8B5A2B, #6B4226);
+    border-radius: 3px;
+    transform-origin: left bottom;
+  }
+
+  .branch-stem.thin {
+    width: 4px;
+  }
+
+  /* 子枝条 */
+  .sub-branch {
+    position: absolute;
+    left: 0; bottom: 0;
+    transform-origin: left bottom;
+    will-change: transform;
+  }
+
+  .sub-branch-stem {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(to right, #5D3A1A, #7B4A28, #5D3A1A);
+    border-radius: 2px;
+    transform-origin: left bottom;
+  }
+
+  /* 树叶 */
+  .leaf {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 0 70% 0 70%;
+    transform-origin: left bottom;
+    will-change: transform;
+    cursor: default;
+  }
+
+  .leaf-1 {
+    background: linear-gradient(135deg, #228B22, #32CD32);
+    box-shadow: 0 0 3px rgba(34,139,34,0.3);
+  }
+
+  .leaf-2 {
+    background: linear-gradient(135deg, #2E8B2E, #3CB371);
+    box-shadow: 0 0 3px rgba(46,139,46,0.3);
+  }
+
+  .leaf-3 {
+    background: linear-gradient(135deg, #556B2F, #6B8E23);
+    box-shadow: 0 0 3px rgba(85,107,47,0.3);
+  }
+
+  .leaf-4 {
+    background: linear-gradient(135deg, #3CB371, #2E8B57);
+    box-shadow: 0 0 3px rgba(60,179,113,0.3);
+  }
+
+  .leaf-5 {
+    background: linear-gradient(135deg, #8FBC8F, #7CCD7C);
+    box-shadow: 0 0 3px rgba(143,188,143,0.3);
+  }
+
+  /* 落叶 */
+  .falling-leaf {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 0 70% 0 70%;
+    will-change: transform;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* 控制面板 */
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(0,0,0,0.35);
+    padding: 12px 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .controls input[type="range"] {
+    width: 100px;
+    accent-color: #66BB6A;
+  }
+
+  .wind-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 60px;
+  }
+
+  .wind-arrow {
+    display: inline-block;
+    transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  /* 太阳 */
+  .sun {
+    position: fixed;
+    top: 8vh;
+    right: 10vw;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, #FFF9C4, #FFD54F, #FFCA28);
+    border-radius: 50%;
+    box-shadow: 0 0 60px 20px rgba(255, 200, 50, 0.3);
+    z-index: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="sun"></div>
+<div class="wind-particles" id="windParticles"></div>
+<div class="ground"></div>
+
+<div class="tree-trunk" id="treeTrunk">
+  <svg width="40" height="200" viewBox="0 0 40 200">
+    <defs>
+      <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#5D3A1A"/>
+        <stop offset="30%" style="stop-color:#8B5A2B"/>
+        <stop offset="70%" style="stop-color:#7B4A28"/>
+        <stop offset="100%" style="stop-color:#5D3A1A"/>
+      </linearGradient>
+    </defs>
+    <path d="M 8 200 Q 8 120 12 80 Q 15 40 20 0 Q 25 40 28 80 Q 32 120 32 200 Z"
+          fill="url(#trunkGrad)"/>
+  </svg>
+</div>
+
+<div class="controls">
+  <label>风力:
+    <input type="range" id="windStrength" min="0" max="100" value="40">
+  </label>
+  <label>阵风:
+    <input type="range" id="gustStrength" min="0" max="100" value="50">
+  </label>
+  <span class="wind-indicator">
+    <span class="wind-arrow" id="windArrow">&#10148;</span>
+    <span id="windDisplay">微风</span>
+  </span>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const CONFIG = {
+  branchCount: 5,
+  leavesPerBranch: 12,
+  subBranchesPerBranch: 3,
+  leavesPerSubBranch: 5,
+  fallingLeafInterval: 2000,
+  windParticleCount: 30,
+};
+
+// ==================== 风系统 ====================
+class WindSystem {
+  constructor() {
+    this.baseStrength = 0.4;
+    this.gustIntensity = 0.5;
+    this.currentWind = 0;
+    this.gustPhase = 0;
+    this.gustTimer = 0;
+    this.isGusting = false;
+    this.gustPeak = 0;
+    this.time = 0;
+    this.windHistory = [];
+    this.onWindChange = null;
+  }
+
+  update(dt) {
+    this.time += dt;
+
+    // 基础风 — 正弦变化，模拟自然微风
+    const baseWave = Math.sin(this.time * 0.3) * 0.15;
+    const secondaryWave = Math.sin(this.time * 0.7 + 1.5) * 0.08;
+
+    // 阵风逻辑
+    if (!this.isGusting) {
+      this.gustTimer -= dt;
+      if (this.gustTimer <= 0 && Math.random() < 0.01 * this.gustIntensity) {
+        this.isGusting = true;
+        this.gustPhase = 0;
+        this.gustPeak = (0.3 + Math.random() * 0.7) * this.gustIntensity;
+      }
+    }
+
+    if (this.isGusting) {
+      this.gustPhase += dt * 2.5;
+      if (this.gustPhase >= Math.PI * 2) {
+        this.isGusting = false;
+        this.gustTimer = 1 + Math.random() * 4;
+      }
+    }
+
+    // 阵风波形：平滑上升、短暂维持、平滑下降
+    const gustWave = this.isGusting
+      ? this.gustPeak * Math.exp(-Math.pow((this.gustPhase - Math.PI) * 0.6, 2))
+      : 0;
+
+    // 组合风力
+    this.currentWind = Math.max(0,
+      this.baseStrength * 0.5 +
+      baseWave +
+      secondaryWave +
+      gustWave
+    );
+
+    // 平滑过渡
+    this.windHistory.push(this.currentWind);
+    if (this.windHistory.length > 10) this.windHistory.shift();
+
+    if (this.onWindChange) this.onWindChange(this.currentWind);
+  }
+
+  setBaseStrength(v) { this.baseStrength = v / 100; }
+  setGustIntensity(v) { this.gustIntensity = v / 100; }
+
+  getStrength() { return this.currentWind; }
+  getGusting() { return this.isGusting; }
+}
+
+// ==================== 枝条类 ====================
+class Branch {
+  constructor(el, depth = 0) {
+    this.el = el;
+    this.depth = depth;
+    this.baseRotation = 0;
+    this.currentRotation = 0;
+    this.targetRotation = 0;
+    this.phaseOffset = Math.random() * Math.PI * 2;
+    this.swayFreq = 1.5 + Math.random() * 0.8;
+    this.swayAmp = 0;
+    this.children = [];
+  }
+
+  update(wind, dt, time) {
+    // 深度越深，摇摆幅度越大
+    const depthMultiplier = 1 + this.depth * 0.6;
+    this.swayAmp = wind * 15 * depthMultiplier;
+
+    // 多频率叠加，模拟自然运动
+    const sway1 = Math.sin(time * this.swayFreq + this.phaseOffset) * this.swayAmp;
+    const sway2 = Math.sin(time * this.swayFreq * 0.6 + this.phaseOffset * 1.3) * this.swayAmp * 0.3;
+    const sway3 = Math.sin(time * 0.3 + this.phaseOffset * 2.1) * this.swayAmp * 0.15;
+
+    this.targetRotation = this.baseRotation + sway1 + sway2 + sway3;
+
+    // 缓动插值（spring-like）
+    const spring = 8 + this.depth * 2;
+    const damping = 0.6 + this.depth * 0.1;
+    this.currentRotation += (this.targetRotation - this.currentRotation) * spring * dt;
+    this.currentRotation *= 1 - damping * dt;
+
+    // 限幅
+    const maxAngle = 35 + this.depth * 15;
+    this.currentRotation = Math.max(-maxAngle, Math.min(maxAngle, this.currentRotation));
+
+    this.el.style.transform = `rotate(${this.currentRotation}deg)`;
+  }
+}
+
+// ==================== 树叶类 ====================
+class Leaf {
+  constructor(el, parentBranch) {
+    this.el = el;
+    this.parentBranch = parentBranch;
+    this.phaseOffset = Math.random() * Math.PI * 2;
+    this.rotation = 0;
+    this.scaleX = 1;
+    this.scaleY = 1;
+    this.flickerPhase = Math.random() * Math.PI * 2;
+  }
+
+  update(wind, dt, time) {
+    const depth = this.parentBranch.depth;
+    const leafAmp = wind * 25 * (1 + depth * 0.4);
+
+    // 主摇摆
+    const rot1 = Math.sin(time * 2.5 + this.phaseOffset) * leafAmp;
+    const rot2 = Math.sin(time * 4.0 + this.phaseOffset * 1.7) * leafAmp * 0.4;
+    const rot3 = Math.sin(time * 1.2 + this.phaseOffset * 0.8) * leafAmp * 0.2;
+
+    // 轻微形变（模拟叶子受风卷曲）
+    const deform = 0.9 + Math.sin(time * 3 + this.phaseOffset) * 0.1 * wind;
+
+    // 叶子翻转
+    const flip = Math.sin(time * 1.8 + this.phaseOffset * 0.5) * 5 * wind;
+
+    this.rotation = rot1 + rot2 + rot3 + flip;
+
+    // 闪烁（模拟阳光透过）
+    this.flickerPhase += dt * (2 + Math.random());
+    const flicker = 0.95 + Math.sin(this.flickerPhase) * 0.05;
+
+    this.el.style.transform = `rotate(${this.rotation}deg) scale(${deform}, ${flicker})`;
+  }
+}
+
+// ==================== 落叶系统 ====================
+class FallingLeafSystem {
+  constructor(container) {
+    this.container = container;
+    this.leaves = [];
+  }
+
+  spawn(wind) {
+    const leaf = document.createElement('div');
+    leaf.className = 'falling-leaf';
+
+    const colors = [
+      'linear-gradient(135deg, #228B22, #32CD32)',
+      'linear-gradient(135deg, #2E8B2E, #3CB371)',
+      'linear-gradient(135deg, #556B2F, #6B8E23)',
+      'linear-gradient(135deg, #8FBC8F, #7CCD7C)',
+      'linear-gradient(135deg, #3CB371, #2E8B57)',
+    ];
+    leaf.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+    const startX = 20 + Math.random() * 60;
+    leaf.style.left = startX + 'vw';
+    leaf.style.top = '-20px';
+
+    this.container.appendChild(leaf);
+
+    this.leaves.push({
+      el: leaf,
+      x: startX,
+      y: -20,
+      rot: Math.random() * 360,
+      rotVel: (Math.random() - 0.5) * 200,
+      vx: 0,
+      vy: 20 + Math.random() * 30,
+      phase: Math.random() * Math.PI * 2,
+      size: 8 + Math.random() * 8,
+      wind: wind,
+    });
+  }
+
+  update(dt) {
+    for (let i = this.leaves.length - 1; i >= 0; i--) {
+      const l = this.leaves[i];
+
+      // 风力影响水平速度
+      l.vx += l.wind * 30 * dt;
+      l.vx *= 0.98;
+
+      // 自然下落 + 轻微起伏
+      l.vy += 20 * dt;
+      const drift = Math.sin(Date.now() * 0.002 + l.phase) * 20 * dt;
+
+      l.x += (l.vx + drift) * dt;
+      l.y += l.vy * dt;
+      l.rot += l.rotVel * dt;
+
+      l.el.style.left = l.x + 'vw';
+      l.el.style.top = l.y + 'px';
+      l.el.style.transform = `rotate(${l.rot}deg) scale(${l.size / 12})`;
+      l.el.style.opacity = Math.min(1, l.y / 100);
+
+      // 移除超出屏幕的
+      if (l.y > window.innerHeight + 50) {
+        l.el.remove();
+        this.leaves.splice(i, 1);
+      }
+    }
+  }
+}
+
+// ==================== 风粒子系统 ====================
+class WindParticleSystem {
+  constructor(container) {
+    this.container = container;
+    this.particles = [];
+  }
+
+  init() {
+    for (let i = 0; i < CONFIG.windParticleCount; i++) {
+      const p = document.createElement('div');
+      p.className = 'wind-particle';
+      this.container.appendChild(p);
+      this.particles.push({
+        el: p,
+        x: Math.random() * 100,
+        y: Math.random() * 60,
+        speed: 0.5 + Math.random() * 1.5,
+        size: 1 + Math.random() * 2,
+        opacity: 0.1 + Math.random() * 0.3,
+        active: false,
+        timer: Math.random() * 3,
+      });
+    }
+  }
+
+  update(dt, wind) {
+    this.particles.forEach(p => {
+      p.timer -= dt;
+      if (p.timer <= 0) {
+        p.active = true;
+        p.x = -5;
+        p.y = Math.random() * 60;
+        p.timer = 2 + Math.random() * 4 / (wind + 0.1);
+      }
+
+      if (p.active) {
+        p.x += p.speed * wind * 40 * dt;
+        p.el.style.left = p.x + 'vw';
+        p.el.style.top = p.y + 'vh';
+        p.el.style.opacity = p.opacity * wind;
+        p.el.style.width = p.size + 'px';
+
+        if (p.x > 105) {
+          p.active = false;
+          p.timer = 1 + Math.random() * 3;
+          p.el.style.opacity = 0;
+        }
+      }
+    });
+  }
+}
+
+// ==================== 场景构建 ====================
+function buildScene() {
+  const trunkEl = document.getElementById('treeTrunk');
+  const branches = [];
+  const leafObjects = [];
+
+  // 枝条配置
+  const branchConfigs = [
+    { angle: -55, length: 180, height: 10, side: -1, depth: 0 },
+    { angle: -30, length: 220, height: 30, side: -1, depth: 0 },
+    { angle: 25,  length: 240, height: 45, side: 1, depth: 0 },
+    { angle: 50,  length: 200, height: 65, side: 1, depth: 0 },
+    { angle: -15, length: 160, height: 80, side: -1, depth: 0 },
+  ];
+
+  branchConfigs.forEach((cfg, bi) => {
+    const branchEl = document.createElement('div');
+    branchEl.className = 'branch';
+
+    // 枝条茎
+    const stem = document.createElement('div');
+    stem.className = 'branch-stem';
+    stem.style.height = cfg.length + 'px';
+    stem.style.transform = `rotate(${cfg.angle}deg)`;
+    branchEl.appendChild(stem);
+
+    // 枝条定位
+    branchEl.style.left = '20px';
+    branchEl.style.bottom = cfg.height + 'px';
+    trunkEl.appendChild(branchEl);
+
+    const branch = new Branch(branchEl, cfg.depth);
+    branch.baseRotation = cfg.angle;
+    branches.push(branch);
+
+    // 沿枝条分布树叶
+    for (let i = 0; i < CONFIG.leavesPerBranch; i++) {
+      const t = (i + 1) / (CONFIG.leavesPerBranch + 1);
+      const dist = t * cfg.length;
+      const spreadAngle = cfg.angle + (Math.random() - 0.5) * 40;
+      const perpOffset = (Math.random() - 0.5) * 30 * cfg.side;
+
+      const leaf = document.createElement('div');
+      leaf.className = `leaf leaf-${(Math.floor(Math.random() * 5) + 1)}`;
+      const leafSize = 12 + Math.random() * 10;
+      leaf.style.width = leafSize + 'px';
+      leaf.style.height = leafSize + 'px';
+
+      // 定位到枝条上
+      const x = Math.cos(spreadAngle * Math.PI / 180) * dist;
+      const y = -Math.sin(spreadAngle * Math.PI / 180) * dist;
+      leaf.style.left = (20 + x + perpOffset) + 'px';
+      leaf.style.bottom = (cfg.height - y) + 'px';
+      leaf.style.transform = `rotate(${spreadAngle + 45}deg)`;
+
+      trunkEl.appendChild(leaf);
+      leafObjects.push(new Leaf(leaf, branch));
+    }
+
+    // 子枝条
+    for (let si = 0; si < CONFIG.subBranchesPerBranch; si++) {
+      const st = 0.3 + (si / CONFIG.subBranchesPerBranch) * 0.5;
+      const subDist = st * cfg.length;
+      const subAngle = cfg.angle + cfg.side * (15 + si * 20) + (Math.random() - 0.5) * 15;
+
+      const subEl = document.createElement('div');
+      subEl.className = 'sub-branch';
+
+      const subStem = document.createElement('div');
+      subStem.className = 'sub-branch-stem';
+      subStem.style.height = (60 + Math.random() * 40) + 'px';
+      subStem.style.transform = `rotate(${subAngle}deg)`;
+      subEl.appendChild(subStem);
+
+      subEl.style.left = '20px';
+      subEl.style.bottom = cfg.height + 'px';
+      trunkEl.appendChild(subEl);
+
+      const subBranch = new Branch(subEl, 1);
+      subBranch.baseRotation = subAngle;
+      branches.push(subBranch);
+
+      // 子枝条上的树叶
+      for (let li = 0; li < CONFIG.leavesPerSubBranch; li++) {
+        const lt = (li + 1) / (CONFIG.leavesPerSubBranch + 1);
+        const lDist = lt * (60 + Math.random() * 40);
+        const lAngle = subAngle + (Math.random() - 0.5) * 30;
+
+        const leaf = document.createElement('div');
+        leaf.className = `leaf leaf-${(Math.floor(Math.random() * 5) + 1)}`;
+        const leafSize = 8 + Math.random() * 8;
+        leaf.style.width = leafSize + 'px';
+        leaf.style.height = leafSize + 'px';
+
+        const lx = Math.cos(lAngle * Math.PI / 180) * lDist;
+        const ly = -Math.sin(lAngle * Math.PI / 180) * lDist;
+        leaf.style.left = (20 + lx + (Math.random() - 0.5) * 15) + 'px';
+        leaf.style.bottom = (cfg.height - ly) + 'px';
+        leaf.style.transform = `rotate(${lAngle + 45}deg)`;
+
+        trunkEl.appendChild(leaf);
+        leafObjects.push(new Leaf(leaf, subBranch));
+      }
+    }
+  });
+
+  return { branches, leafObjects };
+}
+
+// ==================== 主循环 ====================
+let lastTime = performance.now();
+const wind = new WindSystem();
+const fallingSystem = new FallingLeafSystem(document.body);
+const windParticles = new WindParticleSystem(document.getElementById('windParticles'));
+
+let scene;
+
+function init() {
+  scene = buildScene();
+  windParticles.init();
+
+  // 控制绑定
+  document.getElementById('windStrength').addEventListener('input', (e) => {
+    wind.setBaseStrength(+e.target.value);
+  });
+  document.getElementById('gustStrength').addEventListener('input', (e) => {
+    wind.setGustIntensity(+e.target.value);
+  });
+
+  // 风力指示器
+  wind.onWindChange = (w) => {
+    const arrow = document.getElementById('windArrow');
+    const display = document.getElementById('windDisplay');
+    const angle = 5 + w * 15;
+    arrow.style.transform = `scaleX(${0.5 + w * 1.5}) rotate(0deg)`;
+
+    let text = '无风';
+    if (w > 0.05) text = '微风';
+    if (w > 0.2) text = '轻风';
+    if (w > 0.4) text = '和风';
+    if (w > 0.6) text = '劲风';
+    if (w > 0.8) text = '大风';
+    display.textContent = text;
+  };
+
+  // 定期落叶
+  setInterval(() => {
+    if (wind.getStrength() > 0.1) {
+      fallingSystem.spawn(wind.getStrength());
+    }
+  }, CONFIG.fallingLeafInterval);
+
+  requestAnimationFrame(loop);
+}
+
+function loop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  // 更新风系统
+  wind.update(dt);
+
+  // 更新所有枝条
+  scene.branches.forEach(b => b.update(wind.getStrength(), dt, now / 1000));
+
+  // 更新所有树叶
+  scene.leafObjects.forEach(l => l.update(wind.getStrength(), dt, now / 1000));
+
+  // 更新风粒子
+  windParticles.update(dt, wind.getStrength());
+
+  // 更新落叶
+  fallingSystem.update(dt);
+
+  requestAnimationFrame(loop);
+}
+
+init();
+</script>
+</body>
+</html>
