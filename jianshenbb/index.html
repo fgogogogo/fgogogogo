@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#6C5CE7">
+  <meta name="description" content="健身追踪仪表盘 - 记录锻炼、追踪目标、见证进步">
+  <title>FitTrack 健身追踪</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236C5CE7'/><text x='50' y='68' font-size='60' text-anchor='middle' fill='white'>💪</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236C5CE7'/><text x='50' y='68' font-size='60' text-anchor='middle' fill='white'>💪</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #6C5CE7;
+      --primary-light: #A29BFE;
+      --primary-dark: #5A4BD1;
+      --accent: #00B894;
+      --accent-light: #55EFC4;
+      --danger: #E17055;
+      --warning: #FDCB6E;
+      --bg: #F8F9FE;
+      --card: #FFFFFF;
+      --text: #2D3436;
+      --text-light: #636E72;
+      --border: #DFE6E9;
+      --shadow: 0 2px 12px rgba(108,92,231,0.1);
+      --shadow-lg: 0 8px 32px rgba(108,92,231,0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+    /* Header */
+    .header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 20px 20px 24px; position: relative; overflow: hidden; }
+    .header::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+    .header::after { content: ''; position: absolute; bottom: -30%; left: -10%; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+    .header-content { position: relative; z-index: 1; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .header-actions { display: flex; gap: 8px; }
+    .icon-btn { background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: var(--transition); }
+    .icon-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+    .header-subtitle { font-size: 13px; opacity: 0.85; }
+
+    /* Stats Row */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: -16px 16px 0; position: relative; z-index: 1; }
+    .stat-card { background: var(--card); border-radius: var(--radius); padding: 14px 10px; text-align: center; box-shadow: var(--shadow-lg); }
+    .stat-value { font-size: 20px; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 11px; color: var(--text-light); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Tabs */
+    .tabs { display: flex; background: var(--card); margin: 16px 16px 0; border-radius: var(--radius); padding: 4px; box-shadow: var(--shadow); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab { flex: 1; min-width: fit-content; padding: 10px 12px; text-align: center; border: none; background: transparent; font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; border-radius: var(--radius-sm); transition: var(--transition); white-space: nowrap; }
+    .tab.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(108,92,231,0.3); }
+    .tab:hover:not(.active) { color: var(--primary); }
+
+    /* Content Sections */
+    .content { padding: 16px; }
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-title .emoji { font-size: 18px; }
+
+    /* Workout Log Form */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
+    .form-input, .form-select { width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; background: var(--bg); transition: var(--transition); outline: none; }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,92,231,0.1); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .workout-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .type-option { padding: 14px 8px; text-align: center; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: var(--bg); }
+    .type-option.selected { border-color: var(--primary); background: rgba(108,92,231,0.08); }
+    .type-option .emoji { font-size: 28px; display: block; margin-bottom: 4px; }
+    .type-option .name { font-size: 12px; font-weight: 600; color: var(--text-light); }
+    .type-option.selected .name { color: var(--primary); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 15px rgba(108,92,231,0.3); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,92,231,0.4); }
+    .btn-accent { background: linear-gradient(135deg, var(--accent), #00A884); color: white; box-shadow: 0 4px 15px rgba(0,184,148,0.3); }
+    .btn-accent:hover { transform: translateY(-1px); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
+    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+    /* Charts */
+    .chart-container { position: relative; height: 220px; margin: 8px 0; }
+
+    /* Goal Milestones */
+    .goal-item { background: var(--bg); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--primary); }
+    .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .goal-name { font-weight: 700; font-size: 15px; }
+    .goal-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; opacity: 0.6; }
+    .goal-delete:hover { opacity: 1; }
+    .milestone-track { background: var(--border); border-radius: 20px; height: 10px; position: relative; overflow: hidden; }
+    .milestone-fill { height: 100%; border-radius: 20px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    .milestone-fill.purple { background: linear-gradient(90deg, var(--primary-light), var(--primary)); }
+    .milestone-fill.green { background: linear-gradient(90deg, var(--accent-light), var(--accent)); }
+    .milestone-fill.orange { background: linear-gradient(90deg, var(--warning), #F39C12); }
+    .milestone-info { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--text-light); }
+    .milestone-current { font-weight: 700; color: var(--primary); }
+    .goal-badge { display: inline-block; background: var(--accent); color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
+    .milestone-markers { display: flex; justify-content: space-between; margin-top: 4px; }
+    .milestone-marker { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+    .milestone-marker.achieved { background: var(--accent); }
+
+    /* Workout History */
+    .workout-item { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 10px; transition: var(--transition); }
+    .workout-item:hover { transform: translateX(4px); }
+    .workout-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .workout-icon.running { background: rgba(108,92,231,0.1); }
+    .workout-icon.weight { background: rgba(225,112,85,0.1); }
+    .workout-icon.cycling { background: rgba(0,184,148,0.1); }
+    .workout-icon.other { background: rgba(253,203,110,0.1); }
+    .workout-info { flex: 1; min-width: 0; }
+    .workout-type-name { font-weight: 700; font-size: 15px; }
+    .workout-details { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .workout-date { font-size: 11px; color: var(--text-light); opacity: 0.7; }
+    .workout-actions { display: flex; gap: 6px; }
+    .workout-actions .icon-btn-sm { width: 32px; height: 32px; font-size: 14px; background: rgba(108,92,231,0.08); color: var(--primary); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .workout-actions .icon-btn-sm:hover { background: rgba(108,92,231,0.15); }
+    .workout-actions .icon-btn-sm.delete:hover { background: rgba(225,112,85,0.1); color: var(--danger); }
+
+    /* Pedometer */
+    .pedometer-card { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: var(--radius); padding: 24px; text-align: center; }
+    .pedometer-value { font-size: 48px; font-weight: 800; }
+    .pedometer-label { font-size: 14px; opacity: 0.8; margin-top: 4px; }
+    .pedometer-status { font-size: 13px; opacity: 0.7; margin-top: 12px; }
+    .pedometer-ring { width: 140px; height: 140px; margin: 0 auto 16px; position: relative; }
+    .pedometer-ring svg { transform: rotate(-90deg); }
+    .pedometer-ring .ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
+    .pedometer-ring .ring-fill { fill: none; stroke: white; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 377; stroke-dashoffset: 377; transition: stroke-dashoffset 0.5s ease; }
+    .pedometer-ring .ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* Share Card Preview */
+    .share-preview { background: linear-gradient(135deg, var(--primary), #845EC2); color: white; border-radius: var(--radius); padding: 24px; text-align: center; margin: 16px 0; position: relative; overflow: hidden; }
+    .share-preview::before { content: ''; position: absolute; top: -30%; right: -20%; width: 150px; height: 150px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+    .share-preview h3 { font-size: 20px; margin-bottom: 12px; }
+    .share-preview p { font-size: 14px; opacity: 0.9; }
+    .share-stats { display: flex; justify-content: center; gap: 24px; margin: 16px 0; }
+    .share-stat { text-align: center; }
+    .share-stat .value { font-size: 24px; font-weight: 800; }
+    .share-stat .label { font-size: 11px; opacity: 0.8; text-transform: uppercase; }
+
+    /* Profile / Settings */
+    .profile-header { text-align: center; padding: 20px 0; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 12px; }
+    .profile-name { font-size: 18px; font-weight: 700; }
+    .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .setting-label { font-size: 14px; font-weight: 600; }
+    .setting-desc { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .toggle { position: relative; width: 48px; height: 26px; background: var(--border); border-radius: 13px; cursor: pointer; transition: var(--transition); }
+    .toggle.active { background: var(--primary); }
+    .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: var(--transition); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .toggle.active::after { left: 25px; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 40px 20px; }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 16px; margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; color: var(--text-light); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: white; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; z-index: 9999; transition: transform 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.2); white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Install Banner */
+    .install-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 16px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 100; transform: translateY(100%); transition: transform 0.3s ease; }
+    .install-banner.show { transform: translateY(0); }
+    .install-banner span { flex: 1; font-size: 14px; font-weight: 600; }
+    .install-banner .btn { width: auto; padding: 10px 20px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      body { max-width: 600px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,0.06); min-height: 100vh; }
+      .header { border-radius: 0; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Offline indicator */
+    .offline-indicator { position: fixed; top: 0; left: 0; right: 0; background: var(--warning); color: var(--text); text-align: center; padding: 8px; font-size: 13px; font-weight: 600; z-index: 10000; transform: translateY(-100%); transition: transform 0.3s ease; }
+    .offline-indicator.show { transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <!-- Offline Indicator -->
+  <div id="offlineIndicator" class="offline-indicator">离线模式 - 数据已本地保存</div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="header-top">
+        <h1>FitTrack</h1>
+        <div class="header-actions">
+          <button class="icon-btn" id="settingsBtn" title="设置">⚙️</button>
+        </div>
+      </div>
+      <p class="header-subtitle" id="headerDate"></p>
+    </div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card">
+        <div class="stat-value" id="statWorkouts">0</div>
+        <div class="stat-label">本周锻炼</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMinutes">0</div>
+        <div class="stat-label">总时长(分)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statCalories">0</div>
+        <div class="stat-label">消耗(kcal)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard">📊 仪表盘</button>
+    <button class="tab" data-tab="log">📝 记录</button>
+    <button class="tab" data-tab="history">📋 历史</button>
+    <button class="tab" data-tab="goals">🎯 目标</button>
+  </nav>
+
+  <!-- Dashboard -->
+  <div class="content">
+    <section class="section active" id="dashboard">
+      <!-- Weight Chart -->
+      <div class="card">
+        <div class="card-title"><span class="emoji">⚖️</span> 体重趋势</div>
+        <div class="chart-container">
+          <canvas id="weightChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Workout Volume Chart -->
+      <div class="card">
+        <div class="card-title"><span class="emoji">📈</span> 本周锻炼量</div>
+        <div class="chart-container">
+          <canvas id="volumeChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Pedometer -->
+      <div class="card">
+        <div class="card-title"><span class="emoji">👟</span> 今日步数</div>
+        <div class="pedometer-card" id="pedometerCard">
+          <div class="pedometer-ring">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle class="ring-bg" cx="70" cy="70" r="60"></circle>
+              <circle class="ring-fill" id="pedometerRing" cx="70" cy="70" r="60"></circle>
+            </svg>
+            <div class="ring-text">
+              <div class="pedometer-value" id="pedometerValue">--</div>
+              <div class="pedometer-label">步</div>
+            </div>
+          </div>
+          <div class="pedometer-status" id="pedometerStatus">正在连接计步器...</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-title"><span class="emoji">🔥</span> 最近活动</div>
+        <div id="recentActivity"></div>
+      </div>
+    </section>
+
+    <!-- Log Workout -->
+    <section class="section" id="log">
+      <div class="card">
+        <div class="card-title"><span class="emoji">✏️</span> 记录锻炼</div>
+
+        <div class="form-group">
+          <label class="form-label">锻炼类型</label>
+          <div class="workout-type-grid">
+            <div class="type-option selected" data-type="running">
+              <span class="emoji">🏃</span>
+              <span class="name">跑步</span>
+            </div>
+            <div class="type-option" data-type="weight">
+              <span class="emoji">🏋️</span>
+              <span class="name">举重</span>
+            </div>
+            <div class="type-option" data-type="cycling">
+              <span class="emoji">🚴</span>
+              <span class="name">骑行</span>
+            </div>
+            <div class="type-option" data-type="swimming">
+              <span class="emoji">🏊</span>
+              <span class="name">游泳</span>
+            </div>
+            <div class="type-option" data-type="yoga">
+              <span class="emoji">🧘</span>
+              <span class="name">瑜伽</span>
+            </div>
+            <div class="type-option" data-type="other">
+              <span class="emoji">💪</span>
+              <span class="name">其他</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">日期</label>
+            <input type="date" class="form-input" id="workoutDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">时长 (分钟)</label>
+            <input type="number" class="form-input" id="workoutDuration" placeholder="30" min="1">
+          </div>
+        </div>
+
+        <div class="form-row" id="distanceRow">
+          <div class="form-group">
+            <label class="form-label">距离 (公里)</label>
+            <input type="number" class="form-input" id="workoutDistance" placeholder="5.0" step="0.1" min="0">
+          </div>
+          <div class="form-group" id="weightRow">
+            <label class="form-label">重量 (kg)</label>
+            <input type="number" class="form-input" id="workoutWeight" placeholder="60" step="0.5" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">卡路里 (kcal)</label>
+            <input type="number" class="form-input" id="workoutCalories" placeholder="200" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">心率 (bpm, 可选)</label>
+            <input type="number" class="form-input" id="workoutHeartRate" placeholder="120" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">备注</label>
+          <input type="text" class="form" id="workoutNotes" placeholder="感觉如何？">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">今日体重 (kg, 可选)</label>
+          <input type="number" class="form-input" id="currentWeight" placeholder="70.0" step="0.1" min="0">
+        </div>
+
+        <button class="btn btn-primary" id="saveWorkout">
+          <span>💾</span> 保存锻炼记录
+        </button>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section class="section" id="history">
+      <div class="card">
+        <div class="card-title">
+          <span class="emoji">📋</span> 锻炼历史
+          <button class="btn btn-sm btn-outline" id="shareSummary" style="margin-left:auto">📤 分享摘要</button>
+        </div>
+        <div id="workoutHistory"></div>
+      </div>
+    </section>
+
+    <!-- Goals -->
+    <section class="section" id="goals">
+      <div class="card">
+        <div class="card-title"><span class="emoji">🎯</span> 我的目标</div>
+        <div id="goalsList"></div>
+        <button class="btn btn-accent" id="addGoalBtn" style="margin-top: 12px;">
+          <span>➕</span> 添加新目标
+        </button>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="section" id="settings">
+      <div class="card">
+        <div class="card-title"><span class="emoji">⚙️</span> 设置</div>
+        <div class="profile-header">
+          <div class="profile-avatar">🏋️</div>
+          <div class="profile-name" id="profileName">健身爱好者</div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">每日步数目标</div>
+            <div class="setting-desc">计步器里程碑目标</div>
+          </div>
+          <input type="number" class="form-input" id="stepGoal" value="10000" style="width:100px;text-align:center" min="1000">
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">深色模式</div>
+            <div class="setting-desc">切换应用主题</div>
+          </div>
+          <div class="toggle" id="darkModeToggle"></div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">清除所有数据</div>
+            <div class="setting-desc">删除所有锻炼记录和目标</div>
+          </div>
+          <button class="btn btn-sm btn-danger" id="clearDataBtn">清除</button>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">版本</div>
+            <div class="setting-desc">FitTrack v1.0.0</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-title">添加目标</div>
+      <div class="form-group">
+        <label class="form-label">目标名称</label>
+        <input type="text" class="form-input" id="goalName" placeholder="例: 每周跑步3次">
+      </div>
+      <div class="form-group">
+        <label class="form-label">目标类型</label>
+        <select class="form-select" id="goalType">
+          <option value="workouts">锻炼次数</option>
+          <option value="minutes">锻炼时长(分钟)</option>
+          <option value="distance">运动距离(公里)</option>
+          <option value="calories">消耗卡路里(kcal)</option>
+          <option value="steps">步数</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">目标值</label>
+        <input type="number" class="form-input" id="goalTarget" placeholder="10" min="1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">周期</label>
+          <select class="form-select" id="goalPeriod">
+            <option value="daily">每日</option>
+            <option value="weekly" selected>每周</option>
+            <option value="monthly">每月</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">颜色</label>
+          <select class="form-select" id="goalColor">
+            <option value="purple">紫色</option>
+            <option value="green">绿色</option>
+            <option value="orange">橙色</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelGoal">取消</button>
+        <button class="btn btn-primary" id="saveGoal">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal">
+      <div class="modal-title">分享锻炼摘要</div>
+      <div class="share-preview" id="sharePreview">
+        <h3>🏆 本周健身成就</h3>
+        <div class="share-stats" id="shareStats"></div>
+        <p id="shareMessage">坚持锻炼，遇见更好的自己！</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelShare">取消</button>
+        <button class="btn btn-primary" id="shareToWeb">📤 分享</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install Banner -->
+  <div class="install-banner" id="installBanner">
+    <span>📲 将 FitTrack 安装到主屏幕</span>
+    <button class="btn btn-primary btn-sm" id="installBtn">安装</button>
+    <button class="icon-btn" id="dismissInstall" style="background:var(--border);color:var(--text)">✕</button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== State Management ====================
+    const STORAGE_KEY = 'fittrack_data';
+    let appState = {
+      workouts: [],
+      goals: [],
+      weights: [],
+      settings: { stepGoal: 10000, darkMode: false, profileName: '健身爱好者' }
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          appState = { ...appState, ...parsed };
+        }
+      } catch (e) { console.error('Failed to load state:', e); }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) { console.error('Failed to save state:', e); }
+    }
+
+    // ==================== Utility ====================
+    const workoutTypes = {
+      running: { emoji: '🏃', name: '跑步', caloriesPerMin: 10 },
+      weight: { emoji: '🏋️', name: '举重', caloriesPerMin: 6 },
+      cycling: { emoji: '🚴', name: '骑行', caloriesPerMin: 8 },
+      swimming: { emoji: '🏊', name: '游泳', caloriesPerMin: 9 },
+      yoga: { emoji: '🧘', name: '瑜伽', caloriesPerMin: 3 },
+      other: { emoji: '💪', name: '其他', caloriesPerMin: 5 }
+    };
+
+    function formatDate(d) {
+      const date = new Date(d);
+      return `${date.getMonth()+1}月${date.getDate()}日`;
+    }
+
+    function formatFullDate(d) {
+      const date = new Date(d);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
+
+    function getWeekDates() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diff);
+      monday.setHours(0,0,0,0);
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dates.push(d);
+      }
+      return dates;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // ==================== Header ====================
+    function updateHeader() {
+      const now = new Date();
+      const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+      document.getElementById('headerDate').textContent =
+        `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+    }
+
+    // ==================== Stats ====================
+    function updateStats() {
+      const weekStart = getWeekDates()[0];
+      const weekWorkouts = appState.workouts.filter(w => new Date(w.date) >= weekStart);
+      const totalMinutes = weekWorkouts.reduce((s, w) => s + (w.duration || 0), 0);
+      const totalCalories = weekWorkouts.reduce((s, w) => s + (w.calories || 0), 0);
+
+      document.getElementById('statWorkouts').textContent = weekWorkouts.length;
+      document.getElementById('statMinutes').textContent = totalMinutes;
+      document.getElementById('statCalories').textContent = totalCalories;
+    }
+
+    // ==================== Charts ====================
+    let weightChart = null;
+    let volumeChart = null;
+
+    function initCharts() {
+      // Weight chart
+      const wCtx = document.getElementById('weightChart').getContext('2d');
+      weightChart = new Chart(wCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: '体重 (kg)',
+            data: [],
+            borderColor: '#6C5CE7',
+            backgroundColor: 'rgba(108,92,231,0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#6C5CE7',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+
+      // Volume chart
+      const vCtx = document.getElementById('volumeChart').getContext('2d');
+      volumeChart = new Chart(vCtx, {
+        type: 'bar',
+        data: {
+          labels: ['周一','周二','周三','周四','周五','周六','周日'],
+          datasets: [{
+            label: '锻炼时长(分)',
+            data: [],
+            backgroundColor: [
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)',
+              'rgba(108,92,231,0.7)'
+            ],
+            borderRadius: 6,
+            barThickness: 28
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function updateCharts() {
+      // Weight chart
+      const weights = [...appState.weights].sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-14);
+      weightChart.data.labels = weights.map(w => formatDate(w.date));
+      weightChart.data.datasets[0].data = weights.map(w => w.weight);
+      weightChart.update();
+
+      // Volume chart
+      const weekDates = getWeekDates();
+      const weekData = weekDates.map(date => {
+        const dayWorkouts = appState.workouts.filter(w => {
+          const wd = new Date(w.date);
+          return wd.toDateString() === date.toDateString();
+        });
+        return dayWorkouts.reduce((s, w) => s + (w.duration || 0), 0);
+      });
+      volumeChart.data.datasets[0].data = weekData;
+      volumeChart.update();
+    }
+
+    // ==================== Recent Activity ====================
+    function updateRecentActivity() {
+      const container = document.getElementById('recentActivity');
+      const recent = [...appState.workouts]
+        .sort((a,b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+      if (recent.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">🏃‍♂️</div>
+            <h3>还没有锻炼记录</h3>
+            <p>开始记录你的第一次锻炼吧！</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = recent.map(w => {
+        const wt = workoutTypes[w.type] || workoutTypes.other;
+        return `
+          <div class="workout-item">
+            <div class="workout-icon ${w.type}">
+              <span>${wt.emoji}</span>
+            </div>
+            <div class="workout-info">
+              <div class="workout-type-name">${wt.name}</div>
+              <div class="workout-details">${w.duration ? w.duration + '分钟' : ''} ${w.calories ? '· ' + w.calories + ' kcal' : ''}</div>
+              <div class="workout-date">${formatDate(w.date)}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ==================== Workout Log ====================
+    let selectedType = 'running';
+
+    function setupWorkoutLog() {
+      document.getElementById('workoutDate').value = formatFullDate(new Date());
+
+      // Type selection
+      document.querySelectorAll('.type-option').forEach(el => {
+        el.addEventListener('click', () => {
+          document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
+          el.classList.add('selected');
+          selectedType = el.dataset.type;
+        });
+      });
+
+      document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
+    }
+
+    function saveWorkout() {
+      const date = document.getElementById('workoutDate').value;
+      const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
+      const distance = parseFloat(document.getElementById('workoutDistance').value) || 0;
+      const weight = parseFloat(document.getElementById('workoutWeight').value) || 0;
+      const calories = parseInt(document.getElementById('workoutCalories').value) || 0;
+      const heartRate = parseInt(document.getElementById('workoutHeartRate').value) || 0;
+      const notes = document.getElementById('workoutNotes').value;
+      const currentWeight = parseFloat(document.getElementById('currentWeight').value) || 0;
+
+      if (!date) { showToast('请选择日期'); return; }
+      if (duration <= 0) { showToast('请输入时长'); return; }
+
+      const workout = {
+        id: Date.now(),
+        type: selectedType,
+        date,
+        duration,
+        distance,
+        weight,
+        calories: calories || Math.round(duration * (workoutTypes[selectedType]?.caloriesPerMin || 5)),
+        heartRate,
+        notes
+      };
+
+      appState.workouts.push(workout);
+
+      if (currentWeight > 0) {
+        appState.weights.push({ date, weight: currentWeight });
+      }
+
+      saveState();
+      updateAll();
+      showToast('锻炼记录已保存！');
+
+      // Reset form
+      document.getElementById('workoutDuration').value = '';
+      document.getElementById('workoutDistance').value = '';
+      document.getElementById('workoutWeight').value = '';
+      document.getElementById('workoutCalories').value = '';
+      document.getElementById('workoutHeartRate').value = '';
+      document.getElementById('workoutNotes').value = '';
+      document.getElementById('currentWeight').value = '';
+    }
+
+    // ==================== History ====================
+    function updateHistory() {
+      const container = document.getElementById('workoutHistory');
+      const sorted = [...appState.workouts].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if (sorted.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">📋</div>
+            <h3>暂无历史记录</h3>
+            <p>你的第一条锻炼记录将显示在这里</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = sorted.map(w => {
+        const wt = workoutTypes[w.type] || workoutTypes.other;
+        const details = [];
+        if (w.duration) details.push(w.duration + '分钟');
+        if (w.distance) details.push(w.distance + 'km');
+        if (w.weight) details.push(w.weight + 'kg');
+        if (w.calories) details.push(w.calories + ' kcal');
+        if (w.heartRate) details.push('HR ' + w.heartRate);
+        return `
+          <div class="workout-item">
+            <div class="workout-icon ${w.type}">
+              <span>${wt.emoji}</span>
+            </div>
+            <div class="workout-info">
+              <div class="workout-type-name">${wt.name}</div>
+              <div class="workout-details">${details.join(' · ')}</div>
+              <div class="workout-date">${formatFullDate(w.date)} ${w.notes ? '· ' + w.notes : ''}</div>
+            </div>
+            <div class="workout-actions">
+              <button class="icon-btn-sm" onclick="shareWorkout(${w.id})" title="分享">📤</button>
+              <button class="icon-btn-sm delete" onclick="deleteWorkout(${w.id})" title="删除">🗑️</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function deleteWorkout(id) {
+      appState.workouts = appState.workouts.filter(w => w.id !== id);
+      saveState();
+      updateAll();
+      showToast('已删除');
+    }
+
+    // ==================== Goals ====================
+    function updateGoals() {
+      const container = document.getElementById('goalsList');
+      if (appState.goals.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">🎯</div>
+            <h3>还没有设定目标</h3>
+            <p>设定目标来追踪你的健身进度</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = appState.goals.map((goal, index) => {
+        const current = calculateGoalProgress(goal);
+        const percent = Math.min(100, Math.round((current / goal.target) * 100));
+        const achieved = current >= goal.target;
+        const colorMap = { purple: 'purple', green: 'green', orange: 'orange' };
+        const colorClass = colorMap[goal.color] || 'purple';
+
+        return `
+          <div class="goal-item">
+            <div class="goal-header">
+              <span class="goal-name">${goal.name} ${achieved ? '<span class="goal-badge">已完成!</span>' : ''}</span>
+              <button class="goal-delete" onclick="deleteGoal(${index})">✕</button>
+            </div>
+            <div class="milestone-track">
+              <div class="milestone-fill ${colorClass}" style="width:${percent}%"></div>
+            </div>
+            <div class="milestone-info">
+              <span class="milestone-current">${current} / ${goal.target}</span>
+              <span>${percent}%</span>
+            </div>
+            <div class="milestone-markers">
+              ${[25, 50, 75, 100].map(p => `<div class="milestone-marker ${percent >= p ? 'achieved' : ''}" title="${p}%"></div>`).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function calculateGoalProgress(goal) {
+      const now = new Date();
+      let startDate = new Date(now);
+      if (goal.period === 'daily') startDate.setHours(0,0,0,0);
+      else if (goal.period === 'weekly') {
+        const day = now.getDay();
+        startDate.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+        startDate.setHours(0,0,0,0);
+      } else {
+        startDate.setDate(1);
+        startDate.setHours(0,0,0,0);
+      }
+
+      const relevant = appState.workouts.filter(w => new Date(w.date) >= startDate);
+      switch (goal.type) {
+        case 'workouts': return relevant.length;
+        case 'minutes': return relevant.reduce((s, w) => s + (w.duration || 0), 0);
+        case 'distance': return relevant.reduce((s, w) => s + (w.distance || 0), 0);
+        case 'calories': return relevant.reduce((s, w) => s + (w.calories || 0), 0);
+        case 'steps': return pedometerSteps || 0;
+        default: return 0;
+      }
+    }
+
+    function deleteGoal(index) {
+      appState.goals.splice(index, 1);
+      saveState();
+      updateGoals();
+      showToast('目标已删除');
+    }
+
+    function setupGoals() {
+      document.getElementById('addGoalBtn').addEventListener('click', () => {
+        document.getElementById('goalModal').classList.add('show');
+      });
+      document.getElementById('cancelGoal').addEventListener('click', () => {
+        document.getElementById('goalModal').classList.remove('show');
+      });
+      document.getElementById('saveGoal').addEventListener('click', () => {
+        const name = document.getElementById('goalName').value.trim();
+        const type = document.getElementById('goalType').value;
+        const target = parseInt(document.getElementById('goalTarget').value) || 0;
+        const period = document.getElementById('goalPeriod').value;
+        const color = document.getElementById('goalColor').value;
+        if (!name || target <= 0) { showToast('请填写完整信息'); return; }
+        appState.goals.push({ name, type, target, period, color });
+        saveState();
+        updateGoals();
+        document.getElementById('goalModal').classList.remove('show');
+        document.getElementById('goalName').value = '';
+        document.getElementById('goalTarget').value = '';
+        showToast('目标已添加！');
+      });
+    }
+
+    // ==================== Share ====================
+    function setupShare() {
+      document.getElementById('shareSummary').addEventListener('click', showShareModal);
+      document.getElementById('cancelShare').addEventListener('click', () => {
+        document.getElementById('shareModal').classList.remove('show');
+      });
+      document.getElementById('shareToWeb').addEventListener('click', shareSummary);
+    }
+
+    function showShareModal() {
+      const weekStart = getWeekDates()[0];
+      const weekWorkouts = appState.workouts.filter(w => new Date(w.date) >= weekStart);
+      const totalMin = weekWorkouts.reduce((s, w) => s + (w.duration || 0), 0);
+      const totalCal = weekWorkouts.reduce((s, w) => s + (w.calories || 0), 0);
+
+      document.getElementById('shareStats').innerHTML = `
+        <div class="share-stat"><div class="value">${weekWorkouts.length}</div><div class="label">锻炼次数</div></div>
+        <div class="share-stat"><div class="value">${totalMin}</div><div class="label">分钟</div></div>
+        <div class="share-stat"><div class="value">${totalCal}</div><div class="label">卡路里</div></div>
+      `;
+
+      document.getElementById('shareMessage').textContent =
+        weekWorkouts.length >= 3 ? '太棒了！继续保持这个节奏！' :
+        weekWorkouts.length > 0 ? '不错的开始，继续加油！' : '开始你的健身之旅吧！';
+
+      document.getElementById('shareModal').classList.add('show');
+    }
+
+    async function shareSummary() {
+      const weekStart = getWeekDates()[0];
+      const weekWorkouts = appState.workouts.filter(w => new Date(w.date) >= weekStart);
+      const totalMin = weekWorkouts.reduce((s, w) => s + (w.duration || 0), 0);
+      const totalCal = weekWorkouts.reduce((s, w) => s + (w.calories || 0), 0);
+
+      const title = 'FitTrack 健身成就';
+      const text = `🏆 本周健身成就\n\n` +
+        `锻炼次数: ${weekWorkouts.length}次\n` +
+        `总时长: ${totalMin}分钟\n` +
+        `消耗卡路里: ${totalCal} kcal\n\n` +
+        `坚持锻炼，遇见更好的自己！\n\n` +
+        `— FitTrack 健身追踪`;
+
+      // Try Web Share API first
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text });
+          document.getElementById('shareModal').classList.remove('show');
+          showToast('已分享！');
+          return;
+        } catch (e) { /* User cancelled or not supported */ }
+      }
+
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById('shareModal').classList.remove('show');
+        showToast('已复制到剪贴板！');
+      } catch (e) {
+        showToast('分享失败，请重试');
+      }
+    }
+
+    function shareWorkout(id) {
+      const w = appState.workouts.find(w => w.id === id);
+      if (!w) return;
+      const wt = workoutTypes[w.type] || workoutTypes.other;
+      const text = `🏋️ ${wt.name}记录\n` +
+        `日期: ${formatFullDate(w.date)}\n` +
+        `时长: ${w.duration}分钟\n` +
+        `${w.distance ? '距离: ' + w.distance + 'km\n' : ''}` +
+        `${w.calories ? '消耗: ' + w.calories + ' kcal\n' : ''}` +
+        `${w.notes ? '备注: ' + w.notes + '\n' : ''}\n` +
+        `— FitTrack`;
+
+      if (navigator.share) {
+        navigator.share({ title: wt.name + '记录', text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板！')).catch(() => showToast('复制失败'));
+      }
+    }
+
+    // ==================== Pedometer ====================
+    let pedometerSteps = 0;
+    let pedometerSensor = null;
+
+    async function initPedometer() {
+      const status = document.getElementById('pedometerStatus');
+      const valueEl = document.getElementById('pedometerValue');
+      const ringEl = document.getElementById('pedometerRing');
+
+      // Check for Generic Sensor API Pedometer
+      if ('Pedometer' in window) {
+        try {
+          const sensor = new Pedometer();
+          pedometerSensor = sensor;
+          sensor.addEventListener('reading', () => {
+            pedometerSteps = sensor.numSteps;
+            updatePedometerUI();
+          });
+          sensor.start();
+          status.textContent = '计步器已连接';
+          return;
+        } catch (e) {
+          status.textContent = '计步器连接失败';
+        }
+      }
+
+      // Fallback: use stored steps or manual input
+      status.innerHTML = `设备不支持自动计步<br><button class="btn btn-sm btn-accent" style="margin-top:8px" onclick="manualSteps()">手动输入步数</button>`;
+    }
+
+    function manualSteps() {
+      const steps = prompt('请输入今日步数:', pedometerSteps || '0');
+      if (steps !== null) {
+        pedometerSteps = parseInt(steps) || 0;
+        updatePedometerUI();
+        document.getElementById('pedometerStatus').textContent = `手动记录: ${pedometerSteps} 步`;
+      }
+    }
+
+    function updatePedometerUI() {
+      const valueEl = document.getElementById('pedometerValue');
+      const ringEl = document.getElementById('pedometerRing');
+      const goal = appState.settings.stepGoal || 10000;
+      const percent = Math.min(100, (pedometerSteps / goal) * 100);
+      const circumference = 2 * Math.PI * 60; // r=60
+      const offset = circumference - (percent / 100) * circumference;
+
+      valueEl.textContent = pedometerSteps.toLocaleString();
+      ringEl.style.strokeDashoffset = offset;
+    }
+
+    // ==================== Tabs ====================
+    function setupTabs() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+      });
+    }
+
+    // ==================== Settings ====================
+    function setupSettings() {
+      document.getElementById('settingsBtn').addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('settings').classList.add('active');
+        // Highlight settings tab
+        document.querySelectorAll('.tab').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === 'settings');
+        });
+      });
+
+      document.getElementById('stepGoal').addEventListener('change', (e) => {
+        appState.settings.stepGoal = parseInt(e.target.value) || 10000;
+        saveState();
+        updatePedometerUI();
+      });
+
+      document.getElementById('darkModeToggle').addEventListener('click', (e) => {
+        e.currentTarget.classList.toggle('active');
+        appState.settings.darkMode = !appState.settings.darkMode;
+        saveState();
+      });
+
+      document.getElementById('clearDataBtn').addEventListener('click', () => {
+        if (confirm('确定要清除所有数据吗？此操作不可恢复。')) {
+          appState = { workouts: [], goals: [], weights: [], settings: { stepGoal: 10000, darkMode: false, profileName: '健身爱好者' } };
+          saveState();
+          updateAll();
+          showToast('数据已清除');
+        }
+      });
+    }
+
+    // ==================== PWA Install ====================
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBanner').classList.add('show');
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          showToast('应用已安装！');
+        }
+        deferredPrompt = null;
+        document.getElementById('installBanner').classList.remove('show');
+      }
+    });
+
+    document.getElementById('dismissInstall').addEventListener('click', () => {
+      document.getElementById('installBanner').classList.remove('show');
+    });
+
+    // ==================== Offline Detection ====================
+    function updateOnlineStatus() {
+      const indicator = document.getElementById('offlineIndicator');
+      if (!navigator.onLine) {
+        indicator.classList.add('show');
+      } else {
+        indicator.classList.remove('show');
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // ==================== Service Worker ====================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+
+    // ==================== Update All ====================
+    function updateAll() {
+      updateStats();
+      updateCharts();
+      updateRecentActivity();
+      updateHistory();
+      updateGoals();
+    }
+
+    // ==================== Initialize ====================
+    function init() {
+      loadState();
+      updateHeader();
+      setupTabs();
+      setupWorkoutLog();
+      setupGoals();
+      setupShare();
+      setupSettings();
+      initCharts();
+      updateAll();
+      initPedometer();
+      updateOnlineStatus();
+
+      // Restore settings
+      document.getElementById('stepGoal').value = appState.settings.stepGoal || 10000;
+      if (appState.settings.darkMode) {
+        document.getElementById('darkModeToggle').classList.add('active');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
