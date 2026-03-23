@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问卷构建工具</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav id="navbar">
+    <div class="nav-brand">问卷构建工具</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="builder" id="tab-builder">构建器</button>
+      <button class="nav-tab" data-view="take" id="tab-take">填写</button>
+      <button class="nav-tab" data-view="results" id="tab-results">结果</button>
+    </div>
+    <div class="nav-actions">
+      <button id="theme-toggle" title="切换主题">☀</button>
+    </div>
+  </nav>
+
+  <!-- 构建器视图 -->
+  <div id="builder-view" class="view active">
+    <div class="builder-header">
+      <input type="text" id="survey-title" class="survey-title-input" placeholder="问卷标题">
+      <textarea id="survey-desc" class="survey-desc-input" placeholder="问卷描述（可选）"></textarea>
+      <div class="builder-settings">
+        <label class="setting-item">
+          <input type="checkbox" id="is-quiz">
+          <span>测验模式</span>
+        </label>
+        <div class="setting-item" id="time-limit-setting" style="display:none">
+          <label>时间限制（分钟）:</label>
+          <input type="number" id="time-limit" min="1" max="120" value="30">
+        </div>
+      </div>
+      <div class="builder-actions">
+        <button id="btn-save" class="btn btn-primary">保存问卷</button>
+        <button id="btn-share" class="btn btn-secondary">分享链接</button>
+        <button id="btn-clear" class="btn btn-danger">清空</button>
+      </div>
+    </div>
+
+    <div class="builder-body">
+      <div class="question-types">
+        <h3>添加问题</h3>
+        <div class="type-grid">
+          <button class="type-btn" data-type="radio">单选题</button>
+          <button class="type-btn" data-type="checkbox">多选题</button>
+          <button class="type-btn" data-type="text">文本题</button>
+          <button class="type-btn" data-type="textarea">多行文本</button>
+          <button class="type-btn" data-type="slider">滑块题</button>
+          <button class="type-btn" data-type="rating">评分题</button>
+        </div>
+      </div>
+      <div class="question-list" id="question-list">
+        <p class="empty-hint">点击上方按钮添加问题</p>
+      </div>
+    </div>
+
+    <!-- 分支规则模态框 -->
+    <div id="branch-modal" class="modal" style="display:none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>分支规则</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="branch-modal-body"></div>
+        <div class="modal-footer">
+          <button id="branch-save" class="btn btn-primary">保存</button>
+          <button class="btn btn-secondary modal-close">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 填写视图 -->
+  <div id="take-view" class="view">
+    <div class="take-header">
+      <h2 id="take-title"></h2>
+      <p id="take-desc"></p>
+      <div id="quiz-timer" class="timer" style="display:none">
+        <span id="timer-display">30:00</span>
+        <button id="timer-toggle" class="btn btn-sm">暂停</button>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+    <div class="take-body" id="take-body"></div>
+    <div class="take-footer" id="take-footer" style="display:none">
+      <button id="btn-submit" class="btn btn-primary btn-large">提交问卷</button>
+      <button id="btn-back" class="btn btn-secondary">上一题</button>
+      <button id="btn-next" class="btn btn-primary">下一题</button>
+    </div>
+  </div>
+
+  <!-- 结果视图 -->
+  <div id="results-view" class="view">
+    <div class="results-header">
+      <h2 id="results-title"></h2>
+      <div class="results-controls">
+        <select id="results-question-select" class="select-input">
+          <option value="all">查看所有问题</option>
+        </select>
+      </div>
+    </div>
+    <div class="results-body" id="results-body">
+      <p class="empty-hint">暂无结果数据</p>
+    </div>
+  </div>
+
+  <!-- 分享弹窗 -->
+  <div id="share-modal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>分享链接</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>复制以下链接分享问卷：</p>
+        <div class="share-url-box">
+          <input type="text" id="share-url" readonly>
+          <button id="copy-url" class="btn btn-sm btn-primary">复制</button>
+        </div>
+        <div class="share-links">
+          <div class="share-link-item">
+            <label>填写链接:</label>
+            <input type="text" id="share-take-url" readonly>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
