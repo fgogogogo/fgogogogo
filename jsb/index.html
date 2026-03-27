@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="健身BB">
+  <meta name="description" content="健身追踪仪表盘 - 记录锻炼、追踪进展、达成目标">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>健身追踪仪表盘</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- App Shell -->
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-content">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 40 40" width="36" height="36">
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#6366f1"/>
+                <stop offset="100%" style="stop-color:#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <circle cx="20" cy="20" r="18" fill="url(#logoGrad)"/>
+            <path d="M12 26 L18 16 L22 22 L28 12" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h1>健身BB</h1>
+        </div>
+        <div class="header-actions">
+          <button id="installBtn" class="btn-icon" title="安装应用" style="display:none">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+          </button>
+          <button id="shareBtn" class="btn-icon" title="分享">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav id="tabs" class="tabs">
+      <button class="tab active" data-tab="dashboard">仪表盘</button>
+      <button class="tab" data-tab="workout">记录</button>
+      <button class="tab" data-tab="goals">目标</button>
+      <button class="tab" data-tab="history">历史</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="content">
+      <!-- Dashboard Tab -->
+      <section id="tab-dashboard" class="tab-content active">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="totalWorkouts">0</span>
+              <span class="stat-label">总锻炼次数</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="totalDuration">0</span>
+              <span class="stat-label">总时长(分钟)</span>
+            </div>
+          </div>
+          <div class="stat-card stat-warning">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="totalCalories">0</span>
+              <span class="stat-label">消耗卡路里</span>
+            </div>
+          </div>
+          <div class="stat-card stat-info">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 20V10M12 20V4M6 20v-6"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="thisWeekWorkouts">0</span>
+              <span class="stat-label">本周锻炼</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pedometer Card -->
+        <div class="card pedometer-card" id="pedometerCard">
+          <div class="card-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="5" r="3"/><path d="M12 8v8M8 21l4-5 4 5M6 13l6-2 6 2"/>
+              </svg>
+              今日步数
+            </h3>
+            <span class="pedometer-status" id="pedometerStatus">检测中...</span>
+          </div>
+          <div class="pedometer-display">
+            <div class="steps-circle">
+              <svg viewBox="0 0 120 120" class="steps-ring">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(99,102,241,0.15)" stroke-width="8"/>
+                <circle id="stepsProgress" cx="60" cy="60" r="54" fill="none" stroke="url(#stepGrad)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="339.292"
+                  transform="rotate(-90 60 60)"/>
+                <defs><linearGradient id="stepGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#6366f1"/><stop offset="100%" style="stop-color:#8b5cf6"/>
+                </linearGradient></defs>
+              </svg>
+              <div class="steps-value">
+                <span id="stepsCount" class="steps-number">--</span>
+                <span class="steps-unit">步</span>
+              </div>
+            </div>
+            <div class="steps-goal-input">
+              <label>目标步数</label>
+              <input type="number" id="stepsGoal" value="10000" min="1000" max="100000" step="1000">
+            </div>
+          </div>
+        </div>
+
+        <!-- Weight Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>体重变化</h3>
+            <button class="btn-small" id="addWeightBtn">+ 记录体重</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="weightChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Workout Volume Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>锻炼量统计</h3>
+            <select id="volumePeriod" class="select-small">
+              <option value="week">本周</option>
+              <option value="month">本月</option>
+              <option value="year">全年</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="volumeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Goals Progress -->
+        <div class="card">
+          <div class="card-header">
+            <h3>目标进展</h3>
+          </div>
+          <div id="goalsPreview" class="goals-preview">
+            <p class="empty-state">暂无目标，去"目标"页面设定吧</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workout Tab -->
+      <section id="tab-workout" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>记录新锻炼</h3>
+          </div>
+          <form id="workoutForm" class="workout-form">
+            <div class="form-group">
+              <label>锻炼类型</label>
+              <div class="exercise-type-selector">
+                <button type="button" class="type-btn active" data-type="running">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="13" cy="5" r="2"/><path d="M6 12l4-3 3 3 5-4"/>
+                  </svg>
+                  <span>跑步</span>
+                </button>
+                <button type="button" class="type-btn" data-type="cycling">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/>
+                    <path d="M15 6a1 1 0 100-2 1 1 0 000 2zM12 17.5V14l-3-3 4-3 2 3h2"/>
+                  </svg>
+                  <span>骑行</span>
+                </button>
+                <button type="button" class="type-btn" data-type="weightlifting">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 5v14M18 5v14M6 12h12M4 8h2M4 16h2M18 8h2M18 16h2"/>
+                  </svg>
+                  <span>举重</span>
+                </button>
+                <button type="button" class="type-btn" data-type="swimming">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 12c2-2 4-3 6-3s4 3 6 3 4-3 6-3 4 3 6 3"/>
+                    <circle cx="7" cy="6" r="2"/><circle cx="17" cy="6" r="2"/>
+                    <path d="M4 18c2-1 4-2 6-2s4 2 6 2 4-2 6-2"/>
+                  </svg>
+                  <span>游泳</span>
+                </button>
+                <button type="button" class="type-btn" data-type="yoga">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="5" r="2"/><path d="M4 20l4-4 4 2 4-2 4 4"/>
+                    <path d="M8 16V10l4-2 4 2v6"/>
+                  </svg>
+                  <span>瑜伽</span>
+                </button>
+                <button type="button" class="type-btn" data-type="other">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                  </svg>
+                  <span>其他</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="workoutDate" required>
+              </div>
+              <div class="form-group">
+                <label>时长 (分钟)</label>
+                <input type="number" id="workoutDuration" min="1" max="1440" required placeholder="30">
+              </div>
+            </div>
+
+            <!-- Running/Cycling fields -->
+            <div class="form-row dynamic-fields" id="fields-cardio">
+              <div class="form-group">
+                <label>距离 (公里)</label>
+                <input type="number" id="workoutDistance" min="0" step="0.1" placeholder="5.0">
+              </div>
+              <div class="form-group">
+                <label>配速 (分/公里)</label>
+                <input type="number" id="workoutPace" min="0" step="0.1" placeholder="自动计算">
+              </div>
+            </div>
+
+            <!-- Weightlifting fields -->
+            <div class="form-row dynamic-fields" id="fields-weights" style="display:none">
+              <div class="form-group">
+                <label>总重量 (公斤)</label>
+                <input type="number" id="workoutWeight" min="0" step="0.5" placeholder="50">
+              </div>
+              <div class="form-group">
+                <label>组数</label>
+                <input type="number" id="workoutSets" min="1" placeholder="5">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>卡路里 (可选)</label>
+              <input type="number" id="workoutCalories" min="0" placeholder="自动估算">
+            </div>
+
+            <div class="form-group">
+              <label>备注</label>
+              <textarea id="workoutNotes" rows="2" placeholder="今天感觉如何？"></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              保存记录
+            </button>
+          </form>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card">
+          <div class="card-header">
+            <h3>快速记录</h3>
+          </div>
+          <div class="quick-records">
+            <button class="quick-btn" data-type="running" data-duration="30" data-distance="5">
+              <span class="quick-icon">🏃</span>
+              <span>跑步 5km</span>
+              <span class="quick-time">30分钟</span>
+            </button>
+            <button class="quick-btn" data-type="cycling" data-duration="45" data-distance="15">
+              <span class="quick-icon">🚴</span>
+              <span>骑行 15km</span>
+              <span class="quick-time">45分钟</span>
+            </button>
+            <button class="quick-btn" data-type="weightlifting" data-duration="60" data-weight="100">
+              <span class="quick-icon">🏋️</span>
+              <span>力量训练</span>
+              <span class="quick-time">60分钟</span>
+            </button>
+            <button class="quick-btn" data-type="swimming" data-duration="30" data-distance="1">
+              <span class="quick-icon">🏊</span>
+              <span>游泳 1km</span>
+              <span class="quick-time">30分钟</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Goals Tab -->
+      <section id="tab-goals" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>设定目标</h3>
+          </div>
+          <form id="goalForm" class="goal-form">
+            <div class="form-group">
+              <label>目标类型</label>
+              <select id="goalType" required>
+                <option value="">选择目标类型</option>
+                <option value="weekly_workouts">每周锻炼次数</option>
+                <option value="weekly_duration">每周锻炼时长 (分钟)</option>
+                <option value="monthly_distance">每月运动距离 (公里)</option>
+                <option value="weight_loss">目标体重 (公斤)</option>
+                <option value="weight_gain">增重目标 (公斤)</option>
+                <option value="total_workouts">总锻炼次数</option>
+                <option value="streak">连续锻炼天数</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>目标值</label>
+                <input type="number" id="goalValue" min="1" required placeholder="例如: 5">
+              </div>
+              <div class="form-group">
+                <label>截止日期</label>
+                <input type="date" id="goalDeadline" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>目标名称 (可选)</label>
+                <input type="text" id="goalName" placeholder="例如: 月度挑战">
+            </div>
+            <button type="submit" class="btn-primary btn-large">创建目标</button>
+          </form>
+        </div>
+
+        <!-- Active Goals -->
+        <div class="card">
+          <div class="card-header">
+            <h3>进行中的目标</h3>
+          </div>
+          <div id="activeGoals" class="goals-list">
+            <p class="empty-state">暂无进行中的目标</p>
+          </div>
+        </div>
+
+        <!-- Completed Goals -->
+        <div class="card">
+          <div class="card-header">
+            <h3>已完成目标</h3>
+          </div>
+          <div id="completedGoals" class="goals-list">
+            <p class="empty-state">暂无已完成的目标</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section id="tab-history" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>锻炼历史</h3>
+            <div class="history-filters">
+              <select id="historyTypeFilter" class="select-small">
+                <option value="all">全部类型</option>
+                <option value="running">跑步</option>
+                <option value="cycling">骑行</option>
+                <option value="weightlifting">举重</option>
+                <option value="swimming">游泳</option>
+                <option value="yoga">瑜伽</option>
+                <option value="other">其他</option>
+              </select>
+              <input type="date" id="historyDateFilter" class="select-small">
+            </div>
+          </div>
+          <div id="historyList" class="history-list">
+            <p class="empty-state">暂无锻炼记录</p>
+          </div>
+        </div>
+
+        <!-- Weight Records -->
+        <div class="card">
+          <div class="card-header">
+            <h3>体重记录</h3>
+          </div>
+          <div id="weightList" class="weight-list">
+            <p class="empty-state">暂无体重记录</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <!-- Weight Input Modal -->
+  <div class="modal-overlay" id="weightModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>记录体重</h3>
+        <button class="modal-close" data-close="weightModal">&times;</button>
+      </div>
+      <form id="weightForm" class="modal-body">
+        <div class="form-group">
+          <label>体重 (公斤)</label>
+          <input type="number" id="weightValue" step="0.1" min="20" max="300" required placeholder="70.5">
+        </div>
+        <div class="form-group">
+          <label>日期</label>
+          <input type="date" id="weightDate" required>
+        </div>
+        <div class="form-group">
+          <label>备注 (可选)</label>
+          <input type="text" id="weightNote" placeholder="例如: 早晨空腹">
+        </div>
+        <button type="submit" class="btn-primary">保存</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal modal-large">
+      <div class="modal-header">
+        <h3>锻炼摘要卡片</h3>
+        <button class="modal-close" data-close="shareModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="shareCard" class="share-card">
+          <div class="share-card-header">
+            <div class="share-card-logo">
+              <svg viewBox="0 0 40 40" width="40" height="40">
+                <defs><linearGradient id="shareLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#6366f1"/><stop offset="100%" style="stop-color:#8b5cf6"/>
+                </linearGradient></defs>
+                <circle cx="20" cy="20" r="18" fill="url(#shareLogoGrad)"/>
+                <path d="M12 26 L18 16 L22 22 L28 12" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>健身BB</span>
+            </div>
+            <span class="share-card-date" id="shareCardDate"></span>
+          </div>
+          <div class="share-card-body">
+            <div class="share-stats-grid">
+              <div class="share-stat">
+                <span class="share-stat-value" id="shareTotalWorkouts">0</span>
+                <span class="share-stat-label">总锻炼</span>
+              </div>
+              <div class="share-stat">
+                <span class="share-stat-value" id="shareTotalDuration">0</span>
+                <span class="share-stat-label">总时长</span>
+              </div>
+              <div class="share-stat">
+                <span class="share-stat-value" id="shareTotalCalories">0</span>
+                <span class="share-stat-label">卡路里</span>
+              </div>
+              <div class="share-stat">
+                <span class="share-stat-value" id="shareTotalDistance">0</span>
+                <span class="share-stat-label">公里</span>
+              </div>
+            </div>
+            <div class="share-milestones" id="shareMilestones"></div>
+            <div class="share-quote" id="shareQuote">"坚持就是胜利！"</div>
+          </div>
+          <div class="share-card-footer">
+            <span>由 健身BB 生成</span>
+          </div>
+        </div>
+        <div class="share-actions">
+          <button class="btn-primary" id="downloadCard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            下载图片
+          </button>
+          <button class="btn-secondary" id="shareNative">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+            分享
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
