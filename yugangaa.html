@@ -2,816 +2,589 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>电子鱼缸</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: linear-gradient(135deg, #1a2a3a, #0d1b2a);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    font-family: 'Microsoft YaHei', sans-serif;
-    overflow: hidden;
-  }
-  .wrapper {
-    text-align: center;
-  }
-  .title {
-    color: #8ec8e8;
-    font-size: 28px;
-    margin-bottom: 12px;
-    text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
-    letter-spacing: 8px;
-  }
-  .subtitle {
-    color: #6aa8c8;
-    font-size: 13px;
-    margin-bottom: 16px;
-    opacity: 0.7;
-  }
-  .tank-container {
-    position: relative;
-    display: inline-block;
-    border-radius: 20px;
-    padding: 4px;
-    background: linear-gradient(135deg, #e8e8e8, #f0f0f0, #d8d8d8);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255,255,255,0.6);
-  }
-  #tank {
-    cursor: pointer;
-    border-radius: 16px;
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; background: #1a2a3a;
+  font-family: 'Microsoft YaHei', sans-serif;
+}
+h1 { color: #88ccff; margin-bottom: 15px; font-size: 28px; text-shadow: 0 0 10px rgba(100,200,255,0.4); }
+#tank-wrapper { position: relative; }
+svg {
+  border-radius: 16px; box-shadow: 0 0 40px rgba(100,200,255,0.15);
+}
 </style>
 </head>
 <body>
-<div class="wrapper">
-  <div class="title">电子鱼缸</div>
-  <div class="subtitle">点击鱼缸任意位置投放饲料</div>
-  <div class="tank-container">
-    <svg id="tank" width="720" height="520" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <!-- Water gradient -->
-        <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#1a4a6e;stop-opacity:0.45"/>
-          <stop offset="30%" style="stop-color:#1b5a7a;stop-opacity:0.5"/>
-          <stop offset="70%" style="stop-color:#0d3a5a;stop-opacity:0.55"/>
-          <stop offset="100%" style="stop-color:#082a40;stop-opacity:0.6"/>
-        </linearGradient>
-
-        <!-- Glass shine -->
-        <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:rgba(255,255,255,0.22)"/>
-          <stop offset="35%" style="stop-color:rgba(255,255,255,0.06)"/>
-          <stop offset="50%" style="stop-color:rgba(255,255,255,0)"/>
-          <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
-        </linearGradient>
-
-        <!-- Glass edge -->
-        <linearGradient id="glassEdge" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
-          <stop offset="50%" style="stop-color:rgba(255,255,255,0.1)"/>
-          <stop offset="100%" style="stop-color:rgba(255,255,255,0.3)"/>
-        </linearGradient>
-
-        <!-- Stone gradient -->
-        <radialGradient id="stoneGrad" cx="35%" cy="35%">
-          <stop offset="0%" style="stop-color:#8B6914"/>
-          <stop offset="50%" style="stop-color:#6B4F0A"/>
-          <stop offset="100%" style="stop-color:#4A3000"/>
-        </radialGradient>
-
-        <radialGradient id="stoneGrad2" cx="30%" cy="30%">
-          <stop offset="0%" style="stop-color:#9B7A1E"/>
-          <stop offset="60%" style="stop-color:#7A5A0A"/>
-          <stop offset="100%" style="stop-color:#5A3D00"/>
-        </radialGradient>
-
-        <radialGradient id="stoneGrad3" cx="40%" cy="35%">
-          <stop offset="0%" style="stop-color:#A08830"/>
-          <stop offset="55%" style="stop-color:#806818"/>
-          <stop offset="100%" style="stop-color:#604500"/>
-        </radialGradient>
-
-        <!-- Seaweed gradient -->
-        <linearGradient id="weedGrad1" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" style="stop-color:#1a4a1a"/>
-          <stop offset="60%" style="stop-color:#2a7a2a"/>
-          <stop offset="100%" style="stop-color:#3aaa3a"/>
-        </linearGradient>
-
-        <linearGradient id="weedGrad2" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" style="stop-color:#154015"/>
-          <stop offset="60%" style="stop-color:#2a6a2a"/>
-          <stop offset="100%" style="stop-color:#389838"/>
-        </linearGradient>
-
-        <linearGradient id="weedGrad3" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" style="stop-color:#1a501a"/>
-          <stop offset="60%" style="stop-color:#2d802d"/>
-          <stop offset="100%" style="stop-color:#40b840"/>
-        </linearGradient>
-
-        <!-- Fish body gradient -->
-        <linearGradient id="fishBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#FFD700"/>
-          <stop offset="40%" style="stop-color:#FFC800"/>
-          <stop offset="70%" style="stop-color:#E8A800"/>
-          <stop offset="100%" style="stop-color:#CC8800"/>
-        </linearGradient>
-
-        <!-- Fish belly gradient -->
-        <linearGradient id="fishBellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#FFE880"/>
-          <stop offset="100%" style="stop-color:#FFD050"/>
-        </linearGradient>
-
-        <!-- Tail fin gradient -->
-        <linearGradient id="tailFinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:#FFB800"/>
-          <stop offset="50%" style="stop-color:#E89A00"/>
-          <stop offset="100%" style="stop-color:#CC7A00"/>
-        </linearGradient>
-
-        <!-- Food gradient -->
-        <radialGradient id="foodGrad" cx="35%" cy="35%">
-          <stop offset="0%" style="stop-color:#FFE080"/>
-          <stop offset="100%" style="stop-color:#D4A030"/>
-        </radialGradient>
-
-        <!-- Clip path for tank interior -->
-        <clipPath id="tankClip">
-          <rect x="4" y="4" width="712" height="512" rx="12"/>
-        </clipPath>
-
-        <!-- Fish clip path (for clipping fish to stay inside tank) -->
-        <clipPath id="fishClip">
-          <rect x="20" y="20" width="680" height="480" rx="8"/>
-        </clipPath>
-
-        <!-- Bubble filter -->
-        <filter id="bubbleFilter" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
-        </filter>
-      </defs>
-
-      <!-- Tank background (glass) -->
-      <rect x="0" y="0" width="720" height="520" rx="16" fill="url(#glassEdge)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
-
-      <!-- Water -->
-      <rect x="4" y="4" width="712" height="512" rx="12" fill="url(#waterGrad)"/>
-
-      <!-- Light rays in water -->
-      <g opacity="0.06">
-        <polygon points="200,0 240,0 300,520 180,520" fill="#a0d8ff"/>
-        <polygon points="380,0 430,0 520,520 420,520" fill="#a0d8ff"/>
-        <polygon points="540,0 580,0 640,520 560,520" fill="#a0d8ff"/>
-      </g>
-
-      <!-- Group for tank contents (clipped) -->
-      <g clip-path="url(#tankClip)">
-
-        <!-- Sand bottom -->
-        <rect x="0" y="460" width="720" height="60" fill="#d4c4a0"/>
-        <rect x="0" y="470" width="720" height="50" fill="#c8b890"/>
-
-        <!-- Seaweed -->
-        <g id="seaweeds">
-          <path id="weed1" d="M60,520 Q55,460 65,400 Q55,350 70,290 Q60,250 72,200"
-                stroke="url(#weedGrad1)" stroke-width="8" stroke-linecap="round" fill="none"/>
-          <path id="weed2" d="M100,520 Q108,450 95,390 Q108,330 92,280 Q105,230 88,190"
-                stroke="url(#weedGrad2)" stroke-width="6" stroke-linecap="round" fill="none"/>
-          <path id="weed3" d="M620,520 Q610,460 625,400 Q612,340 630,280 Q618,230 635,180"
-                stroke="url(#weedGrad3)" stroke-width="9" stroke-linecap="round" fill="none"/>
-          <path id="weed4" d="M660,520 Q670,450 655,390 Q672,330 658,280 Q670,230 652,190"
-                stroke="url(#weedGrad1)" stroke-width="5" stroke-linecap="round" fill="none"/>
-          <path id="weed5" d="M140,520 Q145,470 138,430 Q148,380 140,340"
-                stroke="url(#weedGrad2)" stroke-width="4" stroke-linecap="round" fill="none"/>
-          <path id="weed6" d="M580,520 Q572,470 580,420 Q570,380 580,340"
-                stroke="url(#weedGrad3)" stroke-width="5" stroke-linecap="round" fill="none"/>
-        </g>
-
-        <!-- Stones -->
-        <g id="stones">
-          <ellipse cx="200" cy="485" rx="35" ry="18" fill="url(#stoneGrad)"/>
-          <ellipse cx="280" cy="490" rx="28" ry="15" fill="url(#stoneGrad2)"/>
-          <ellipse cx="450" cy="482" rx="40" ry="20" fill="url(#stoneGrad3)"/>
-          <ellipse cx="520" cy="488" rx="25" ry="14" fill="url(#stoneGrad)"/>
-          <ellipse cx="350" cy="492" rx="22" ry="12" fill="url(#stoneGrad2)"/>
-          <ellipse cx="590" cy="485" rx="18" ry="10" fill="url(#stoneGrad3)"/>
-          <!-- Stone highlights -->
-          <ellipse cx="195" cy="478" rx="8" ry="4" fill="rgba(255,255,255,0.15)"/>
-          <ellipse cx="445" cy="475" rx="10" ry="5" fill="rgba(255,255,255,0.12)"/>
-          <ellipse cx="275" cy="484" rx="6" ry="3" fill="rgba(255,255,255,0.15)"/>
-        </g>
-
-        <!-- Fish container -->
-        <g id="fishLayer"></g>
-
-        <!-- Food container -->
-        <g id="foodLayer"></g>
-
-        <!-- Bubbles -->
-        <g id="bubbles"></g>
-
-      </g>
-
-      <!-- Glass reflection overlay -->
-      <rect x="4" y="4" width="712" height="512" rx="12" fill="url(#glassShine)" pointer-events="none"/>
-
-      <!-- Top glass edge highlight -->
-      <path d="M16,4 L704,4" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
-      <path d="M4,16 L4,504" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>
-
-      <!-- Corner glass highlights -->
-      <path d="M4,20 Q4,4 20,4" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none" pointer-events="none"/>
-      <path d="M716,4 Q700,4 700,20" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none" pointer-events="none"/>
-    </svg>
-  </div>
-</div>
-
+<div id="app"></div>
 <script>
-// ==================== CONFIG ====================
-const TANK_W = 720;
-const TANK_H = 520;
-const BOUND_L = 30;
-const BOUND_R = 690;
-const BOUND_T = 40;
-const BOUND_B = 440;
-const FOOD_SINK_SPEED = 0.4;
-const FOOD_COUNT = 6;
-const EAT_DISTANCE = 28;
+// ============ 常量 ============
+const W = 800, H = 560;
+const TANK_MARGIN = 20;
 
-// ==================== STATE ====================
-let foods = [];
+// ============ SVG创建辅助 ============
+const NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'text') { el.textContent = v; }
+    else if (k === 'innerHTML') { el.innerHTML = v; }
+    else el.setAttribute(k, v);
+  }
+  return el;
+}
+
+// ============ 游戏状态 ============
 let fishes = [];
-let animationId = null;
+let foods = [];
+let lastTime = 0;
 
-// ==================== FISH CLASS ====================
-class Fish {
-  constructor(id, x, y, size, scale) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
-    this.vx = (Math.random() - 0.5) * 1.5;
-    this.vy = (Math.random() - 0.5) * 1;
-    this.size = size;
-    this.scale = scale;
-    this.facing = 1; // 1 = right, -1 = left
-    this.tailPhase = Math.random() * Math.PI * 2;
-    this.targetX = null;
-    this.targetY = null;
-    this.state = 'idle'; // 'idle' | 'chasing' | 'eating'
-    this.eatTimer = 0;
-    this.baseSpeed = 1.2 + Math.random() * 0.8;
-    this.chaseSpeed = 3.5 + Math.random() * 1.5;
-    this.wanderTimer = 0;
-    this.wanderTarget = { x: x, y: y };
+// ============ 初始化场景 ============
+function buildScene() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
 
-    this.el = this.createFishSVG();
-    document.getElementById('fishLayer').appendChild(this.el);
+  const title = document.createElement('h1');
+  title.textContent = '电子鱼缸 - 点击投喂';
+  app.appendChild(title);
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'tank-wrapper';
+
+  const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
+  svg.id = 'tank';
+
+  // 水背景
+  const waterGrad = svgEl('defs', {});
+  waterGrad.innerHTML = `
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4aa8c9" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#2d7a99" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#1a4d5e" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.12)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0.03)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffcc00"/>
+      <stop offset="30%" stop-color="#ffe566"/>
+      <stop offset="50%" stop-color="#ffaa00"/>
+      <stop offset="70%" stop-color="#ffcc00"/>
+      <stop offset="100%" stop-color="#ff9900"/>
+    </linearGradient>
+    <linearGradient id="goldGrad2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffaa00"/>
+      <stop offset="30%" stop-color="#ffdd44"/>
+      <stop offset="50%" stop-color="#ff9900"/>
+      <stop offset="70%" stop-color="#ffcc00"/>
+      <stop offset="100%" stop-color="#ff8800"/>
+    </linearGradient>
+    <linearGradient id="seaweedGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2ea84a"/>
+      <stop offset="100%" stop-color="#1a6030"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="tankClip">
+      <rect x="${TANK_MARGIN}" y="${TANK_MARGIN}" width="${W - TANK_MARGIN * 2}" height="${H - TANK_MARGIN * 2}" rx="12"/>
+    </clipPath>
+  `;
+
+  svg.appendChild(waterGrad);
+
+  // 背景矩形
+  svg.appendChild(svgEl('rect', {
+    x: 0, y: 0, width: W, height: H, rx: 12,
+    fill: '#0d1e2b'
+  }));
+
+  // 水体
+  svg.appendChild(svgEl('rect', {
+    x: TANK_MARGIN, y: TANK_MARGIN,
+    width: W - TANK_MARGIN * 2, height: H - TANK_MARGIN * 2,
+    rx: 12, fill: 'url(#waterGrad)',
+    'clip-path': 'url(#tankClip)'
+  }));
+
+  // 气泡层
+  const bubbleGroup = svgEl('g', { id: 'bubbles' });
+  svg.appendChild(bubbleGroup);
+
+  // 石头组
+  const stonesGroup = svgEl('g', { id: 'stones' });
+  svg.appendChild(stonesGroup);
+
+  // 水草组
+  const seaweedGroup = svgEl('g', { id: 'seaweed' });
+  svg.appendChild(seaweedGroup);
+
+  // 沙底
+  svg.appendChild(svgEl('ellipse', {
+    cx: W / 2, cy: H - TANK_MARGIN - 8,
+    rx: W / 2 - 35, ry: 18,
+    fill: '#b8925a', opacity: 0.6
+  }));
+  svg.appendChild(svgEl('ellipse', {
+    cx: W / 2, cy: H - TANK_MARGIN - 12,
+    rx: W / 2 - 50, ry: 14,
+    fill: '#d4b078', opacity: 0.4
+  }));
+
+  // 鱼群组
+  const fishGroup = svgEl('g', { id: 'fishes' });
+  svg.appendChild(fishGroup);
+
+  // 饲料组
+  const foodGroup = svgEl('g', { id: 'foods' });
+  svg.appendChild(foodGroup);
+
+  // 玻璃反光效果
+  svg.appendChild(svgEl('rect', {
+    x: TANK_MARGIN, y: TANK_MARGIN,
+    width: W - TANK_MARGIN * 2, height: H - TANK_MARGIN * 2,
+    rx: 12, fill: 'url(#glassGrad)',
+    'clip-path': 'url(#tankClip)',
+    'pointer-events': 'none'
+  }));
+
+  // 左侧玻璃高光
+  svg.appendChild(svgEl('path', {
+    d: `M ${TANK_MARGIN + 20} ${TANK_MARGIN + 10} Q ${TANK_MARGIN + 5} ${H / 2} ${TANK_MARGIN + 20} ${H - TANK_MARGIN - 30}`,
+    stroke: 'rgba(255,255,255,0.08)', 'stroke-width': 6, fill: 'none',
+    'clip-path': 'url(#tankClip)', 'pointer-events': 'none'
+  }));
+
+  // 顶部玻璃反光条
+  svg.appendChild(svgEl('rect', {
+    x: TANK_MARGIN + 10, y: TANK_MARGIN + 5,
+    width: W - TANK_MARGIN * 2 - 20, height: 4, rx: 2,
+    fill: 'rgba(255,255,255,0.06)',
+    'clip-path': 'url(#tankClip)', 'pointer-events': 'none'
+  }));
+
+  // 边框
+  svg.appendChild(svgEl('rect', {
+    x: TANK_MARGIN, y: TANK_MARGIN,
+    width: W - TANK_MARGIN * 2, height: H - TANK_MARGIN * 2,
+    rx: 12, fill: 'none', stroke: 'rgba(180,220,255,0.2)', 'stroke-width': 2
+  }));
+
+  wrapper.appendChild(svg);
+  app.appendChild(wrapper);
+
+  // 创建石头
+  createStones(stonesGroup);
+
+  // 创建水草
+  createSeaweed(seaweedGroup);
+
+  // 创建鱼
+  createFish(fishGroup, 1.0, 400, 220);  // 大鱼
+  createFish(fishGroup, 0.55, 250, 350); // 小鱼
+
+  // 创建气泡
+  createBubbles(bubbleGroup);
+
+  // 点击事件
+  svg.addEventListener('click', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    dropFood(x, y);
+  });
+}
+
+// ============ 石头 ============
+function createStones(group) {
+  const positions = [
+    { cx: 120, cy: H - TANK_MARGIN - 22, rx: 35, ry: 18, color: '#8b6914' },
+    { cx: 200, cy: H - TANK_MARGIN - 16, rx: 25, ry: 12, color: '#6b4f10' },
+    { cx: 680, cy: H - TANK_MARGIN - 20, rx: 38, ry: 16, color: '#7a5c12' },
+    { cx: 600, cy: H - TANK_MARGIN - 14, rx: 22, ry: 11, color: '#5c4410' },
+    { cx: 400, cy: H - TANK_MARGIN - 18, rx: 20, ry: 10, color: '#8b6914' },
+    { cx: 50, cy: H - TANK_MARGIN - 12, rx: 15, ry: 9, color: '#6b4f10' },
+  ];
+  positions.forEach(s => {
+    group.appendChild(svgEl('ellipse', {
+      cx: s.cx, cy: s.cy, rx: s.rx, ry: s.ry, fill: s.color, opacity: 0.8
+    }));
+    // 石头高光
+    group.appendChild(svgEl('ellipse', {
+      cx: s.cx - s.rx * 0.3, cy: s.cy - s.ry * 0.4,
+      rx: s.rx * 0.5, ry: s.ry * 0.3, fill: 'rgba(255,255,255,0.08)'
+    }));
+  });
+}
+
+// ============ 水草 ============
+function createSeaweed(group) {
+  const plants = [
+    { x: 90, height: 80, width: 14, color1: '#2ea84a', color2: '#1a6030' },
+    { x: 130, height: 110, width: 16, color1: '#3cb85c', color2: '#1d6a32' },
+    { x: 640, height: 95, width: 14, color1: '#2ea84a', color2: '#1a6030' },
+    { x: 690, height: 75, width: 12, color1: '#3cb85c', color2: '#1d6a32' },
+    { x: 350, height: 65, width: 10, color1: '#2ea84a', color2: '#1a6030' },
+  ];
+
+  // 先在SVG defs中创建所有渐变
+  const svgDefs = document.querySelector('#tank defs');
+  plants.forEach((p, i) => {
+    const grad = document.createElementNS(NS, 'linearGradient');
+    grad.setAttribute('id', `sw${i}`);
+    grad.setAttribute('x1', '0');
+    grad.setAttribute('y1', '0');
+    grad.setAttribute('x2', '0');
+    grad.setAttribute('y2', '1');
+    const stop1 = document.createElementNS(NS, 'stop');
+    stop1.setAttribute('offset', '0%');
+    stop1.setAttribute('stop-color', p.color1);
+    const stop2 = document.createElementNS(NS, 'stop');
+    stop2.setAttribute('offset', '100%');
+    stop2.setAttribute('stop-color', p.color2);
+    grad.appendChild(stop1);
+    grad.appendChild(stop2);
+    svgDefs.appendChild(grad);
+
+    const path = svgEl('path', {
+      fill: `url(#sw${i})`, opacity: 0.85
+    });
+    path.dataset.baseX = p.x;
+    path.dataset.height = p.height;
+    path.dataset.width = p.width;
+    path.dataset.phase = i * 0.7;
+    group.appendChild(path);
+    // Store reference for animation
+    if (!group._seaweeds) group._seaweeds = [];
+    group._seaweeds.push(path);
+  });
+}
+
+// ============ 气泡 ============
+function createBubbles(group) {
+  if (!group._bubbles) group._bubbles = [];
+  for (let i = 0; i < 12; i++) {
+    const b = svgEl('circle', {
+      cx: 50 + Math.random() * (W - 100),
+      cy: H - TANK_MARGIN - 30 - Math.random() * 150,
+      r: 1 + Math.random() * 2.5,
+      fill: 'rgba(200,240,255,0.25)',
+      stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 0.5
+    });
+    b.dataset.baseX = parseFloat(b.getAttribute('cx'));
+    b.dataset.baseY = parseFloat(b.getAttribute('cy'));
+    b.dataset.speed = 0.15 + Math.random() * 0.3;
+    b.dataset.phase = Math.random() * Math.PI * 2;
+    group.appendChild(b);
+    group._bubbles.push(b);
+  }
+}
+
+// ============ 鱼 ============
+function createFish(group, scale, x, y) {
+  const fishGroup = svgEl('g', {
+    transform: `translate(${x},${y}) scale(${scale})`,
+    'filter': 'url(#shadow)'
+  });
+
+  // 尾鳍 (独立动画元素)
+  const tailGroup = svgEl('g', { id: 'tail' });
+  tailGroup.innerHTML = `
+    <path d="M -40 0 C -55 -15 -70 -8 -75 0 C -70 8 -55 15 -40 0"
+      fill="url(#goldGrad)" opacity="0.9"/>
+    <path d="M -38 -2 C -50 -12 -62 -6 -65 0 C -62 6 -50 12 -38 -2"
+      fill="#ffdd66" opacity="0.3"/>
+  `;
+  fishGroup.appendChild(tailGroup);
+
+  // 身体
+  const body = svgEl('ellipse', {
+    cx: 0, cy: 0, rx: 45, ry: 22,
+    fill: 'url(#goldGrad)'
+  });
+  fishGroup.appendChild(body);
+
+  // 身体条纹
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M -15 -18 Q -10 -5 -5 -18', fill: 'none',
+    stroke: '#cc8800', 'stroke-width': 1.5, opacity: 0.4
+  }));
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M 5 -16 Q 10 -4 15 -16', fill: 'none',
+    stroke: '#cc8800', 'stroke-width': 1.5, opacity: 0.4
+  }));
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M -5 16 Q 0 5 5 16', fill: 'none',
+    stroke: '#cc8800', 'stroke-width': 1.5, opacity: 0.4
+  }));
+
+  // 腹鳍
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M -5 18 Q -15 35 -20 30 Q -10 20 -5 18',
+    fill: '#ffaa00', opacity: 0.8
+  }));
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M 5 18 Q 15 35 20 30 Q 10 20 5 18',
+    fill: '#ffaa00', opacity: 0.8
+  }));
+
+  // 背鳍
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M -20 -20 Q -10 -38 5 -42 Q 15 -38 20 -22 Q 10 -18 0 -20 Q -10 -18 -20 -20',
+    fill: 'url(#goldGrad2)', opacity: 0.9
+  }));
+
+  // 胸鳍
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M 10 2 Q 30 10 25 25 Q 15 12 10 5',
+    fill: 'url(#goldGrad2)', opacity: 0.8
+  }));
+
+  // 眼睛
+  fishGroup.appendChild(svgEl('circle', {
+    cx: 30, cy: -6, r: 7, fill: '#fff'
+  }));
+  fishGroup.appendChild(svgEl('circle', {
+    cx: 32, cy: -5, r: 4, fill: '#111'
+  }));
+  fishGroup.appendChild(svgEl('circle', {
+    cx: 33, cy: -6, r: 1.5, fill: '#fff'
+  }));
+
+  // 嘴
+  fishGroup.appendChild(svgEl('ellipse', {
+    cx: 44, cy: 3, rx: 3, ry: 2, fill: '#cc6600'
+  }));
+
+  // 鳃
+  fishGroup.appendChild(svgEl('path', {
+    d: 'M 12 -14 Q 18 -8 12 0', fill: 'none',
+    stroke: '#cc7700', 'stroke-width': 1.2, opacity: 0.5
+  }));
+
+  group.appendChild(fishGroup);
+
+  fishes.push({
+    el: fishGroup,
+    tail: tailGroup,
+    x: x, y: y,
+    scale: scale,
+    vx: (Math.random() - 0.5) * 1.5,
+    vy: (Math.random() - 0.5) * 0.8,
+    baseSpeed: 0.6 + Math.random() * 0.4,
+    targetX: x, targetY: y,
+    facingRight: true,
+    tailPhase: Math.random() * Math.PI * 2,
+    tailSpeed: 0.12 + Math.random() * 0.06,
+    wanderTimer: 0,
+    wanderInterval: 1500 + Math.random() * 2000,
+    boundLeft: TANK_MARGIN + 60,
+    boundRight: W - TANK_MARGIN - 60,
+    boundTop: TANK_MARGIN + 40,
+    boundBottom: H - TANK_MARGIN - 50,
+    eating: false
+  });
+}
+
+// ============ 投饲料 ============
+function dropFood(x, y) {
+  const count = 4 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const fx = x + (Math.random() - 0.5) * 40;
+    const fy = y + (Math.random() - 0.5) * 15;
+    const pellet = svgEl('ellipse', {
+      cx: fx, cy: fy, rx: 3.5, ry: 2.5,
+      fill: '#d4763a', stroke: '#b85a20', 'stroke-width': 0.5
+    });
+    pellet.dataset.x = fx;
+    pellet.dataset.y = fy;
+    pellet.dataset.vx = (Math.random() - 0.5) * 0.3;
+    pellet.dataset.vy = 0.25 + Math.random() * 0.35;
+    pellet.dataset.eaten = 'false';
+    document.getElementById('foods').appendChild(pellet);
+    foods.push({
+      el: pellet,
+      x: fx, y: fy,
+      vx: parseFloat(pellet.dataset.vx),
+      vy: parseFloat(pellet.dataset.vy),
+      eaten: false
+    });
+  }
+}
+
+// ============ 动画循环 ============
+function animate(time) {
+  if (!lastTime) lastTime = time;
+  const dt = Math.min((time - lastTime) / 16.67, 3); // 归一化帧时间
+  lastTime = time;
+
+  const t = time * 0.001;
+
+  // 更新水草
+  const seaweedGroup = document.getElementById('seaweed');
+  if (seaweedGroup && seaweedGroup._seaweeds) {
+    seaweedGroup._seaweeds.forEach(sw => {
+      const bx = parseFloat(sw.dataset.baseX);
+      const h = parseFloat(sw.dataset.height);
+      const w = parseFloat(sw.dataset.width);
+      const phase = parseFloat(sw.dataset.phase);
+      const sway = Math.sin(t * 1.5 + phase) * 8;
+      sw.setAttribute('d',
+        `M ${bx} ${H - TANK_MARGIN - 5} ` +
+        `Q ${bx + sway} ${H - TANK_MARGIN - h * 0.4} ${bx + sway * 1.5} ${H - TANK_MARGIN - h} ` +
+        `Q ${bx + w + sway * 0.5} ${H - TANK_MARGIN - h * 0.4} ${bx + w} ${H - TANK_MARGIN - 5} Z`
+      );
+    });
   }
 
-  createFishSVG() {
-    const s = this.scale;
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.id = 'fish-' + this.id;
-    g.style.transformOrigin = 'center center';
+  // 更新气泡
+  const bubbleGroup = document.getElementById('bubbles');
+  if (bubbleGroup && bubbleGroup._bubbles) {
+    bubbleGroup._bubbles.forEach(b => {
+      let cy = parseFloat(b.getAttribute('cy'));
+      let cx = parseFloat(b.getAttribute('cx'));
+      const baseX = parseFloat(b.dataset.baseX);
+      const speed = parseFloat(b.dataset.speed);
+      const phase = parseFloat(b.dataset.phase);
 
-    // --- Tail fin (swings) ---
-    this.tailGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    this.tailGroup.id = 'tail-' + this.id;
+      cy -= speed * dt;
+      cx = baseX + Math.sin(t * 2 + phase) * 5;
 
-    // Upper tail lobe
-    const upperTail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    upperTail.setAttribute('d',
-      `M ${-s*35} ${0} ` +
-      `Q ${-s*70} ${-s*22} ${-s*55} ${-s*45} ` +
-      `Q ${-s*40} ${-s*30} ${-s*25} ${-s*15} ` +
-      `Q ${-s*18} ${-s*8} ${-s*35} ${0} Z`
-    );
-    upperTail.setAttribute('fill', 'url(#tailFinGrad)');
-    upperTail.setAttribute('opacity', '0.9');
+      if (cy < TANK_MARGIN + 20) {
+        cy = H - TANK_MARGIN - 30 - Math.random() * 150;
+        cx = baseX;
+      }
 
-    // Lower tail lobe
-    const lowerTail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    lowerTail.setAttribute('d',
-      `M ${-s*35} ${0} ` +
-      `Q ${-s*70} ${s*22} ${-s*55} ${s*45} ` +
-      `Q ${-s*40} ${s*30} ${-s*25} ${s*15} ` +
-      `Q ${-s*18} ${s*8} ${-s*35} ${0} Z`
-    );
-    lowerTail.setAttribute('fill', 'url(#tailFinGrad)');
-    lowerTail.setAttribute('opacity', '0.9');
-
-    // Tail center stripe
-    const tailStripe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    tailStripe.setAttribute('d',
-      `M ${-s*35} ${0} L ${-s*55} ${-s*5} L ${-s*52} ${0} L ${-s*55} ${s*5} Z`
-    );
-    tailStripe.setAttribute('fill', '#CC5500');
-    tailStripe.setAttribute('opacity', '0.7');
-
-    this.tailGroup.appendChild(upperTail);
-    this.tailGroup.appendChild(lowerTail);
-    this.tailGroup.appendChild(tailStripe);
-
-    // --- Body ---
-    const body = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    body.setAttribute('d',
-      `M ${-s*35} ${0} ` +
-      `Q ${-s*15} ${-s*18} ${s*15} ${-s*18} ` +
-      `Q ${s*45} ${-s*14} ${s*55} ${0} ` +
-      `Q ${s*45} ${s*14} ${s*15} ${s*18} ` +
-      `Q ${-s*15} ${s*18} ${-s*35} ${0} Z`
-    );
-    body.setAttribute('fill', 'url(#fishBodyGrad)');
-
-    // Belly highlight
-    const belly = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    belly.setAttribute('d',
-      `M ${-s*25} ${s*2} ` +
-      `Q ${-s*10} ${s*12} ${s*10} ${s*12} ` +
-      `Q ${s*35} ${s*8} ${s*45} ${s*2} ` +
-      `Q ${s*35} ${-s*2} ${s*10} ${-s*2} ` +
-      `Q ${-s*10} ${-s*2} ${-s*25} ${s*2} Z`
-    );
-    belly.setAttribute('fill', 'url(#fishBellyGrad)');
-    belly.setAttribute('opacity', '0.6');
-
-    // Body stripe
-    const stripe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    stripe.setAttribute('d',
-      `M ${-s*5} ${-s*5} Q ${s*10} ${-s*8} ${s*25} ${-s*3} Q ${s*15} ${s*3} ${s*5} ${s*6} Q ${-s*8} ${s*4} ${-s*5} ${-s*5} Z`
-    );
-    stripe.setAttribute('fill', '#CC5500');
-    stripe.setAttribute('opacity', '0.5');
-
-    // --- Dorsal fin ---
-    const dorsalFin = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    dorsalFin.setAttribute('d',
-      `M ${s*5} ${-s*18} ` +
-      `Q ${s*15} ${-s*38} ${s*30} ${-s*30} ` +
-      `Q ${s*22} ${-s*20} ${s*12} ${-s*16} Z`
-    );
-    dorsalFin.setAttribute('fill', '#E8A000');
-    dorsalFin.setAttribute('opacity', '0.85');
-
-    // --- Pectoral fin ---
-    const pectoralFin = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pectoralFin.setAttribute('d',
-      `M ${s*8} ${s*6} ` +
-      `Q ${s*18} ${s*22} ${s*25} ${s*12} ` +
-      `Q ${s*18} ${s*8} ${s*8} ${s*6} Z`
-    );
-    pectoralFin.setAttribute('fill', '#E8A000');
-    pectoralFin.setAttribute('opacity', '0.7');
-
-    // --- Pelvic fin ---
-    const pelvicFin = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pelvicFin.setAttribute('d',
-      `M ${s*2} ${s*15} Q ${s*8} ${s*28} ${s*14} ${s*18} Q ${s*8} ${s*14} ${s*2} ${s*15} Z`
-    );
-    pelvicFin.setAttribute('fill', '#D49400');
-    pelvicFin.setAttribute('opacity', '0.7');
-
-    // --- Anal fin ---
-    const analFin = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    analFin.setAttribute('d',
-      `M ${-s*10} ${s*16} Q ${-s*18} ${s*28} ${-s*5} ${s*18} Q ${0} ${s*15} ${-s*10} ${s*16} Z`
-    );
-    analFin.setAttribute('fill', '#D49400');
-    analFin.setAttribute('opacity', '0.7');
-
-    // --- Eye ---
-    const eyeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const eyeWhite = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eyeWhite.setAttribute('cx', s * 38);
-    eyeWhite.setAttribute('cy', -s * 5);
-    eyeWhite.setAttribute('r', s * 6);
-    eyeWhite.setAttribute('fill', '#FFFFFF');
-    const eyePupil = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eyePupil.setAttribute('cx', s * 40);
-    eyePupil.setAttribute('cy', -s * 5);
-    eyePupil.setAttribute('r', s * 3);
-    eyePupil.setAttribute('fill', '#1a1a2e');
-    const eyeHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eyeHighlight.setAttribute('cx', s * 41);
-    eyeHighlight.setAttribute('cy', -s * 7);
-    eyeHighlight.setAttribute('r', s * 1.5);
-    eyeHighlight.setAttribute('fill', '#FFFFFF');
-    eyeGroup.appendChild(eyeWhite);
-    eyeGroup.appendChild(eyePupil);
-    eyeGroup.appendChild(eyeHighlight);
-
-    // --- Mouth ---
-    const mouth = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    mouth.setAttribute('cx', s * 55);
-    mouth.setAttribute('cy', s * 2);
-    mouth.setAttribute('rx', s * 2);
-    mouth.setAttribute('ry', s * 1.5);
-    mouth.setAttribute('fill', '#CC6600');
-
-    // --- Barbels (whiskers) ---
-    const barbels = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const b1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    b1.setAttribute('d', `M ${s*52} ${s*3} Q ${s*65} ${s*12} ${s*58} ${s*15}`);
-    b1.setAttribute('stroke', '#CC6600');
-    b1.setAttribute('stroke-width', s * 1);
-    b1.setAttribute('fill', 'none');
-    b1.setAttribute('opacity', '0.7');
-    const b2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    b2.setAttribute('d', `M ${s*52} ${s*4} Q ${s*62} ${s*18} ${s*54} ${s*20}`);
-    b2.setAttribute('stroke', '#CC6600');
-    b2.setAttribute('stroke-width', s * 0.8);
-    b2.setAttribute('fill', 'none');
-    b2.setAttribute('opacity', '0.6');
-    barbels.appendChild(b1);
-    barbels.appendChild(b2);
-
-    // --- Scales pattern ---
-    const scales = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    scales.setAttribute('opacity', '0.15');
-    for (let i = 0; i < 4; i++) {
-      const sx = -s * 20 + i * s * 12;
-      const scale = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-      scale.setAttribute('cx', sx);
-      scale.setAttribute('cy', -s * 4);
-      scale.setAttribute('rx', s * 5);
-      scale.setAttribute('ry', s * 8);
-      scale.setAttribute('fill', 'none');
-      scale.setAttribute('stroke', '#FFF8DC');
-      scale.setAttribute('stroke-width', s * 0.5);
-      scales.appendChild(scale);
-    }
-
-    // Assemble
-    g.appendChild(this.tailGroup);
-    g.appendChild(body);
-    g.appendChild(belly);
-    g.appendChild(scales);
-    g.appendChild(stripe);
-    g.appendChild(dorsalFin);
-    g.appendChild(analFin);
-    g.appendChild(pectoralFin);
-    g.appendChild(pelvicFin);
-    g.appendChild(eyeGroup);
-    g.appendChild(mouth);
-    g.appendChild(barbels);
-
-    return g;
+      b.setAttribute('cy', cy);
+      b.setAttribute('cx', cx);
+    });
   }
 
-  update(dt) {
-    this.tailPhase += dt * 8;
-
-    // Check if chasing a food target
-    if (this.state === 'chasing') {
-      const dx = this.targetX - this.x;
-      const dy = this.targetY - this.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < EAT_DISTANCE) {
-        // Eat the food
-        this.state = 'eating';
-        this.eatTimer = 0;
-        this.eatFood();
-      } else {
-        // Chase
-        const speed = this.chaseSpeed;
-        this.vx = (dx / dist) * speed;
-        this.vy = (dy / dist) * speed;
-      }
-    } else if (this.state === 'eating') {
-      this.eatTimer += dt;
-      this.vx *= 0.85;
-      this.vy *= 0.85;
-      if (this.eatTimer > 0.8) {
-        this.state = 'idle';
-        this.targetX = null;
-        this.targetY = null;
-      }
-    } else {
-      // Idle wandering
-      this.wanderTimer += dt;
-      if (this.wanderTimer > 3 + Math.random() * 4) {
-        this.wanderTimer = 0;
-        this.wanderTarget = {
-          x: BOUND_L + Math.random() * (BOUND_R - BOUND_L),
-          y: BOUND_T + Math.random() * (BOUND_B - BOUND_T)
-        };
-      }
-
-      const dx = this.wanderTarget.x - this.x;
-      const dy = this.wanderTarget.y - this.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist > 5) {
-        const speed = this.baseSpeed;
-        this.vx += (dx / dist) * speed * 0.03;
-        this.vy += (dy / dist) * speed * 0.03;
-      }
-
-      // Gentle random movement
-      this.vx += (Math.random() - 0.5) * 0.08;
-      this.vy += (Math.random() - 0.5) * 0.05;
-
-      // Speed limit
-      const maxSpeed = this.baseSpeed * 1.2;
-      const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-      if (currentSpeed > maxSpeed) {
-        this.vx = (this.vx / currentSpeed) * maxSpeed;
-        this.vy = (this.vy / currentSpeed) * maxSpeed;
-      }
-
-      // Damping
-      this.vx *= 0.995;
-      this.vy *= 0.995;
+  // 更新饲料
+  foods = foods.filter(f => {
+    if (f.eaten) return false;
+    f.y += f.vy * dt;
+    f.x += f.vx * dt;
+    f.vx *= 0.995;
+    f.el.setAttribute('cy', f.y);
+    f.el.setAttribute('cx', f.x);
+    if (f.y > H - TANK_MARGIN - 25) {
+      f.el.remove();
+      return false;
     }
+    return true;
+  });
 
-    // Update position
-    this.x += this.vx;
-    this.y += this.vy;
-
-    // Boundary bounce
-    const margin = 40 * this.scale;
-    if (this.x < BOUND_L + margin) { this.x = BOUND_L + margin; this.vx = Math.abs(this.vx) * 0.6; }
-    if (this.x > BOUND_R - margin) { this.x = BOUND_R - margin; this.vx = -Math.abs(this.vx) * 0.6; }
-    if (this.y < BOUND_T + margin) { this.y = BOUND_T + margin; this.vy = Math.abs(this.vy) * 0.6; }
-    if (this.y > BOUND_B - margin) { this.y = BOUND_B - margin; this.vy = -Math.abs(this.vy) * 0.6; }
-
-    // Update facing direction
-    if (Math.abs(this.vx) > 0.1) {
-      this.facing = this.vx > 0 ? 1 : -1;
-    }
-
-    // Apply transforms
-    const tailSwing = Math.sin(this.tailPhase) * 15;
-    this.tailGroup.style.transform = `rotate(${tailSwing}deg)`;
-    this.el.style.transform = `translate(${this.x}px, ${this.y}px) scaleX(${this.facing})`;
-  }
-
-  eatFood() {
-    // Find and remove nearest food
-    let nearestIdx = -1;
+  // 更新鱼
+  fishes.forEach(fish => {
+    // 寻找最近的饲料
+    let nearestFood = null;
     let nearestDist = Infinity;
-    for (let i = 0; i < foods.length; i++) {
-      const dx = foods[i].x - this.x;
-      const dy = foods[i].y - this.y;
+    foods.forEach(fd => {
+      if (fd.eaten) return;
+      const dx = fd.x - fish.x;
+      const dy = fd.y - fish.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < nearestDist) {
         nearestDist = dist;
-        nearestIdx = i;
+        nearestFood = fd;
+      }
+    });
+
+    if (nearestFood && nearestDist < 350) {
+      // 朝饲料游动
+      fish.eating = true;
+      const dx = nearestFood.x - fish.x;
+      const dy = nearestFood.y - fish.y;
+      const angle = Math.atan2(dy, dx);
+      const speed = fish.baseSpeed * 2.2 * dt;
+      fish.vx = Math.cos(angle) * speed;
+      fish.vy = Math.sin(angle) * speed;
+      fish.targetX = nearestFood.x;
+      fish.targetY = nearestFood.y;
+
+      // 吃饲料
+      if (nearestDist < 18 * fish.scale) {
+        nearestFood.eaten = true;
+        nearestFood.el.style.transition = 'opacity 0.2s';
+        nearestFood.el.style.opacity = '0';
+        setTimeout(() => { if (nearestFood.el.parentNode) nearestFood.el.remove(); }, 200);
+        fish.eating = false;
+      }
+    } else {
+      fish.eating = false;
+      fish.wanderTimer += 16.67 * dt;
+      if (fish.wanderTimer > fish.wanderInterval) {
+        fish.wanderTimer = 0;
+        fish.wanderInterval = 1500 + Math.random() * 2000;
+        const angle = Math.random() * Math.PI * 2;
+        fish.targetX = fish.x + Math.cos(angle) * (100 + Math.random() * 150);
+        fish.targetY = fish.y + Math.sin(angle) * (60 + Math.random() * 100);
+        // 保持在边界内
+        fish.targetX = Math.max(fish.boundLeft, Math.min(fish.boundRight, fish.targetX));
+        fish.targetY = Math.max(fish.boundTop, Math.min(fish.boundBottom, fish.targetY));
+      }
+
+      const dx = fish.targetX - fish.x;
+      const dy = fish.targetY - fish.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 3) {
+        const speed = fish.baseSpeed * dt;
+        fish.vx = (dx / dist) * speed;
+        fish.vy = (dy / dist) * speed;
+      } else {
+        fish.vx *= 0.95;
+        fish.vy *= 0.95;
       }
     }
-    if (nearestIdx >= 0) {
-      const food = foods[nearestIdx];
-      if (food.el && food.el.parentNode) {
-        food.el.parentNode.removeChild(food.el);
-      }
-      foods.splice(nearestIdx, 1);
-    }
-  }
 
-  chaseFood(x, y) {
-    if (this.state !== 'eating') {
-      this.state = 'chasing';
-      this.targetX = x;
-      this.targetY = y;
-    }
-  }
-}
+    // 移动
+    fish.x += fish.vx;
+    fish.y += fish.vy;
 
-// ==================== FOOD CLASS ====================
-class Food {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.vy = FOOD_SINK_SPEED + Math.random() * 0.3;
-    this.drift = (Math.random() - 0.5) * 0.3;
-    this.eaten = false;
+    // 边界碰撞
+    if (fish.x < fish.boundLeft) { fish.x = fish.boundLeft; fish.vx *= -0.5; fish.targetX = fish.boundRight - 50; }
+    if (fish.x > fish.boundRight) { fish.x = fish.boundRight; fish.vx *= -0.5; fish.targetX = fish.boundLeft + 50; }
+    if (fish.y < fish.boundTop) { fish.y = fish.boundTop; fish.vy *= -0.5; fish.targetY = fish.boundBottom - 50; }
+    if (fish.y > fish.boundBottom) { fish.y = fish.boundBottom; fish.vy *= -0.5; fish.targetY = fish.boundTop + 50; }
 
-    this.el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    this.el.setAttribute('rx', 3.5);
-    this.el.setAttribute('ry', 2.5);
-    this.el.setAttribute('fill', 'url(#foodGrad)');
-    this.el.setAttribute('opacity', '0.9');
-
-    // Add glow
-    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    glow.setAttribute('rx', 5);
-    glow.setAttribute('ry', 3.5);
-    glow.setAttribute('fill', 'rgba(255, 220, 100, 0.2)');
-    glow.setAttribute('filter', 'blur(1px)');
-
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.appendChild(glow);
-    g.appendChild(this.el);
-    g.id = 'food-' + Math.random().toString(36).substr(2, 9);
-
-    document.getElementById('foodLayer').appendChild(g);
-    this.container = g;
-  }
-
-  update(dt) {
-    this.y += this.vy;
-    this.x += this.drift;
-    this.drift += (Math.random() - 0.5) * 0.1;
-    this.drift = Math.max(-0.5, Math.min(0.5, this.drift));
-
-    this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-    // Stop at bottom sand
-    if (this.y > 475) {
-      this.y = 475;
-      this.vy = 0;
+    // 朝向
+    const shouldFaceRight = fish.vx > 0.01;
+    if (shouldFaceRight !== fish.facingRight) {
+      fish.facingRight = shouldFaceRight;
+      const currentScale = fish.scale * (fish.facingRight ? 1 : -1);
+      fish.el.setAttribute('transform',
+        `translate(${fish.x},${fish.y}) scale(${fish.scale * (fish.facingRight ? 1 : -1)},${fish.scale})`);
+    } else {
+      fish.el.setAttribute('transform',
+        `translate(${fish.x},${fish.y}) scale(${fish.scale * (fish.facingRight ? 1 : -1)},${fish.scale})`);
     }
 
-    return this.y < 475;
-  }
-
-  remove() {
-    if (this.container && this.container.parentNode) {
-      this.container.parentNode.removeChild(this.container);
-    }
-  }
-}
-
-// ==================== BUBBLE SYSTEM ====================
-const bubbles = [];
-let bubbleTimer = 0;
-
-function spawnBubble() {
-  const x = 50 + Math.random() * (TANK_W - 100);
-  const r = 1.5 + Math.random() * 4;
-  const bubble = {
-    x, y: 480 + Math.random() * 20, r,
-    vx: (Math.random() - 0.5) * 0.3,
-    vy: -(0.5 + Math.random() * 1.5),
-    wobble: Math.random() * Math.PI * 2
-  };
-
-  const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  el.setAttribute('cx', 0);
-  el.setAttribute('cy', 0);
-  el.setAttribute('r', bubble.r);
-  el.setAttribute('fill', 'rgba(180, 220, 255, 0.25)');
-  el.setAttribute('stroke', 'rgba(200, 235, 255, 0.4)');
-  el.setAttribute('stroke-width', '0.5');
-  el.style.transform = `translate(${bubble.x}px, ${bubble.y}px)`;
-
-  document.getElementById('bubbles').appendChild(el);
-  bubble.el = el;
-  bubbles.push(bubble);
-}
-
-function updateBubbles(dt) {
-  for (let i = bubbles.length - 1; i >= 0; i--) {
-    const b = bubbles[i];
-    b.wobble += dt * 3;
-    b.x += b.vx + Math.sin(b.wobble) * 0.3;
-    b.y += b.vy;
-    b.el.style.transform = `translate(${b.x}px, ${b.y}px)`;
-
-    if (b.y < 30) {
-      if (b.el.parentNode) b.el.parentNode.removeChild(b.el);
-      bubbles.splice(i, 1);
-    }
-  }
-
-  bubbleTimer += dt;
-  if (bubbleTimer > 0.8 + Math.random() * 1.5) {
-    bubbleTimer = 0;
-    if (Math.random() > 0.3) spawnBubble();
-  }
-}
-
-// ==================== SEAWEED ANIMATION ====================
-let weedTime = 0;
-function animateSeaweed(dt) {
-  weedTime += dt;
-  const weeds = document.querySelectorAll('[id^="weed"]');
-  weeds.forEach((weed, i) => {
-    const phase = weedTime * 1.5 + i * 0.7;
-    const sway = Math.sin(phase) * 3;
-    weed.style.transform = `rotate(${sway}deg)`;
-    weed.style.transformOrigin = 'bottom center';
-  });
-}
-
-// ==================== FOOD DROP ====================
-function dropFood(clickX, clickY) {
-  // Drop FOOD_COUNT pellets spread around click point
-  for (let i = 0; i < FOOD_COUNT; i++) {
-    const offsetX = (Math.random() - 0.5) * 40;
-    const offsetY = (Math.random() - 0.5) * 20;
-    const food = new Food(clickX + offsetX, Math.max(30, clickY + offsetY));
-    foods.push(food);
-  }
-
-  // Tell fish to chase
-  fishes.forEach(fish => {
-    if (fish.state !== 'eating') {
-      // Each fish targets a different food
-      const foodIdx = fishes.indexOf(fish) % Math.min(foods.length, 2);
-      if (foods[foodIdx]) {
-        fish.chaseFood(foods[foodIdx].x, foods[foodIdx].y);
-      }
-    }
-  });
-}
-
-// ==================== MAIN LOOP ====================
-let lastTime = 0;
-
-function gameLoop(timestamp) {
-  if (!lastTime) lastTime = timestamp;
-  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
-  lastTime = timestamp;
-
-  // Update fish
-  fishes.forEach(fish => fish.update(dt));
-
-  // Update food
-  for (let i = foods.length - 1; i >= 0; i--) {
-    if (!foods[i].update(dt)) {
-      foods[i].remove();
-      foods.splice(i, 1);
-    }
-  }
-
-  // If fish is chasing but its target food was eaten by another fish, re-target
-  fishes.forEach(fish => {
-    if (fish.state === 'chasing') {
-      let hasTarget = false;
-      for (const food of foods) {
-        const dx = food.x - fish.targetX;
-        const dy = food.y - fish.targetY;
-        if (Math.sqrt(dx*dx + dy*dy) < 20) {
-          hasTarget = true;
-          break;
-        }
-      }
-      if (!hasTarget && foods.length > 0) {
-        // Find nearest remaining food
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (const food of foods) {
-          const dx = food.x - fish.x;
-          const dy = food.y - fish.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < nearestDist) {
-            nearestDist = dist;
-            nearest = food;
-          }
-        }
-        if (nearest) {
-          fish.targetX = nearest.x;
-          fish.targetY = nearest.y;
-        }
-      }
-      if (foods.length === 0) {
-        fish.state = 'idle';
-        fish.targetX = null;
-        fish.targetY = null;
-      }
-    }
+    // 尾鳍摇摆
+    fish.tailPhase += fish.tailSpeed * dt;
+    const tailAngle = Math.sin(fish.tailPhase) * 18;
+    const waggleSpeed = fish.eating ? 1.8 : 1;
+    fish.tail.setAttribute('transform', `rotate(${tailAngle * waggleSpeed})`);
   });
 
-  // Update bubbles and seaweed
-  updateBubbles(dt);
-  animateSeaweed(dt);
-
-  animationId = requestAnimationFrame(gameLoop);
+  requestAnimationFrame(animate);
 }
 
-// ==================== INIT ====================
-function init() {
-  // Create two koi fish
-  const bigFish = new Fish('big', 300, 200, 'large', 1.6);
-  const smallFish = new Fish('small', 450, 300, 'small', 1.0);
-  fishes.push(bigFish, smallFish);
-
-  // Click handler
-  document.getElementById('tank').addEventListener('click', function(e) {
-    const rect = this.getBoundingClientRect();
-    const scaleX = 720 / rect.width;
-    const scaleY = 520 / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
-
-    // Only drop food if inside the water area
-    if (clickX > 20 && clickX < 700 && clickY > 20 && clickY < 480) {
-      dropFood(clickX, clickY);
-    }
-  });
-
-  // Start animation loop
-  lastTime = 0;
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-init();
+// ============ 启动 ============
+buildScene();
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>
