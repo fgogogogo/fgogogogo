@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狂欢大促 · 限时秒杀</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #1a0000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ========== 动态背景 ========== */
+        .bg-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .particle {
+            position: absolute; width: 4px; height: 4px;
+            background: gold; border-radius: 50%; opacity: 0;
+            animation: floatUp 4s infinite ease-out;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translateY(-20vh) scale(1.5); opacity: 0; }
+        }
+
+        /* ========== 通用容器 ========== */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; position: relative; z-index: 1; }
+        .section { padding: 48px 0; }
+        .section-title {
+            text-align: center; font-size: 2rem; font-weight: 900;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FFD700);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 8px; letter-spacing: 4px;
+        }
+        .section-subtitle {
+            text-align: center; color: #ffccaa; font-size: 0.95rem;
+            margin-bottom: 32px; letter-spacing: 2px;
+        }
+        .divider {
+            width: 80px; height: 4px; background: linear-gradient(90deg, #FFD700, #FF4500, #FFD700);
+            margin: 0 auto 32px; border-radius: 2px;
+        }
+
+        /* ========== 头部 Hero ========== */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; position: relative; padding: 40px 16px;
+            background: radial-gradient(ellipse at center, #4a0000 0%, #1a0000 70%);
+        }
+        .hero::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-block; padding: 6px 24px;
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            border-radius: 30px; font-size: 0.85rem; font-weight: 700;
+            letter-spacing: 3px; margin-bottom: 20px;
+            animation: pulse 2s infinite; border: 1px solid rgba(255,215,0,0.4);
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,69,0,0.5); }
+            50% { box-shadow: 0 0 30px rgba(255,69,0,0.9), 0 0 60px rgba(255,215,0,0.3); }
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 7vw, 4.5rem); font-weight: 900;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 30%, #FF6347 60%, #FFD700 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% 200%; animation: shimmer 3s ease infinite;
+            line-height: 1.2; margin-bottom: 12px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .hero-desc {
+            font-size: clamp(1rem, 2.5vw, 1.4rem); color: #ffccaa;
+            margin-bottom: 36px; letter-spacing: 2px;
+        }
+
+        /* ========== 倒计时 ========== */
+        .countdown-wrap {
+            background: linear-gradient(135deg, rgba(255,69,0,0.15), rgba(255,215,0,0.08));
+            border: 2px solid rgba(255,215,0,0.3); border-radius: 16px;
+            padding: 28px 40px; display: inline-block;
+            backdrop-filter: blur(10px);
+        }
+        .countdown-label {
+            font-size: 0.9rem; color: #FFD700; letter-spacing: 4px;
+            margin-bottom: 12px; font-weight: 700;
+        }
+        .countdown {
+            display: flex; gap: 12px; justify-content: center;
+        }
+        .cd-item {
+            background: linear-gradient(180deg, #2a0000, #1a0000);
+            border: 2px solid #FFD700; border-radius: 12px;
+            min-width: 64px; padding: 12px 8px; text-align: center;
+        }
+        .cd-num {
+            font-size: 2rem; font-weight: 900; color: #FFD700;
+            line-height: 1; font-variant-numeric: tabular-nums;
+        }
+        .cd-unit { font-size: 0.7rem; color: #ff9966; margin-top: 4px; }
+        .cd-sep { font-size: 2rem; color: #FFD700; line-height: 1; align-self: center; font-weight: 900; }
+
+        /* ========== 规则区 ========== */
+        .rules-section { background: linear-gradient(180deg, transparent, rgba(139,0,0,0.1), transparent); }
+        .rules-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px; max-width: 900px; margin: 0 auto;
+        }
+        .rule-card {
+            background: linear-gradient(135deg, rgba(255,69,0,0.08), rgba(255,215,0,0.04));
+            border: 1px solid rgba(255,215,0,0.15); border-radius: 14px;
+            padding: 24px; text-align: center; transition: transform 0.3s, border-color 0.3s;
+        }
+        .rule-card:hover { transform: translateY(-4px); border-color: rgba(255,215,0,0.4); }
+        .rule-icon {
+            width: 48px; height: 48px; margin: 0 auto 12px;
+            background: linear-gradient(135deg, #FF4500, #FFD700);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 900;
+        }
+        .rule-card h3 { font-size: 1.05rem; color: #FFD700; margin-bottom: 8px; }
+        .rule-card p { font-size: 0.85rem; color: #cc9988; line-height: 1.6; }
+
+        /* ========== 秒杀产品 ========== */
+        .flash-section { background: radial-gradient(ellipse at 50% 0%, rgba(139,0,0,0.2), transparent 60%); }
+        .product-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: linear-gradient(145deg, rgba(40,0,0,0.9), rgba(20,0,0,0.95));
+            border: 1px solid rgba(255,215,0,0.2); border-radius: 16px;
+            overflow: hidden; transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-6px); box-shadow: 0 12px 40px rgba(255,69,0,0.3);
+        }
+        .product-tag {
+            position: absolute; top: 12px; left: 12px;
+            background: linear-gradient(135deg, #FF0000, #FF4500);
+            padding: 4px 12px; border-radius: 6px; font-size: 0.75rem;
+            font-weight: 700; z-index: 2; letter-spacing: 1px;
+        }
+        .product-img {
+            width: 100%; height: 200px; background: linear-gradient(135deg, #2a0a0a, #1a0505);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; position: relative; overflow: hidden;
+        }
+        .product-img::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 40px; background: linear-gradient(transparent, rgba(20,0,0,0.8));
+        }
+        .product-info { padding: 16px; }
+        .product-name {
+            font-size: 1rem; font-weight: 700; margin-bottom: 6px;
+            color: #fff; line-height: 1.4;
+        }
+        .product-desc { font-size: 0.8rem; color: #aa8877; margin-bottom: 12px; line-height: 1.4; }
+        .product-price-row {
+            display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;
+        }
+        .product-price {
+            font-size: 1.5rem; font-weight: 900; color: #FF4500;
+        }
+        .product-price::before { content: '¥'; font-size: 0.9rem; }
+        .product-original {
+            font-size: 0.85rem; color: #776655; text-decoration: line-through;
+        }
+        .product-progress {
+            background: rgba(255,255,255,0.1); border-radius: 8px;
+            height: 8px; overflow: hidden; margin-bottom: 14px;
+        }
+        .product-progress-bar {
+            height: 100%; background: linear-gradient(90deg, #FF4500, #FFD700);
+            border-radius: 8px; transition: width 0.5s;
+        }
+        .product-progress-text {
+            font-size: 0.72rem; color: #ff9966; margin-bottom: 12px;
+        }
+        .buy-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            color: #fff; font-size: 0.95rem; font-weight: 800;
+            cursor: pointer; letter-spacing: 2px; transition: all 0.3s;
+        }
+        .buy-btn:hover {
+            background: linear-gradient(135deg, #FF6347, #FF4500);
+            box-shadow: 0 4px 20px rgba(255,69,0,0.5);
+        }
+
+        /* ========== 分区活动 ========== */
+        .zone-section { background: linear-gradient(180deg, transparent, rgba(139,0,0,0.08), transparent); }
+        .zone-tabs {
+            display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        .zone-tab {
+            padding: 10px 28px; border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 30px; background: transparent; color: #FFD700;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; letter-spacing: 2px;
+        }
+        .zone-tab.active, .zone-tab:hover {
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            border-color: #FF4500; color: #fff;
+        }
+        .zone-content { display: none; }
+        .zone-content.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .zone-card {
+            background: linear-gradient(135deg, rgba(255,69,0,0.1), rgba(255,215,0,0.05));
+            border: 1px solid rgba(255,215,0,0.2); border-radius: 20px;
+            padding: 36px; text-align: center;
+        }
+        .zone-card h3 {
+            font-size: 1.4rem; color: #FFD700; margin-bottom: 8px;
+        }
+        .zone-card .zone-off {
+            font-size: 2.5rem; font-weight: 900; color: #FF4500;
+            margin: 12px 0;
+        }
+        .zone-card p { color: #cc9988; font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px; }
+        .zone-card .zone-btn {
+            display: inline-block; padding: 12px 40px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #1a0000; border-radius: 30px; font-weight: 800;
+            font-size: 1rem; cursor: pointer; letter-spacing: 2px;
+            transition: all 0.3s; text-decoration: none;
+        }
+        .zone-card .zone-btn:hover {
+            transform: scale(1.05); box-shadow: 0 6px 30px rgba(255,215,0,0.4);
+        }
+
+        /* ========== 优惠券 ========== */
+        .coupon-section { background: radial-gradient(ellipse at 50% 100%, rgba(139,0,0,0.2), transparent 60%); }
+        .coupon-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px; max-width: 900px; margin: 0 auto;
+        }
+        .coupon-card {
+            display: flex; align-items: stretch;
+            background: linear-gradient(135deg, #2a0808, #1a0404);
+            border: 2px solid rgba(255,215,0,0.25); border-radius: 16px;
+            overflow: hidden; transition: transform 0.3s; position: relative;
+        }
+        .coupon-card:hover { transform: translateY(-4px); border-color: rgba(255,215,0,0.5); }
+        .coupon-left {
+            width: 110px; min-width: 110px;
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 16px 8px; position: relative;
+        }
+        .coupon-left::after {
+            content: ''; position: absolute; right: -8px; top: 50%;
+            transform: translateY(-50%);
+            width: 16px; height: 16px; background: #1a0404;
+            border-radius: 50%; box-shadow: inset 2px 0 4px rgba(0,0,0,0.3);
+        }
+        .coupon-amount { font-size: 1.8rem; font-weight: 900; color: #fff; line-height: 1; }
+        .coupon-amount::before { content: '¥'; font-size: 0.9rem; }
+        .coupon-condition { font-size: 0.7rem; color: rgba(255,255,255,0.8); margin-top: 4px; }
+        .coupon-right {
+            flex: 1; padding: 16px 20px; display: flex;
+            flex-direction: column; justify-content: center;
+        }
+        .coupon-name { font-size: 0.95rem; font-weight: 700; color: #FFD700; margin-bottom: 4px; }
+        .coupon-scope { font-size: 0.78rem; color: #aa8877; margin-bottom: 10px; }
+        .coupon-expire { font-size: 0.72rem; color: #776655; }
+        .coupon-btn {
+            margin-top: 8px; align-self: flex-start;
+            padding: 6px 20px; border: 1px solid #FFD700;
+            border-radius: 20px; background: transparent; color: #FFD700;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; letter-spacing: 1px;
+        }
+        .coupon-btn:hover { background: #FFD700; color: #1a0000; }
+        .coupon-btn.claimed { background: #555; border-color: #555; color: #aaa; cursor: default; }
+
+        /* ========== 售后提示 ========== */
+        .service-section { background: linear-gradient(180deg, transparent, rgba(0,0,0,0.3)); }
+        .service-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; max-width: 900px; margin: 0 auto;
+        }
+        .service-item {
+            text-align: center; padding: 20px;
+        }
+        .service-icon {
+            font-size: 2rem; margin-bottom: 8px;
+        }
+        .service-item h4 { font-size: 0.95rem; color: #FFD700; margin-bottom: 4px; }
+        .service-item p { font-size: 0.78rem; color: #887766; line-height: 1.5; }
+
+        /* ========== 底部 CTA ========== */
+        .footer-cta {
+            text-align: center; padding: 60px 20px;
+            background: linear-gradient(180deg, transparent, rgba(139,0,0,0.15));
+        }
+        .footer-cta h2 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            background: linear-gradient(135deg, #FFD700, #FF4500);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 16px; font-weight: 900;
+        }
+        .footer-cta p { color: #cc9988; margin-bottom: 28px; font-size: 0.95rem; }
+        .big-btn {
+            display: inline-block; padding: 16px 56px;
+            background: linear-gradient(135deg, #FF4500, #FF0000);
+            color: #fff; border-radius: 40px; font-size: 1.1rem;
+            font-weight: 900; cursor: pointer; letter-spacing: 4px;
+            border: 2px solid #FFD700; transition: all 0.3s;
+            text-decoration: none;
+            animation: pulse 2s infinite;
+        }
+        .big-btn:hover {
+            transform: scale(1.05); box-shadow: 0 8px 40px rgba(255,69,0,0.5);
+        }
+
+        /* ========== 底部版权 ========== */
+        footer {
+            text-align: center; padding: 24px; color: #554433;
+            font-size: 0.78rem; border-top: 1px solid rgba(255,215,0,0.08);
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 768px) {
+            .section { padding: 36px 0; }
+            .section-title { font-size: 1.5rem; }
+            .countdown-wrap { padding: 20px 24px; }
+            .cd-item { min-width: 52px; padding: 10px 6px; }
+            .cd-num { font-size: 1.5rem; }
+            .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+            .product-img { height: 150px; font-size: 2.2rem; }
+            .product-info { padding: 12px; }
+            .product-name { font-size: 0.88rem; }
+            .product-price { font-size: 1.2rem; }
+            .coupon-card { flex-direction: column; }
+            .coupon-left { width: 100%; min-width: unset; flex-direction: row; padding: 12px; }
+            .coupon-left::after { display: none; }
+            .zone-card { padding: 24px 16px; }
+        }
+
+        @media (max-width: 480px) {
+            .countdown { gap: 6px; }
+            .cd-item { min-width: 44px; padding: 8px 4px; }
+            .cd-num { font-size: 1.2rem; }
+            .cd-sep { font-size: 1.2rem; }
+            .product-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .product-img { height: 130px; }
+            .buy-btn { padding: 10px; font-size: 0.85rem; }
+        }
+
+        /* ========== 滚动动画 ========== */
+        .scroll-anim {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .scroll-anim.visible { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<!-- 动态粒子背景 -->
+<div class="bg-particles" id="particles"></div>
+
+<!-- ========== Hero 区域 ========== -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-badge">🔥 限时狂欢 · 全场超低价 🔥</div>
+        <h1>618 年中大促</h1>
+        <p class="hero-desc">爆款直降 · 限量秒杀 · 叠券更省</p>
+
+        <div class="countdown-wrap">
+            <div class="countdown-label">⏰ 距离活动结束还剩</div>
+            <div class="countdown" id="countdown">
+                <div class="cd-item"><div class="cd-num" id="d">00</div><div class="cd-unit">天</div></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-item"><div class="cd-num" id="h">00</div><div class="cd-unit">时</div></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-item"><div class="cd-num" id="m">00</div><div class="cd-unit">分</div></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-item"><div class="cd-num" id="s">00</div><div class="cd-unit">秒</div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 活动规则 ========== -->
+<section class="section rules-section scroll-anim">
+    <div class="container">
+        <h2 class="section-title">活动规则</h2>
+        <div class="divider"></div>
+        <div class="rules-grid">
+            <div class="rule-card">
+                <div class="rule-icon">01</div>
+                <h3>限时秒杀</h3>
+                <p>每日整点开启秒杀专场，爆款商品限时抢购，先到先得</p>
+            </div>
+            <div class="rule-card">
+                <div class="rule-icon">02</div>
+                <h3>满减叠加</h3>
+                <p>全场满199减30、满399减80、满599减150，可与优惠券叠加使用</p>
+            </div>
+            <div class="rule-card">
+                <div class="rule-icon">03</div>
+                <h3>会员专享</h3>
+                <p>注册会员额外享9.5折，PLUS会员再享包邮特权</p>
+            </div>
+            <div class="rule-card">
+                <div class="rule-icon">04</div>
+                <h3>价保承诺</h3>
+                <p>活动结束后30天内，如遇更低价格，联系客服退差价</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 秒杀产品 ========== -->
+<section class="section flash-section scroll-anim">
+    <div class="container">
+        <h2 class="section-title">🔥 限时秒杀 · 手慢无</h2>
+        <p class="section-subtitle">精选爆款 · 极致低价 · 限量抢购</p>
+        <div class="divider"></div>
+        <div class="product-grid" id="productGrid">
+            <!-- JS 动态渲染 -->
+        </div>
+    </div>
+</section>
+
+<!-- ========== 分区活动 ========== -->
+<section class="section zone-section scroll-anim">
+    <div class="container">
+        <h2 class="section-title">🎯 专场活动</h2>
+        <p class="section-subtitle">多会场联动 · 总有一款适合你</p>
+        <div class="divider"></div>
+        <div class="zone-tabs">
+            <button class="zone-tab active" data-zone="tech">数码科技</button>
+            <button class="zone-tab" data-zone="life">生活家居</button>
+            <button class="zone-tab" data-zone="beauty">美妆护肤</button>
+            <button class="zone-tab" data-zone="food">美食生鲜</button>
+        </div>
+        <div class="zone-content active" id="zone-tech">
+            <div class="zone-card">
+                <h3>数码科技专场</h3>
+                <div class="zone-off">最高直降 ¥2000</div>
+                <p>手机/平板/笔记本/智能穿戴全场参与，爆款机型直降千元，更有以旧换新补贴叠加</p>
+                <a class="zone-btn" href="javascript:void(0)">立即逛逛 →</a>
+            </div>
+        </div>
+        <div class="zone-content" id="zone-life">
+            <div class="zone-card">
+                <h3>生活家居专场</h3>
+                <div class="zone-off">5折起</div>
+                <p>家具/厨电/家纺/日用好物一站式购齐，打造品质生活从现在开始</p>
+                <a class="zone-btn" href="javascript:void(0)">立即逛逛 →</a>
+            </div>
+        </div>
+        <div class="zone-content" id="zone-beauty">
+            <div class="zone-card">
+                <h3>美妆护肤专场</h3>
+                <div class="zone-off">买1送1</div>
+                <p>国际大牌/国货之光/小众宝藏，精选单品买一送一，囤货正当时</p>
+                <a class="zone-btn" href="javascript:void(0)">立即逛逛 →</a>
+            </div>
+        </div>
+        <div class="zone-content" id="zone-food">
+            <div class="zone-card">
+                <h3>美食生鲜专场</h3>
+                <div class="zone-off">满99包邮</div>
+                <p>全球直采/产地直发/冷链配送，生鲜水果零食饮料一站搞定</p>
+                <a class="zone-btn" href="javascript:void(0)">立即逛逛 →</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 优惠券领取 ========== -->
+<section class="section coupon-section scroll-anim">
+    <div class="container">
+        <h2 class="section-title">🎫 领券中心</h2>
+        <p class="section-subtitle">先领券再下单，省上加省</p>
+        <div class="divider"></div>
+        <div class="coupon-grid" id="couponGrid">
+            <!-- JS 动态渲染 -->
+        </div>
+    </div>
+</section>
+
+<!-- ========== 售后服务 ========== -->
+<section class="section service-section scroll-anim">
+    <div class="container">
+        <h2 class="section-title">🛡️ 售后保障</h2>
+        <p class="section-subtitle">放心购 · 售无忧</p>
+        <div class="divider"></div>
+        <div class="service-grid">
+            <div class="service-item">
+                <div class="service-icon">🚚</div>
+                <h4>极速发货</h4>
+                <p>下单后24小时内发货，全程物流追踪</p>
+            </div>
+            <div class="service-item">
+                <div class="service-icon">↩️</div>
+                <h4>7天无理由</h4>
+                <p>签收7天内无理由退换货，运费平台承担</p>
+            </div>
+            <div class="service-item">
+                <div class="service-icon">🛡️</div>
+                <h4>正品保证</h4>
+                <p>官方授权渠道，假一赔十，品质有保障</p>
+            </div>
+            <div class="service-item">
+                <div class="service-icon">💬</div>
+                <h4>专属客服</h4>
+                <p>7×24小时在线客服，随时为您解答</p>
+            </div>
+            <div class="service-item">
+                <div class="service-icon">🔄</div>
+                <h4>价保30天</h4>
+                <p>活动后30天内降价，联系客服退差价</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 底部 CTA ========== -->
+<section class="footer-cta scroll-anim">
+    <div class="container">
+        <h2>错过再等一年！</h2>
+        <p>爆款库存有限，抢完即止，赶快行动</p>
+        <a class="big-btn" href="javascript:void(0)">立即抢购 →</a>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 618年中大促 · 活动最终解释权归平台所有 · 客服热线：400-888-8888</p>
+</footer>
+
+<script>
+// ========== 粒子背景 ==========
+(function() {
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 4 + 's';
+        p.style.animationDuration = (3 + Math.random() * 3) + 's';
+        const colors = ['#FFD700', '#FF4500', '#FFA500', '#FF6347'];
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.width = (2 + Math.random() * 4) + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+    }
+})();
+
+// ========== 倒计时 ==========
+(function() {
+    // 设定活动结束时间（可自定义）
+    const endTime = new Date();
+    endTime.setDate(endTime.getDate() + 3); // 3天后结束
+    endTime.setHours(23, 59, 59, 999);
+
+    function update() {
+        const now = new Date();
+        let diff = endTime - now;
+        if (diff <= 0) {
+            diff = 0;
+            document.getElementById('d').textContent = '00';
+            document.getElementById('h').textContent = '00';
+            document.getElementById('m').textContent = '00';
+            document.getElementById('s').textContent = '00';
+            return;
+        }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('d').textContent = String(d).padStart(2, '0');
+        document.getElementById('h').textContent = String(h).padStart(2, '0');
+        document.getElementById('m').textContent = String(m).padStart(2, '0');
+        document.getElementById('s').textContent = String(s).padStart(2, '0');
+    }
+    update();
+    setInterval(update, 1000);
+})();
+
+// ========== 秒杀产品数据 ==========
+const products = [
+    { name: '智能降噪耳机 Pro Max', desc: '主动降噪 · 40h续航 · Hi-Fi音质', price: 299, original: 899, progress: 87, icon: '🎧', tag: '爆款' },
+    { name: '旗舰智能手机 16+512G', desc: '骁龙8Gen3 · 2亿像素 · 快充', price: 2999, original: 4999, progress: 92, icon: '📱', tag: '热卖' },
+    { name: '超薄笔记本电脑', desc: '14寸2.8K屏 · 32G内存 · 1T SSD', price: 4599, original: 7999, progress: 78, icon: '💻', tag: '限时' },
+    { name: '智能手表运动版', desc: '血氧监测 · GPS定位 · 14天续航', price: 599, original: 1299, progress: 95, icon: '⌚', tag: '秒杀' },
+    { name: '无线蓝牙音箱', desc: '360°环绕音效 · 防水IPX7', price: 199, original: 499, progress: 71, icon: '🔊', tag: '特价' },
+    { name: '4K高清投影仪', desc: '3000流明 · 自动梯形校正', price: 1899, original: 3999, progress: 64, icon: '📽️', tag: '爆款' },
+    { name: '机械键盘 RGB版', desc: '热插拔轴体 · 全键无冲', price: 259, original: 599, progress: 83, icon: '⌨️', tag: '秒杀' },
+    { name: '便携式充电宝 20000mAh', desc: '65W快充 · 三口输出', price: 89, original: 199, progress: 96, icon: '🔋', tag: '疯抢' },
+];
+
+(function() {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = products.map(p => `
+        <div class="product-card">
+            <span class="product-tag">${p.tag}</span>
+            <div class="product-img">${p.icon}</div>
+            <div class="product-info">
+                <div class="product-name">${p.name}</div>
+                <div class="product-desc">${p.desc}</div>
+                <div class="product-price-row">
+                    <span class="product-price">${p.price}</span>
+                    <span class="product-original">¥${p.original}</span>
+                </div>
+                <div class="product-progress-text">已抢 ${p.progress}%</div>
+                <div class="product-progress">
+                    <div class="product-progress-bar" style="width:${p.progress}%"></div>
+                </div>
+                <button class="buy-btn" onclick="alert('即将跳转到「${p.name}」商品详情页')">立即抢购</button>
+            </div>
+        </div>
+    `).join('');
+})();
+
+// ========== 优惠券数据 ==========
+const coupons = [
+    { amount: 50, condition: '满199可用', name: '新人专享券', scope: '全场通用', expire: '2026.04.30 前' },
+    { amount: 100, condition: '满399可用', name: '大促满减券', scope: '全场通用', expire: '2026.04.30 前' },
+    { amount: 200, condition: '满699可用', name: '爆款加码券', scope: '数码/家电', expire: '2026.04.30 前' },
+];
+
+(function() {
+    const grid = document.getElementById('couponGrid');
+    grid.innerHTML = coupons.map((c, i) => `
+        <div class="coupon-card">
+            <div class="coupon-left">
+                <span class="coupon-amount">${c.amount}</span>
+                <span class="coupon-condition">${c.condition}</span>
+            </div>
+            <div class="coupon-right">
+                <div class="coupon-name">${c.name}</div>
+                <div class="coupon-scope">适用：${c.scope}</div>
+                <div class="coupon-expire">有效期：${c.expire}</div>
+                <button class="coupon-btn" id="couponBtn${i}" onclick="claimCoupon(${i})">立即领取</button>
+            </div>
+        </div>
+    `).join('');
+})();
+
+// 领券交互
+function claimCoupon(index) {
+    const btn = document.getElementById('couponBtn' + index);
+    if (btn.classList.contains('claimed')) return;
+    btn.textContent = '已领取 ✓';
+    btn.classList.add('claimed');
+}
+
+// ========== 分区活动 Tab 切换 ==========
+document.querySelectorAll('.zone-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.zone-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.zone-content').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('zone-' + this.dataset.zone).classList.add('active');
+    });
+});
+
+// ========== 滚动动画 ==========
+(function() {
+    const els = document.querySelectorAll('.scroll-anim');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        });
+    }, { threshold: 0.15 });
+    els.forEach(el => observer.observe(el));
+})();
+</script>
+
+</body>
+</html>
