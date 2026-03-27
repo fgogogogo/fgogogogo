@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风吹树叶</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 50%, #98D8AA 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+  }
+
+  /* 风力指示器 */
+  .wind-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    padding: 14px 22px;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    z-index: 100;
+  }
+  .wind-indicator h3 {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .wind-bar {
+    width: 160px;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .wind-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .wind-label {
+    font-size: 12px;
+    color: #888;
+    margin-top: 6px;
+  }
+
+  /* 场景容器 */
+  .scene {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    height: 85vh;
+  }
+
+  /* 树干 */
+  .trunk {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 200px;
+    background: linear-gradient(90deg, #5D4037 0%, #795548 40%, #5D4037 100%);
+    border-radius: 4px 4px 8px 8px;
+    z-index: 5;
+  }
+
+  /* 树枝基础样式 */
+  .branch {
+    position: absolute;
+    transform-origin: bottom center;
+    z-index: 4;
+  }
+
+  .branch-stem {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #5D4037 0%, #795548 40%, #5D4037 100%);
+    border-radius: 3px;
+  }
+
+  /* 树叶基础样式 */
+  .leaf {
+    position: absolute;
+    width: 36px;
+    height: 48px;
+    transform-origin: bottom center;
+    will-change: transform;
+  }
+
+  .leaf svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.15));
+  }
+
+  /* ========== 各枝条 ========== */
+
+  /* 左侧大枝 */
+  .branch-left-main {
+    bottom: 160px;
+    left: 50%;
+    margin-left: -100px;
+    width: 180px;
+    height: 140px;
+  }
+  .branch-left-main .branch-stem {
+    width: 8px;
+    height: 130px;
+    transform: translateX(-50%) rotate(-35deg);
+    transform-origin: bottom center;
+  }
+
+  /* 右侧大枝 */
+  .branch-right-main {
+    bottom: 170px;
+    left: 50%;
+    margin-left: 20px;
+    width: 180px;
+    height: 140px;
+  }
+  .branch-right-main .branch-stem {
+    width: 8px;
+    height: 125px;
+    transform: translateX(-50%) rotate(32deg);
+    transform-origin: bottom center;
+  }
+
+  /* 顶部主枝 */
+  .branch-top {
+    bottom: 190px;
+    left: 50%;
+    margin-left: -10px;
+    width: 60px;
+    height: 120px;
+  }
+  .branch-top .branch-stem {
+    width: 6px;
+    height: 115px;
+    transform: translateX(-50%) rotate(-5deg);
+    transform-origin: bottom center;
+  }
+
+  /* 左侧小枝 */
+  .branch-left-small {
+    bottom: 120px;
+    left: 50%;
+    margin-left: -60px;
+    width: 100px;
+    height: 80px;
+  }
+  .branch-left-small .branch-stem {
+    width: 5px;
+    height: 70px;
+    transform: translateX(-50%) rotate(-55deg);
+    transform-origin: bottom center;
+  }
+
+  /* 右侧小枝 */
+  .branch-right-small {
+    bottom: 130px;
+    left: 50%;
+    margin-left: 40px;
+    width: 100px;
+    height: 80px;
+  }
+  .branch-right-small .branch-stem {
+    width: 5px;
+    height: 70px;
+    transform: translateX(-50%) rotate(50deg);
+    transform-origin: bottom center;
+  }
+
+  /* ========== 叶子放置 (相对于各自枝条) ========== */
+
+  /* 左主枝叶子 */
+  .branch-left-main .leaf:nth-child(1) { left: 10px;  top: 5px;  }
+  .branch-left-main .leaf:nth-child(2) { left: 45px; top: -5px; }
+  .branch-left-main .leaf:nth-child(3) { left: 80px; top: 10px; }
+  .branch-left-main .leaf:nth-child(4) { left: 30px; top: 35px; }
+  .branch-left-main .leaf:nth-child(5) { left: 65px; top: 40px; }
+  .branch-left-main .leaf:nth-child(6) { left: 110px; top: 25px; }
+  .branch-left-main .leaf:nth-child(7) { left: 140px; top: 50px; }
+
+  /* 右主枝叶子 */
+  .branch-right-main .leaf:nth-child(1) { left: 10px;  top: 0px;  }
+  .branch-right-main .leaf:nth-child(2) { left: 45px; top: 10px; }
+  .branch-right-main .leaf:nth-child(3) { left: 80px; top: -5px; }
+  .branch-right-main .leaf:nth-child(4) { left: 30px; top: 40px; }
+  .branch-right-main .leaf:nth-child(5) { left: 70px; top: 45px; }
+  .branch-right-main .leaf:nth-child(6) { left: 110px; top: 30px; }
+  .branch-right-main .leaf:nth-child(7) { left: 140px; top: 55px; }
+
+  /* 顶部枝叶子 */
+  .branch-top .leaf:nth-child(1) { left: 5px;  top: 0px;  }
+  .branch-top .leaf:nth-child(2) { left: -15px; top: 25px; }
+  .branch-top .leaf:nth-child(3) { left: 25px;  top: 30px; }
+  .branch-top .leaf:nth-child(4) { left: -5px;  top: 55px; }
+  .branch-top .leaf:nth-child(5) { left: 20px;  top: 65px; }
+
+  /* 左小枝叶子 */
+  .branch-left-small .leaf:nth-child(1) { left: 5px;  top: 0px;  }
+  .branch-left-small .leaf:nth-child(2) { left: 35px; top: 10px; }
+  .branch-left-small .leaf:nth-child(3) { left: 15px; top: 35px; }
+  .branch-left-small .leaf:nth-child(4) { left: 50px; top: 30px; }
+
+  /* 右小枝叶子 */
+  .branch-right-small .leaf:nth-child(1) { left: 5px;  top: 5px;  }
+  .branch-right-small .leaf:nth-child(2) { left: 35px; top: 0px;  }
+  .branch-right-small .leaf:nth-child(3) { left: 15px; top: 35px; }
+  .branch-right-small .leaf:nth-child(4) { left: 50px; top: 30px; }
+
+  /* ========== 地面草地 ========== */
+  .ground {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(180deg, #6B8E4E 0%, #4A7035 100%);
+    border-radius: 100% 100% 0 0 / 20px 20px 0 0;
+    z-index: 3;
+  }
+
+  /* 草 */
+  .grass-blade {
+    position: absolute;
+    bottom: 50px;
+    width: 4px;
+    transform-origin: bottom center;
+    border-radius: 2px 2px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- 风力指示器 -->
+<div class="wind-indicator">
+  <h3>风力强度</h3>
+  <div class="wind-bar">
+    <div class="wind-fill" id="windFill" style="width: 40%"></div>
+  </div>
+  <div class="wind-label" id="windLabel">微风 · 2级</div>
+</div>
+
+<div class="scene">
+  <!-- 树干 -->
+  <div class="trunk"></div>
+
+  <!-- 各枝条及叶子 -->
+  <div class="branch branch-left-main" id="branch-left-main">
+    <div class="branch-stem"></div>
+    <div class="leaf" data-delay="0" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.15" data-depth="0.9"></div>
+    <div class="leaf" data-delay="0.3" data-depth="1.1"></div>
+    <div class="leaf" data-delay="0.1" data-depth="0.85"></div>
+    <div class="leaf" data-delay="0.25" data-depth="0.95"></div>
+    <div class="leaf" data-delay="0.35" data-depth="1.05"></div>
+    <div class="leaf" data-delay="0.2" data-depth="0.8"></div>
+  </div>
+
+  <div class="branch branch-right-main" id="branch-right-main">
+    <div class="branch-stem"></div>
+    <div class="leaf" data-delay="0.05" data-depth="0.95"></div>
+    <div class="leaf" data-delay="0.2" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.35" data-depth="0.9"></div>
+    <div class="leaf" data-delay="0.12" data-depth="1.1"></div>
+    <div class="leaf" data-delay="0.28" data-depth="0.85"></div>
+    <div class="leaf" data-delay="0.4" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.18" data-depth="0.92"></div>
+  </div>
+
+  <div class="branch branch-top" id="branch-top">
+    <div class="branch-stem"></div>
+    <div class="leaf" data-delay="0" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.1" data-depth="0.9"></div>
+    <div class="leaf" data-delay="0.2" data-depth="1.05"></div>
+    <div class="leaf" data-delay="0.05" data-depth="0.95"></div>
+    <div class="leaf" data-delay="0.15" data-depth="1.0"></div>
+  </div>
+
+  <div class="branch branch-left-small" id="branch-left-small">
+    <div class="branch-stem"></div>
+    <div class="leaf" data-delay="0" data-depth="0.9"></div>
+    <div class="leaf" data-delay="0.15" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.08" data-depth="0.85"></div>
+    <div class="leaf" data-delay="0.22" data-depth="0.95"></div>
+  </div>
+
+  <div class="branch branch-right-small" id="branch-right-small">
+    <div class="branch-stem"></div>
+    <div class="leaf" data-delay="0.03" data-depth="0.92"></div>
+    <div class="leaf" data-delay="0.18" data-depth="1.0"></div>
+    <div class="leaf" data-delay="0.1" data-depth="0.88"></div>
+    <div class="leaf" data-delay="0.25" data-depth="0.96"></div>
+  </div>
+
+  <!-- 地面 -->
+  <div class="ground"></div>
+</div>
+
+<script>
+// ========== 叶子 SVG 模板 ==========
+const leafSVGTemplates = [
+  // 绿叶1
+  `<svg viewBox="0 0 36 48"><path d="M18 2C8 12 2 26 2 38C2 44 8 47 18 46C28 47 34 44 34 38C34 26 28 12 18 2Z" fill="#4CAF50"/><path d="M18 2C18 12 16 26 16 38" stroke="#388E3C" stroke-width="1" fill="none" opacity="0.5"/><path d="M18 10L10 18M18 18L8 26M18 26L10 34M18 14L26 20M18 24L28 30M18 32L24 38" stroke="#388E3C" stroke-width="0.6" fill="none" opacity="0.3"/></svg>`,
+  // 绿叶2 (偏黄)
+  `<svg viewBox="0 0 36 48"><path d="M18 2C8 12 2 26 2 38C2 44 8 47 18 46C28 47 34 44 34 38C34 26 28 12 18 2Z" fill="#66BB6A"/><path d="M18 2C18 12 16 26 16 38" stroke="#43A047" stroke-width="1" fill="none" opacity="0.5"/><path d="M18 10L10 18M18 18L8 26M18 26L10 34M18 14L26 20M18 24L28 30M18 32L24 38" stroke="#43A047" stroke-width="0.6" fill="none" opacity="0.3"/></svg>`,
+  // 深绿
+  `<svg viewBox="0 0 36 48"><path d="M18 2C8 12 2 26 2 38C2 44 8 47 18 46C28 47 34 44 34 38C34 26 28 12 18 2Z" fill="#388E3C"/><path d="M18 2C18 12 16 26 16 38" stroke="#2E7D32" stroke-width="1" fill="none" opacity="0.5"/><path d="M18 10L10 18M18 18L8 26M18 26L10 34M18 14L26 20M18 24L28 30M18 32L24 38" stroke="#2E7D32" stroke-width="0.6" fill="none" opacity="0.3"/></svg>`,
+  // 黄绿
+  `<svg viewBox="0 0 36 48"><path d="M18 2C8 12 2 26 2 38C2 44 8 47 18 46C28 47 34 44 34 38C34 26 28 12 18 2Z" fill="#8BC34A"/><path d="M18 2C18 12 16 26 16 38" stroke="#689F38" stroke-width="1" fill="none" opacity="0.5"/><path d="M18 10L10 18M18 18L8 26M18 26L10 34M18 14L26 20M18 24L28 30M18 32L24 38" stroke="#689F38" stroke-width="0.6" fill="none" opacity="0.3"/></svg>`,
+];
+
+// ========== 初始化叶子 ==========
+document.querySelectorAll('.leaf').forEach((leaf, i) => {
+  leaf.innerHTML = leafSVGTemplates[i % leafSVGTemplates.length];
+  // 随机初始旋转角度让叶子看起来更自然
+  const baseRot = (Math.random() - 0.5) * 20;
+  leaf.dataset.baseRot = baseRot;
+});
+
+// ========== 风力系统 ==========
+const WindSystem = {
+  // 当前风力 0~1
+  currentWind: 0.4,
+  // 目标风力
+  targetWind: 0.4,
+  // 风向角度 (度, 0=向右)
+  direction: 0,
+  // 时间
+  time: 0,
+
+  // 风力标签映射
+  windLevels: [
+    { max: 0.15, label: '无风 · 0级' },
+    { max: 0.3,  label: '软风 · 1级' },
+    { max: 0.5,  label: '微风 · 2级' },
+    { max: 0.7,  label: '和风 · 3级' },
+    { max: 0.85, label: '清风 · 4级' },
+    { max: 1.0,  label: '劲风 · 5级' },
+  ],
+
+  // 缓动插值
+  lerp(a, b, t) { return a + (b - a) * t; },
+
+  // 噪声函数 (简化的柏林噪声近似)
+  noise(x) {
+    const s = Math.sin(x * 0.8) * 0.5 +
+              Math.sin(x * 2.1 + 1.3) * 0.3 +
+              Math.sin(x * 4.7 + 2.7) * 0.15 +
+              Math.sin(x * 9.3 + 4.1) * 0.05;
+    return (s + 1) / 2; // 归一化到 0~1
+  },
+
+  // 更新风力
+  update(dt) {
+    this.time += dt;
+
+    // 使用噪声产生自然的风力变化
+    const noiseVal = this.noise(this.time * 0.4);
+    this.targetWind = 0.15 + noiseVal * 0.75; // 风力范围 0.15~0.9
+
+    // 平滑过渡到目标风力
+    this.currentWind = this.lerp(this.currentWind, this.targetWind, dt * 0.8);
+
+    // 风向微变
+    this.direction = Math.sin(this.time * 0.15) * 8;
+
+    // 更新 UI
+    this.updateUI();
+  },
+
+  updateUI() {
+    const fill = document.getElementById('windFill');
+    const label = document.getElementById('windLabel');
+    const pct = Math.round(this.currentWind * 100);
+    fill.style.width = pct + '%';
+
+    const level = this.windLevels.find(l => this.currentWind <= l.max);
+    label.textContent = level ? level.label : '劲风 · 5级';
+  },
+
+  // 获取瞬时风力 (包含高频抖动)
+  getInstantWind() {
+    const gust = Math.sin(this.time * 3.7) * 0.08 +
+                 Math.sin(this.time * 7.3 + 2.1) * 0.04;
+    return Math.max(0, Math.min(1, this.currentWind + gust));
+  }
+};
+
+// ========== 动画引擎 ==========
+const leaves = document.querySelectorAll('.leaf');
+const branches = document.querySelectorAll('.branch');
+
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.1); // 限制最大 dt
+  lastTime = now;
+
+  WindSystem.update(dt);
+  const wind = WindSystem.getInstantWind();
+  const t = WindSystem.time;
+  const dir = WindSystem.direction;
+
+  // 动画每个叶子
+  leaves.forEach(leaf => {
+    const delay = parseFloat(leaf.dataset.delay) || 0;
+    const depth = parseFloat(leaf.dataset.depth) || 1;
+    const baseRot = parseFloat(leaf.dataset.baseRot) || 0;
+
+    // 复合摇摆: 低频大摆 + 中频摆动 + 高频抖动
+    const phase = t + delay;
+    const sway1 = Math.sin(phase * 1.8) * (12 + wind * 28) * depth;     // 主摇摆
+    const sway2 = Math.sin(phase * 3.5 + 1.2) * (4 + wind * 10) * depth;  // 次摇摆
+    const sway3 = Math.sin(phase * 7.0 + 3.4) * (1.5 + wind * 4) * depth;  // 微抖动
+
+    // 3D 翻转效果 (风大时叶子会翻转)
+    const flipX = Math.sin(phase * 2.3 + delay * 5) * (wind * 15);
+    const flipY = Math.cos(phase * 1.7 + delay * 3) * (wind * 8);
+
+    // 组合变换
+    const rotX = baseRot + sway1 + sway2 + sway3 + dir * wind * 0.5;
+    const rotY = flipX;
+    const rotZ = flipY * 0.5;
+
+    // 缩放微变 (模拟透视远近)
+    const scale = 1 + Math.sin(phase * 2.1) * 0.03 * wind;
+
+    leaf.style.transform =
+      `rotateX(${rotY}deg) rotateZ(${rotX}deg) rotateY(${rotZ}deg) scale(${scale})`;
+  });
+
+  // 枝条轻微晃动 (风力越大晃动越明显)
+  branches.forEach((branch, i) => {
+    const branchPhase = t + i * 0.5;
+    // 枝条摇摆幅度远小于叶子
+    const branchSway = Math.sin(branchPhase * 1.2 + i) * (1 + wind * 3);
+    const branchWobble = Math.sin(branchPhase * 3.0 + i * 2) * (0.3 + wind * 0.8);
+
+    // 根据枝条位置决定基础偏转方向
+    const baseAngle = branch.id.includes('left') ? -1 : (branch.id.includes('right') ? 1 : 0);
+
+    branch.style.transform = `rotateZ(${baseAngle * wind * 2 + branchSway + branchWobble}deg)`;
+
+    // 枝条内部茎的次要晃动
+    const stem = branch.querySelector('.branch-stem');
+    if (stem) {
+      const stemSway = Math.sin(branchPhase * 2.5 + i * 1.5) * (0.5 + wind * 1.5);
+      stem.style.transform = stem.style.transform.replace(/rotate\([^)]+\)/, '') +
+        ` rotate(${stemSway}deg)`;
+    }
+  });
+
+  requestAnimationFrame(animate);
+}
+
+// 启动动画
+requestAnimationFrame(animate);
+
+// ========== 草地摆动 ==========
+function createGrass() {
+  const ground = document.querySelector('.ground');
+  const grassCount = 40;
+  for (let i = 0; i < grassCount; i++) {
+    const blade = document.createElement('div');
+    blade.className = 'grass-blade';
+    const height = 15 + Math.random() * 25;
+    const left = (i / grassCount) * 100 + (Math.random() - 0.5) * 3;
+    const hue = 85 + Math.random() * 30;
+    const lightness = 30 + Math.random() * 15;
+
+    blade.style.cssText = `
+      left: ${left}%;
+      height: ${height}px;
+      background: hsl(${hue}, 50%, ${lightness}%);
+    `;
+    blade.dataset.phase = Math.random() * Math.PI * 2;
+    blade.dataset.height = height;
+    ground.parentElement.insertBefore(blade, ground);
+  }
+}
+
+createGrass();
+
+// 草地动画
+function animateGrass() {
+  const wind = WindSystem.getInstantWind();
+  const t = WindSystem.time;
+
+  document.querySelectorAll('.grass-blade').forEach(blade => {
+    const phase = parseFloat(blade.dataset.phase);
+    const h = parseFloat(blade.dataset.height);
+    const sway = Math.sin(t * 2.5 + phase) * (10 + wind * 35) * (h / 40);
+    blade.style.transform = `rotateZ(${sway}deg)`;
+  });
+
+  requestAnimationFrame(animateGrass);
+}
+animateGrass();
+</script>
+</body>
+</html>
