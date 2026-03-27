@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+        #map { height: 100%; width: 100%; }
+
+        /* 切换底图按钮组 */
+        .leaflet-top.leaflet-left { top: 80px; }
+        .map-control { display: flex; flex-direction: column; gap: 4px; background: #fff; border: 2px solid rgba(0,0,0,0.15); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.3); }
+        .map-control button { display: block; border: none; padding: 8px 12px; font-size: 13px; cursor: pointer; background: #fff; color: #333; text-align: left; transition: background .2s; }
+        .map-control button:hover { background: #f0f0f0; }
+        .map-control button.active { background: #4a90d9; color: #fff; }
+
+        /* 定位按钮 */
+        .locate-btn { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 36px; height: 36px; border: none; border-radius: 6px; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: background .2s; }
+        .locate-btn:hover { background: #f0f0f0; }
+        .locate-btn.locating { background: #4a90d9; color: #fff; }
+
+        /* 标记弹窗样式 */
+        .custom-popup .leaflet-popup-content-wrapper { border-radius: 10px; box-shadow: 0 3px 15px rgba(0,0,0,0.15); }
+        .custom-popup .leaflet-popup-content { margin: 12px 14px; line-height: 1.6; }
+        .popup-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; }
+        .popup-desc { font-size: 13px; color: #555; }
+        .popup-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; color: #fff; margin-top: 8px; }
+        .popup-meta { font-size: 11px; color: #999; margin-top: 6px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <!-- 定位按钮 -->
+    <button class="locate-btn" id="locateBtn" title="定位到当前位置">📍</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    // ==================== 底图配置 ====================
+    const baseLayers = {
+        'OpenStreetMap': {
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
+        },
+        '卫星图': {
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            options: { maxZoom: 19, attribution: 'Esri | Maxar, Earthstar Geographics, CNES/Airbus DS' }
+        },
+        '地形图': {
+            url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 17, attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>' }
+        },
+        '深色主题': {
+            url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+            options: { maxZoom: 19, attribution: '&copy; <a href="https://carto.com/">CARTO</a>' }
+        }
+    };
+
+    // ==================== 初始化地图 ====================
+    const map = L.map('map', {
+        center: [39.9042, 116.4074],   // 默认：北京
+        zoom: 12,
+        zoomControl: false
+    });
+
+    // 放缩控件放到左下角
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+    // 底图图层
+    let currentTile = L.tileLayer(baseLayers['OpenStreetMap'].url, baseLayers['OpenStreetMap'].options).addTo(map);
+
+    // 底图切换按钮
+    const controlDiv = L.DomUtil.create('div', 'map-control');
+    controlDiv.id = 'baseLayerControl';
+    Object.keys(baseLayers).forEach(name => {
+        const btn = document.createElement('button');
+        btn.textContent = name;
+        btn.className = name === 'OpenStreetMap' ? 'active' : '';
+        btn.onclick = () => switchBaseLayer(name, btn);
+        controlDiv.appendChild(btn);
+    });
+    L.DomEvent.disableClickPropagation(controlDiv);
+    L.DomEvent.disableScrollPropagation(controlDiv);
+    new L.Control({ position: 'topleft' }).onAdd = () => controlDiv;
+    map.addControl(new L.Control({ position: 'topleft' }).onAdd = () => controlDiv);
+
+    // 切换底图
+    function switchBaseLayer(name, btnEl) {
+        currentTile.remove();
+        currentTile = L.tileLayer(baseLayers[name].url, baseLayers[name].options).addTo(map);
+        document.querySelectorAll('#baseLayerControl button').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+    }
+
+    // ==================== 自定义标记图标 ====================
+    function createIcon(color) {
+        return L.divIcon({
+            className: 'custom-marker',
+            html: `<svg width="28" height="40" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="14" cy="14" r="6" fill="#fff" opacity="0.9"/>
+            </svg>`,
+            iconSize: [28, 40],
+            iconAnchor: [14, 40],
+            popupAnchor: [0, -40]
+        });
+    }
+
+    // ==================== 标记数据 ====================
+    const markers = [
+        { lat: 39.9042, lng: 116.4074, title: '天安门广场', desc: '北京市中心的标志性广场，是世界上最大的城市广场之一。', tag: '地标', tagColor: '#e74c3c' },
+        { lat: 39.9163, lng: 116.3972, title: '故宫博物院', desc: '明清两代皇家宫殿，世界上现存规模最大的古代宫殿建筑群。', tag: '景点', tagColor: '#e67e22' },
+        { lat: 39.9841, lng: 116.4654, title: '鸟巢', desc: '2008年北京奥运会主体育场，由赫尔佐格与德梅隆设计。', tag: '体育', tagColor: '#27ae60' },
+        { lat: 39.8704, lng: 116.1945, title: '香山公园', desc: '以红叶闻名的皇家园林，秋季层林尽染，景色壮观。', tag: '自然', tagColor: '#2980b9' },
+        { lat: 39.8836, lng: 116.4375, title: '天坛公园', desc: '明清皇帝祭天祈谷的场所，世界文化遗产。', tag: '文化遗产', tagColor: '#9b59b6' }
+    ];
+
+    // ==================== 添加标记 ====================
+    markers.forEach(m => {
+        const marker = L.marker([m.lat, m.lng], { icon: createIcon(m.tagColor) }).addTo(map);
+
+        // 构建弹窗内容
+        const popupContent = `
+            <div class="popup-title">${m.title}</div>
+            <div class="popup-desc">${m.desc}</div>
+            <span class="popup-tag" style="background:${m.tagColor}">${m.tag}</span>
+            <div class="popup-meta">经纬度: ${m.lat.toFixed(4)}, ${m.lng.toFixed(4)}</div>
+        `;
+
+        marker.bindPopup(popupContent, {
+            className: 'custom-popup',
+            maxWidth: 280,
+            closeButton: true
+        });
+
+        // 鼠标悬停高亮效果
+        marker.on('mouseover', function() { this.openPopup(); });
+    });
+
+    // ==================== 定位功能 ====================
+    const locateBtn = document.getElementById('locateBtn');
+
+    locateBtn.onclick = function() {
+        if (!navigator.geolocation) {
+            alert('您的浏览器不支持地理定位');
+            return;
+        }
+        locateBtn.classList.add('locating');
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const { latitude, longitude } = pos.coords;
+                // 添加定位标记
+                L.circleMarker([latitude, longitude], {
+                    radius: 8, fillColor: '#4a90d9', color: '#fff', weight: 2, fillOpacity: 0.9
+                }).addTo(map).bindPopup('<b>您的位置</b><br/>经度: ' + longitude.toFixed(6) + '<br/>纬度: ' + latitude.toFixed(6));
+                map.setView([latitude, longitude], 15);
+                locateBtn.classList.remove('locating');
+            },
+            err => {
+                alert('定位失败：' + err.message);
+                locateBtn.classList.remove('locating');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    // ==================== 初始弹窗 ====================
+    markers[0].openPopup();
+    </script>
+</body>
+</html>
