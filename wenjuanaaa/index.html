@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线问卷构建工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <h1 class="logo" onclick="location.hash='#/create'">
+                <span class="logo-icon">&#9729;</span> 问卷构建工具
+            </h1>
+            <nav class="header-nav">
+                <a href="#/create" class="nav-link">新建问卷</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Create Page -->
+        <section id="page-create" class="page">
+            <div class="editor-container">
+                <!-- Left Panel: Question List -->
+                <div class="editor-sidebar">
+                    <div class="sidebar-header">
+                        <h2>问题列表</h2>
+                        <button class="btn btn-primary" id="btn-add-question">
+                            + 添加问题
+                        </button>
+                    </div>
+                    <ul class="question-list" id="question-list"></ul>
+                </div>
+
+                <!-- Right Panel: Config -->
+                <div class="editor-panel">
+                    <div class="panel-section">
+                        <h3>问卷设置</h3>
+                        <div class="form-group">
+                            <label>问卷标题</label>
+                            <input type="text" id="survey-title" class="input" placeholder="输入问卷标题">
+                        </div>
+                        <div class="form-group">
+                            <label>问卷描述</label>
+                            <textarea id="survey-desc" class="textarea" rows="3" placeholder="输入问卷描述"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>问卷类型</label>
+                            <select id="survey-type" class="input">
+                                <option value="survey">普通问卷</option>
+                                <option value="quiz">限时测验</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>时间限制（分钟，0=不限时）</label>
+                            <input type="number" id="survey-timelimit" class="input" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="panel-section" id="question-editor" style="display:none;">
+                        <h3>编辑问题</h3>
+                        <div class="form-group">
+                            <label>问题类型</label>
+                            <select id="q-type" class="input">
+                                <option value="radio">单选题</option>
+                                <option value="checkbox">多选题</option>
+                                <option value="text">文本输入</option>
+                                <option value="range">滑块</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>问题文本</label>
+                            <input type="text" id="q-text" class="input" placeholder="输入问题">
+                        </div>
+                        <div class="form-group" id="options-group">
+                            <label>选项（每行一个）</label>
+                            <textarea id="q-options" class="textarea" rows="4" placeholder="选项1&#10;选项2&#10;选项3"></textarea>
+                        </div>
+                        <div class="form-group" id="range-group" style="display:none;">
+                            <label>滑块范围</label>
+                            <div class="range-config">
+                                <input type="number" id="q-range-min" class="input small" value="1">
+                                <span>到</span>
+                                <input type="number" id="q-range-max" class="input small" value="10">
+                                <span>步长</span>
+                                <input type="number" id="q-range-step" class="input small" value="1">
+                            </div>
+                        </div>
+                        <div class="form-group" id="branch-group">
+                            <label>分支逻辑</label>
+                            <div id="branch-options"></div>
+                            <p class="help-text">为每个选项设置跳转目标，留空则进入下一题</p>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn btn-secondary" id="btn-delete-question">删除问题</button>
+                            <button class="btn btn-primary" id="btn-save-question">保存修改</button>
+                        </div>
+                    </div>
+                    <div class="panel-section actions">
+                        <button class="btn btn-primary" id="btn-preview">预览</button>
+                        <button class="btn btn-accent" id="btn-publish">发布问卷</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fill Page -->
+        <section id="page-fill" class="page" style="display:none;">
+            <div class="fill-container">
+                <div class="fill-card">
+                    <div class="fill-header">
+                        <h2 id="fill-title"></h2>
+                        <p id="fill-desc"></p>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                        <span class="progress-text" id="progress-text">0%</span>
+                    </div>
+                    <div class="timer-container" id="timer-container" style="display:none;">
+                        <div class="timer-bar" id="timer-bar"></div>
+                        <span class="timer-text" id="timer-text"></span>
+                    </div>
+                    <div id="fill-content"></div>
+                    <div class="nav-buttons">
+                        <button class="btn btn-secondary" id="btn-prev">上一题</button>
+                        <button class="btn btn-primary" id="btn-next">下一题</button>
+                        <button class="btn btn-accent" id="btn-submit" style="display:none;">提交</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Page -->
+        <section id="page-results" class="page" style="display:none;">
+            <div class="results-container">
+                <div class="results-header">
+                    <h2 id="results-title"></h2>
+                    <p id="results-subtitle">共 <span id="results-count">0</span> 份提交</p>
+                </div>
+                <div id="results-charts"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- URL Share Modal -->
+    <div class="modal-overlay" id="modal-overlay" style="display:none;">
+        <div class="modal">
+            <h3>问卷已发布</h3>
+            <p>复制以下链接分享给填写者：</p>
+            <input type="text" id="share-url" class="input" readonly>
+            <button class="btn btn-primary" id="btn-copy-url">复制链接</button>
+            <button class="btn btn-secondary" id="btn-close-modal">关闭</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" style="display:none;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="app.js"></script>
+</body>
+</html>
