@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>超级大促 - 全场限时特惠</title>
+<style>
+/* ========== 基础重置 & 变量 ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --red: #E53935; --red-dark: #B71C1C; --red-light: #FF5252;
+  --gold: #FFC107; --gold-dark: #FF8F00; --gold-light: #FFD54F;
+  --bg: #0D0D0D; --card: #1A1A1A; --text: #FFF; --text-dim: #999;
+  --shadow: 0 4px 30px rgba(229,57,53,.15);
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* ========== 通用容器 ========== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+.section { padding: 40px 0; }
+.section-title {
+  text-align: center; font-size: 1.8rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--gold), #FFE082);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 8px; letter-spacing: 4px;
+}
+.section-sub { text-align: center; color: var(--text-dim); margin-bottom: 30px; font-size: .9rem; }
+
+/* ========== 顶部导航栏 ========== */
+.top-bar {
+  background: linear-gradient(135deg, var(--red-dark), var(--red));
+  padding: 8px 16px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,.4);
+}
+.top-bar .logo { font-size: 1.3rem; font-weight: 900; letter-spacing: 2px; }
+.top-bar .logo span { color: var(--gold); }
+.top-bar .nav-links { display: flex; gap: 20px; }
+.top-bar .nav-links a {
+  color: rgba(255,255,255,.85); text-decoration: none; font-size: .85rem;
+  transition: color .2s; position: relative;
+}
+.top-bar .nav-links a:hover { color: var(--gold); }
+.top-bar .nav-links a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+  background: var(--gold); transition: width .3s;
+}
+.top-bar .nav-links a:hover::after { width: 100%; }
+
+/* ========== 英雄区域（标题 + 倒计时） ========== */
+.hero {
+  background: linear-gradient(180deg, #1A0505 0%, #0D0D0D 100%);
+  padding: 60px 0 40px; text-align: center; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(ellipse at center, rgba(229,57,53,.12) 0%, transparent 70%);
+  animation: heroPulse 4s ease-in-out infinite alternate;
+}
+@keyframes heroPulse {
+  0% { transform: scale(1); opacity: .5; }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+.hero-content { position: relative; z-index: 2; }
+.hero-badge {
+  display: inline-block; background: var(--red); color: #FFF; padding: 4px 20px;
+  border-radius: 20px; font-size: .8rem; font-weight: 700; letter-spacing: 2px;
+  margin-bottom: 16px; animation: badgeShake 2s ease-in-out infinite;
+}
+@keyframes badgeShake {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+}
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 3.8rem); font-weight: 900; line-height: 1.2;
+  background: linear-gradient(135deg, #FFF, var(--gold), var(--gold-light));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 12px; letter-spacing: 4px;
+}
+.hero .subtitle { font-size: 1rem; color: var(--text-dim); margin-bottom: 30px; }
+.hero .highlight { color: var(--gold); font-weight: 700; }
+
+/* 倒计时 */
+.countdown-wrap { margin-top: 30px; }
+.countdown-label {
+  font-size: .9rem; color: var(--text-dim); margin-bottom: 12px; letter-spacing: 2px;
+}
+.countdown {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.countdown .unit {
+  background: linear-gradient(180deg, #2A1515, #1A0A0A);
+  border: 1px solid rgba(255,193,7,.3); border-radius: 12px;
+  min-width: 70px; padding: 16px 12px; text-align: center;
+  box-shadow: inset 0 0 20px rgba(229,57,53,.1), 0 4px 20px rgba(0,0,0,.3);
+}
+.countdown .unit .num {
+  font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; color: var(--gold);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.countdown .unit .label { font-size: .7rem; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+.countdown .sep { font-size: 1.8rem; font-weight: 900; color: var(--red); align-self: center; }
+
+/* ========== 活动规则 ========== */
+.rules {
+  background: linear-gradient(135deg, rgba(255,193,7,.06), rgba(229,57,53,.06));
+  border-radius: 16px; padding: 30px; margin: 0 auto 20px;
+  max-width: 900px; border: 1px solid rgba(255,193,7,.15);
+}
+.rules h3 { color: var(--gold); font-size: 1.1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.rules h3::before { content: ''; width: 4px; height: 20px; background: var(--gold); border-radius: 2px; }
+.rules ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.rules li {
+  padding: 12px 16px; background: rgba(255,255,255,.03); border-radius: 8px;
+  border-left: 3px solid var(--red); font-size: .88rem; color: #CCC;
+  transition: transform .2s, background .2s;
+}
+.rules li:hover { transform: translateX(4px); background: rgba(255,255,255,.06); }
+
+/* ========== 秒杀产品 ========== */
+.flash-sale { padding: 50px 0; }
+.flash-header {
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;
+}
+.flash-header .icon {
+  width: 40px; height: 40px; background: var(--red); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  animation: flashIcon 1.5s ease-in-out infinite alternate;
+}
+@keyframes flashIcon { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
+.products-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.product-card {
+  background: var(--card); border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.06); transition: transform .3s, box-shadow .3s;
+  position: relative;
+}
+.product-card:hover { transform: translateY(-6px); box-shadow: var(--shadow), 0 0 40px rgba(229,57,53,.1); }
+.product-img {
+  width: 100%; aspect-ratio: 4/3; background: linear-gradient(135deg, #2A1A1A, #1A0A0A);
+  display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  position: relative; overflow: hidden;
+}
+.product-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.4) 100%);
+}
+.flash-tag {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  background: var(--red); color: #FFF; padding: 3px 12px;
+  border-radius: 20px; font-size: .75rem; font-weight: 700; letter-spacing: 1px;
+}
+.discount-badge {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  background: var(--gold); color: #000; padding: 3px 12px;
+  border-radius: 20px; font-size: .75rem; font-weight: 800;
+}
+.product-info { padding: 16px; }
+.product-info h4 { font-size: 1rem; margin-bottom: 6px; line-height: 1.4; }
+.product-desc { font-size: .8rem; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5; }
+.price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+.price-now { font-size: 1.5rem; font-weight: 900; color: var(--red-light); }
+.price-now small { font-size: .8rem; }
+.price-old { font-size: .8rem; color: var(--text-dim); text-decoration: line-through; }
+.progress-wrap { margin-bottom: 14px; }
+.progress-label { display: flex; justify-content: space-between; font-size: .75rem; color: var(--text-dim); margin-bottom: 4px; }
+.progress-bar {
+  height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%; background: linear-gradient(90deg, var(--red), var(--gold));
+  border-radius: 3px; transition: width .6s ease;
+}
+.btn-buy {
+  width: 100%; padding: 10px; background: linear-gradient(135deg, var(--red), var(--red-dark));
+  color: #FFF; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700;
+  cursor: pointer; letter-spacing: 2px; transition: all .3s;
+}
+.btn-buy:hover { background: linear-gradient(135deg, var(--red-light), var(--red)); box-shadow: 0 4px 15px rgba(229,57,53,.4); }
+.btn-buy:active { transform: scale(.97); }
+
+/* ========== 分区活动 ========== */
+.zones { padding: 50px 0; }
+.zones-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+.zone-card {
+  border-radius: 16px; padding: 30px; position: relative; overflow: hidden;
+  transition: transform .3s; cursor: pointer;
+}
+.zone-card:hover { transform: translateY(-4px); }
+.zone-card::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+}
+.zone-card > * { position: relative; z-index: 1; }
+.zone-card h3 { font-size: 1.3rem; margin-bottom: 8px; }
+.zone-card p { font-size: .85rem; opacity: .8; margin-bottom: 16px; line-height: 1.6; }
+.zone-card .zone-btn {
+  display: inline-block; padding: 8px 24px; border-radius: 20px; font-size: .85rem;
+  font-weight: 700; text-decoration: none; transition: all .3s;
+}
+/* 红色区 */
+.zone-red { background: linear-gradient(135deg, #B71C1C, #E53935, #FF5252); border: 1px solid rgba(255,255,255,.1); }
+.zone-red .zone-btn { background: #FFF; color: var(--red); }
+.zone-red .zone-btn:hover { background: var(--gold); color: #000; }
+/* 金色区 */
+.zone-gold { background: linear-gradient(135deg, #FF6F00, #FFC107, #FFD54F); border: 1px solid rgba(0,0,0,.1); }
+.zone-gold h3, .zone-gold p { color: #000; }
+.zone-gold .zone-btn { background: var(--red-dark); color: #FFF; }
+.zone-gold .zone-btn:hover { background: #000; color: var(--gold); }
+/* 深色区 */
+.zone-dark { background: linear-gradient(135deg, #1A1A1A, #2D2D2D); border: 1px solid rgba(255,193,7,.2); }
+.zone-dark h3 { color: var(--gold); }
+.zone-dark .zone-btn { background: var(--gold); color: #000; }
+.zone-dark .zone-btn:hover { background: var(--gold-light); }
+
+/* ========== 优惠券区域 ========== */
+.coupon-section { padding: 50px 0; }
+.coupon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.coupon-card {
+  display: flex; align-items: stretch; border-radius: 12px; overflow: hidden;
+  transition: transform .3s; cursor: pointer; position: relative;
+}
+.coupon-card:hover { transform: scale(1.03); }
+.coupon-left {
+  width: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 10px; position: relative;
+}
+.coupon-left .amount { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+.coupon-left .condition { font-size: .7rem; margin-top: 4px; opacity: .8; }
+/* 优惠券样式 */
+.coupon-red .coupon-left { background: linear-gradient(180deg, var(--red-dark), var(--red)); color: #FFF; }
+.coupon-red .coupon-left::after {
+  content: ''; position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  border: 10px solid transparent; border-left-color: var(--red);
+}
+.coupon-red .coupon-right { background: #FFF; color: #333; }
+.coupon-gold .coupon-left { background: linear-gradient(180deg, #FF8F00, #FFC107); color: #000; }
+.coupon-gold .coupon-left::after {
+  content: ''; position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  border: 10px solid transparent; border-left-color: #FFC107;
+}
+.coupon-gold .coupon-right { background: #1A1A1A; color: #FFF; }
+.coupon-right { flex: 1; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+.coupon-right .info h5 { font-size: .9rem; margin-bottom: 2px; }
+.coupon-right .info span { font-size: .72rem; opacity: .6; }
+.coupon-right .claim-btn {
+  padding: 6px 16px; border-radius: 20px; font-size: .8rem; font-weight: 700;
+  border: none; cursor: pointer; transition: all .3s;
+}
+.coupon-red .claim-btn { background: var(--red); color: #FFF; }
+.coupon-red .claim-btn:hover { background: var(--red-dark); }
+.coupon-gold .claim-btn { background: var(--gold); color: #000; }
+.coupon-gold .claim-btn:hover { background: var(--gold-dark); }
+.coupon-card.claimed .claim-btn { background: #555; color: #CCC; cursor: not-allowed; }
+
+/* ========== 底部 CTA ========== */
+.cta-banner {
+  text-align: center; padding: 60px 20px;
+  background: linear-gradient(135deg, rgba(229,57,53,.15), rgba(255,193,7,.1));
+  border-radius: 20px; margin: 40px auto; max-width: 900px;
+  border: 1px solid rgba(255,193,7,.15);
+}
+.cta-banner h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 8px; }
+.cta-banner h2 span { color: var(--gold); }
+.cta-banner p { color: var(--text-dim); margin-bottom: 24px; }
+.btn-cta {
+  display: inline-block; padding: 14px 48px; font-size: 1rem; font-weight: 800;
+  letter-spacing: 3px; border-radius: 30px; text-decoration: none;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #000; transition: all .3s; box-shadow: 0 4px 20px rgba(255,193,7,.3);
+}
+.btn-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,193,7,.5); }
+
+/* ========== 售后提示 ========== */
+.after-sales { padding: 40px 0; }
+.as-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
+.as-item {
+  display: flex; align-items: flex-start; gap: 12px; padding: 20px;
+  background: rgba(255,255,255,.03); border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.05); transition: background .2s;
+}
+.as-item:hover { background: rgba(255,255,255,.06); }
+.as-icon { font-size: 1.5rem; flex-shrink: 0; }
+.as-item h5 { font-size: .9rem; margin-bottom: 4px; }
+.as-item p { font-size: .78rem; color: var(--text-dim); line-height: 1.5; }
+
+/* ========== 页脚 ========== */
+footer {
+  text-align: center; padding: 30px 16px; border-top: 1px solid rgba(255,255,255,.06);
+  font-size: .8rem; color: var(--text-dim);
+}
+footer a { color: var(--gold); text-decoration: none; }
+
+/* ========== 动画类 ========== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { opacity: 0; animation: fadeInUp .6s ease forwards; }
+.animate-in.delay-1 { animation-delay: .1s; }
+.animate-in.delay-2 { animation-delay: .2s; }
+.animate-in.delay-3 { animation-delay: .3s; }
+.animate-in.delay-4 { animation-delay: .4s; }
+
+/* ========== Toast 提示 ========== */
+.toast {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+  background: var(--gold); color: #000; padding: 12px 28px; border-radius: 30px;
+  font-weight: 700; font-size: .9rem; z-index: 999; opacity: 0;
+  transition: all .4s ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .top-bar .nav-links { display: none; }
+  .hero { padding: 40px 0 30px; }
+  .hero h1 { letter-spacing: 2px; }
+  .countdown .unit { min-width: 56px; padding: 12px 8px; }
+  .countdown .unit .num { font-size: 1.4rem; }
+  .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .product-info { padding: 12px; }
+  .product-info h4 { font-size: .88rem; }
+  .price-now { font-size: 1.2rem; }
+  .btn-buy { padding: 8px; font-size: .8rem; }
+  .zones-grid { grid-template-columns: 1fr; }
+  .coupon-grid { grid-template-columns: 1fr; }
+  .coupon-left { width: 90px; }
+  .coupon-left .amount { font-size: 1.4rem; }
+  .section-title { font-size: 1.4rem; }
+  .rules ul { grid-template-columns: 1fr; }
+  .cta-banner { padding: 40px 16px; }
+  .btn-cta { padding: 12px 32px; font-size: .9rem; }
+}
+@media (max-width: 480px) {
+  .hero h1 { font-size: 1.6rem; }
+  .countdown .unit { min-width: 48px; padding: 10px 6px; }
+  .countdown .unit .num { font-size: 1.1rem; }
+  .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .product-img { font-size: 2rem; }
+  .section { padding: 30px 0; }
+  .zones-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<nav class="top-bar">
+  <div class="logo">超级<span>大促</span></div>
+  <div class="nav-links">
+    <a href="#flash">限时秒杀</a>
+    <a href="#zones">专场活动</a>
+    <a href="#coupon">领券中心</a>
+    <a href="#sales">售后服务</a>
+  </div>
+</nav>
+
+<!-- ========== 英雄区域 ========== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge animate-in">限时特惠 · 全场狂欢</div>
+    <h1 class="animate-in delay-1">618 超级大促</h1>
+    <p class="subtitle animate-in delay-2">全场低至 <span class="highlight">1折起</span> · 每整点秒杀 · 限量抢购</p>
+
+    <div class="countdown-wrap animate-in delay-3">
+      <div class="countdown-label">距活动结束还剩</div>
+      <div class="countdown" id="countdown">
+        <div class="unit"><div class="num" id="d">00</div><div class="label">天</div></div>
+        <span class="sep">:</span>
+        <div class="unit"><div class="num" id="h">00</div><div class="label">时</div></div>
+        <span class="sep">:</span>
+        <div class="unit"><div class="num" id="m">00</div><div class="label">分</div></div>
+        <span class="sep">:</span>
+        <div class="unit"><div class="num" id="s">00</div><div class="label">秒</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 活动规则 ========== -->
+<section class="section">
+  <div class="container">
+    <div class="rules">
+      <h3>活动规则</h3>
+      <ul>
+        <li>活动时间：2026年3月27日 — 4月3日，每天 00:00 - 23:59</li>
+        <li>秒杀时段：每日 10:00 / 14:00 / 20:00 三档整点开抢</li>
+        <li>优惠券可与秒杀价叠加使用，每个账号限领一张</li>
+        <li>满 199 包邮，部分地区次日达</li>
+        <li>7天无理由退换货，正品保障</li>
+        <li>订单满 499 赠限量定制礼品一份</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 秒杀产品 ========== -->
+<section class="flash-sale section" id="flash">
+  <div class="container">
+    <div class="flash-header">
+      <div class="icon">⚡</div>
+      <h2 class="section-title">限时秒杀</h2>
+      <div class="icon">⚡</div>
+    </div>
+    <p class="section-sub">爆款直降，手慢无</p>
+
+    <div class="products-grid" id="productsGrid">
+      <!-- JS 动态渲染 -->
+    </div>
+  </div>
+</section>
+
+<!-- ========== 分区活动 ========== -->
+<section class="zones section" id="zones">
+  <div class="container">
+    <h2 class="section-title">专场活动</h2>
+    <p class="section-sub">多主题福利，满足你的每一个需求</p>
+
+    <div class="zones-grid">
+      <div class="zone-card zone-red">
+        <h3>新人专享区</h3>
+        <p>首单立减 50 元，叠加新人专属 9 折券，新人礼包免费领！注册即享，错过等一年。</p>
+        <a class="zone-btn" href="#">立即参与 →</a>
+      </div>
+      <div class="zone-card zone-gold">
+        <h3>品牌狂欢日</h3>
+        <p>百大品牌联合让利，部分爆款低至 3 折。每日品牌轮换，天天有惊喜，快来看看今日主角！</p>
+        <a class="zone-btn" href="#">品牌馆 →</a>
+      </div>
+      <div class="zone-card zone-dark">
+        <h3>拼团更划算</h3>
+        <p>3人成团享 8 折，5人成团享 7 折。邀请好友一起拼，省钱又热闹，还能获得拼团奖励！</p>
+        <a class="zone-btn" href="#">发起拼团 →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 优惠券领取 ========== -->
+<section class="coupon-section section" id="coupon">
+  <div class="container">
+    <h2 class="section-title">领券中心</h2>
+    <p class="section-sub">领券下单更省钱，多种面额任你选</p>
+
+    <div class="coupon-grid" id="couponGrid">
+      <!-- JS 动态渲染 -->
+    </div>
+  </div>
+</section>
+
+<!-- ========== CTA 横幅 ========== -->
+<div class="container">
+  <div class="cta-banner">
+    <h2>别再犹豫了，<span>好货不等人！</span></h2>
+    <p>限时特惠，错过今天再等一年</p>
+    <a class="btn-cta" href="#flash">立即抢购</a>
+  </div>
+</div>
+
+<!-- ========== 售后提示 ========== -->
+<section class="after-sales section" id="sales">
+  <div class="container">
+    <h2 class="section-title">售后保障</h2>
+    <p class="section-sub">购物无忧，品质承诺</p>
+
+    <div class="as-grid">
+      <div class="as-item">
+        <div class="as-icon">🛡️</div>
+        <div>
+          <h5>正品保证</h5>
+          <p>所有商品均为品牌授权正品，假一赔十</p>
+        </div>
+      </div>
+      <div class="as-item">
+        <div class="as-icon">🚚</div>
+        <div>
+          <h5>极速发货</h5>
+          <p>下单后 24 小时内发货，部分地区次日达</p>
+        </div>
+      </div>
+      <div class="as-item">
+        <div class="as-icon">↩️</div>
+        <div>
+          <h5>7天无理由</h5>
+          <p>签收 7 天内支持无理由退换，运费我们承担</p>
+        </div>
+      </div>
+      <div class="as-item">
+        <div class="as-icon">💬</div>
+        <div>
+          <h5>专属客服</h5>
+          <p>7×24 小时在线客服，随时随地为您服务</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 页脚 ========== -->
+<footer>
+  <p>© 2026 超级大促 · 限时特惠活动</p>
+  <p><a href="#">隐私政策</a> · <a href="#">用户协议</a> · <a href="#">联系客服</a></p>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== 数据 ==========
+const products = [
+  { name: '智能降噪耳机 Pro', desc: '40dB 主动降噪，续航 60 小时', price: 299, oldPrice: 799, sold: 87, emoji: '🎧' },
+  { name: '机械键盘 RGB 版', desc: '热插拔轴体，1680 万色背光', price: 189, oldPrice: 459, sold: 72, emoji: '⌨️' },
+  { name: '便携式充电宝 20000mAh', desc: '65W 快充，三口同时输出', price: 79,  oldPrice: 199, sold: 94, emoji: '🔋' },
+  { name: '智能手表 运动版', desc: '心率血氧监测，100+ 运动模式', price: 399, oldPrice: 999, sold: 65, emoji: '⌚' },
+  { name: '无线蓝牙音箱', desc: '360° 环绕立体声，防水防尘', price: 129, oldPrice: 349, sold: 81, emoji: '🔊' },
+  { name: '电动牙刷 礼盒装', desc: '5 种清洁模式，续航 90 天', price: 159, oldPrice: 399, sold: 76, emoji: '🪥' },
+  { name: '桌面台灯 护眼款', desc: '无频闪无蓝光，色温智能调节', price: 89,  oldPrice: 249, sold: 90, emoji: '💡' },
+  { name: '运动水壶 大容量', desc: '1.5L 双层保温，BPA Free', price: 39,  oldPrice: 99,  sold: 95, emoji: '🥤' },
+];
+
+const coupons = [
+  { amount: 50, condition: '满 199 可用', type: 'red',   desc: '通用券', expire: '活动期间有效' },
+  { amount: 30, condition: '满 99 可用',  type: 'red',   desc: '新人券', expire: '新用户专享' },
+  { amount: 100, condition: '满 499 可用', type: 'gold', desc: '大额券', expire: '限量 500 张' },
+  { amount: 20, condition: '无门槛',      type: 'gold', desc: '神券',   expire: '每日 10 点刷新' },
+];
+
+// ========== 渲染秒杀产品 ==========
+const grid = document.getElementById('productsGrid');
+products.forEach((p, i) => {
+  const disc = Math.round((1 - p.price / p.oldPrice) * 100);
+  grid.innerHTML += `
+    <div class="product-card animate-in" style="animation-delay:${i * .08}s">
+      <div class="product-img">${p.emoji}
+        <span class="flash-tag">秒杀</span>
+        <span class="discount-badge">${disc}折</span>
+      </div>
+      <div class="product-info">
+        <h4>${p.name}</h4>
+        <p class="product-desc">${p.desc}</p>
+        <div class="price-row">
+          <span class="price-now"><small>¥</small>${p.price}</span>
+          <span class="price-old">¥${p.oldPrice}</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>已抢 ${p.sold}%</span><span>库存紧张</span></div>
+          <div class="progress-bar"><div class="fill" style="width:${p.sold}%"></div></div>
+        </div>
+        <button class="btn-buy" onclick="buy('${p.name}')">立即抢购</button>
+      </div>
+    </div>`;
+});
+
+// ========== 渲染优惠券 ==========
+const cg = document.getElementById('couponGrid');
+coupons.forEach(c => {
+  cg.innerHTML += `
+    <div class="coupon-card coupon-${c.type}" data-id="${c.amount}">
+      <div class="coupon-left">
+        <div class="amount">¥${c.amount}</div>
+        <div class="condition">${c.condition}</div>
+      </div>
+      <div class="coupon-right">
+        <div class="info">
+          <h5>${c.desc}</h5>
+          <span>${c.expire}</span>
+        </div>
+        <button class="claim-btn" onclick="claimCoupon(this, ${c.amount})">立即领取</button>
+      </div>
+    </div>`;
+});
+
+// ========== 倒计时 ==========
+function updateCountdown() {
+  // 设置活动结束时间：2026-04-03 23:59:59
+  const end = new Date('2026-04-03T23:59:59').getTime();
+  const now = Date.now();
+  const diff = Math.max(0, end - now);
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('d').textContent = String(d).padStart(2,'0');
+  document.getElementById('h').textContent = String(h).padStart(2,'0');
+  document.getElementById('m').textContent = String(m).padStart(2,'0');
+  document.getElementById('s').textContent = String(s).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// ========== 交互 ==========
+function buy(name) {
+  showToast(`已加入购物车：${name}`);
+}
+function claimCoupon(btn, amount) {
+  const card = btn.closest('.coupon-card');
+  if (card.classList.contains('claimed')) return;
+  btn.textContent = '已领取 ✓';
+  card.classList.add('claimed');
+  showToast(`成功领取 ¥${amount} 优惠券！`);
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ========== 滚动动画 ==========
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.animationPlayState = 'running';
+      obs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.animate-in').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  obs.observe(el);
+});
+</script>
+
+</body>
+</html>
