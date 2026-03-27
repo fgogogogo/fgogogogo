@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界时区地图 - Timezone Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1f3a 0%, #0d1225 100%);
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(100, 140, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #64b5f6, #7c4dff, #e040fb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .local-time {
+    font-size: 14px;
+    color: #8892b0;
+  }
+
+  .local-time strong {
+    color: #64b5f6;
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Main content */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Map area */
+  .map-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .map-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .country {
+    fill: #1e2a4a;
+    stroke: #2a3a5c;
+    stroke-width: 0.5;
+    cursor: pointer;
+    transition: fill 0.2s, filter 0.2s;
+  }
+
+  .country:hover {
+    fill: #2a4070;
+    filter: brightness(1.3);
+  }
+
+  .country.selected {
+    fill: #3d5a99;
+    stroke: #64b5f6;
+    stroke-width: 1;
+  }
+
+  .city-dot {
+    cursor: pointer;
+    transition: r 0.2s, fill 0.2s;
+  }
+
+  .city-dot:hover {
+    r: 5;
+  }
+
+  .city-dot.selected {
+    fill: #ff6b6b;
+    r: 6;
+    stroke: #fff;
+    stroke-width: 1.5;
+  }
+
+  .city-label {
+    pointer-events: none;
+    font-size: 9px;
+    fill: #8892b0;
+    font-family: sans-serif;
+  }
+
+  .city-dot:hover + .city-label,
+  .city-dot.selected + .city-label {
+    fill: #e0e0e0;
+    font-weight: bold;
+  }
+
+  /* Ocean background */
+  .ocean {
+    fill: #0a0e1a;
+  }
+
+  /* Grid lines */
+  .grid-line {
+    stroke: rgba(100, 140, 255, 0.06);
+    stroke-width: 0.5;
+    fill: none;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(20, 28, 50, 0.95);
+    border: 1px solid rgba(100, 140, 255, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    max-width: 260px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .tooltip.visible { opacity: 1; }
+
+  .tooltip-city { font-weight: 700; color: #64b5f6; margin-bottom: 4px; }
+  .tooltip-time { font-size: 16px; font-variant-numeric: tabular-nums; color: #fff; }
+  .tooltip-tz { color: #8892b0; font-size: 12px; margin-top: 2px; }
+
+  /* Sidebar - comparison panel */
+  .sidebar {
+    width: 340px;
+    background: #0f1424;
+    border-left: 1px solid rgba(100, 140, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(100, 140, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #b0bec5;
+  }
+
+  .btn-clear {
+    background: none;
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-clear:hover {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: #ff6b6b;
+  }
+
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  .sidebar-content::-webkit-scrollbar { width: 5px; }
+  .sidebar-content::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-content::-webkit-scrollbar-thumb { background: rgba(100, 140, 255, 0.2); border-radius: 3px; }
+
+  /* City card */
+  .city-card {
+    background: linear-gradient(135deg, #151c33, #1a2240);
+    border: 1px solid rgba(100, 140, 255, 0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.3s ease-out;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .city-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .city-card-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #e0e0e0;
+  }
+
+  .city-card-remove {
+    background: none;
+    border: none;
+    color: #5c6a7a;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+
+  .city-card-remove:hover { color: #ff6b6b; }
+
+  .city-card-time {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #64b5f6;
+    letter-spacing: 1px;
+  }
+
+  .city-card-date {
+    font-size: 12px;
+    color: #6b7a8f;
+    margin-top: 2px;
+  }
+
+  .city-card-info {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .city-card-info-item {
+    font-size: 12px;
+    color: #8892b0;
+    background: rgba(100, 140, 255, 0.06);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .city-card-info-item strong { color: #b0bec5; }
+
+  /* Time difference bar */
+  .diff-bar {
+    height: 3px;
+    background: rgba(100, 140, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .diff-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .diff-label {
+    font-size: 11px;
+    color: #6b7a8f;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #5c6a7a;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* Search */
+  .search-box {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(100, 140, 255, 0.08);
+  }
+
+  .search-input {
+    width: 100%;
+    background: rgba(20, 28, 50, 0.8);
+    border: 1px solid rgba(100, 140, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #e0e0e0;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: rgba(100, 140, 255, 0.4);
+  }
+
+  .search-input::placeholder { color: #5c6a7a; }
+
+  /* Search results dropdown */
+  .search-results {
+    position: absolute;
+    background: rgba(20, 28, 50, 0.98);
+    border: 1px solid rgba(100, 140, 255, 0.2);
+    border-radius: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 200;
+    width: calc(100% - 32px);
+    margin: 4px 16px 0;
+    display: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .search-results.visible { display: block; }
+
+  .search-result-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(100, 140, 255, 0.06);
+    transition: background 0.15s;
+    font-size: 13px;
+  }
+
+  .search-result-item:hover { background: rgba(100, 140, 255, 0.1); }
+
+  .search-result-item:last-child { border-bottom: none; }
+
+  .search-result-name { font-weight: 600; color: #e0e0e0; }
+  .search-result-tz { font-size: 11px; color: #6b7a8f; margin-left: 8px; }
+
+  .search-wrap { position: relative; }
+
+  /* Day/Night indicator on map */
+  .night-overlay {
+    fill: rgba(10, 15, 40, 0.45);
+    pointer-events: none;
+    transition: d 0.5s ease;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; max-height: 45vh; border-left: none; border-top: 1px solid rgba(100, 140, 255, 0.1); }
+    .map-container { min-height: 50vh; }
+    .header h1 { font-size: 16px; }
+  }
+
+  /* Time column for comparison */
+  .time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .time-cell {
+    text-align: center;
+    padding: 6px;
+    background: rgba(100, 140, 255, 0.04);
+    border-radius: 6px;
+  }
+
+  .time-cell-label {
+    font-size: 10px;
+    color: #6b7a8f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .time-cell-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b0bec5;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1>🌍 世界时区地图</h1>
+    <div class="header-right">
+      <div class="local-time">本地时间: <strong id="localTime">--:--:--</strong></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="map-container" id="mapContainer">
+      <!-- SVG world map will be inserted here -->
+    </div>
+
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>🕐 时间对比 (<span id="cityCount">0</span>)</h2>
+        <button class="btn-clear" id="btnClear" style="display:none;">清空全部</button>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <input type="text" class="search-input" id="searchInput" placeholder="搜索城市 (如: 北京, Tokyo, New York)...">
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <div class="sidebar-content" id="sidebarContent">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-state-icon">📍</div>
+          <p>点击地图上的城市圆点<br>或搜索添加城市来对比时间</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="tooltip" id="tooltip">
+    <div class="tooltip-city" id="ttCity"></div>
+    <div class="tooltip-time" id="ttTime"></div>
+    <div class="tooltip-tz" id="ttTz"></div>
+  </div>
+</div>
+
+<script>
+// ============ CITY DATA ============
+// Simplified world cities with timezone data
+const CITIES = [
+  // Asia
+  { name: '北京', nameEn: 'Beijing', tz: 'Asia/Shanghai', x: 1172, y: 198, country: '中国' },
+  { name: '上海', nameEn: 'Shanghai', tz: 'Asia/Shanghai', x: 1184, y: 216, country: '中国' },
+  { name: '香港', nameEn: 'Hong Kong', tz: 'Asia/Hong_Kong', x: 1160, y: 236, country: '中国' },
+  { name: '台北', nameEn: 'Taipei', tz: 'Asia/Taipei', x: 1176, y: 234, country: '中国台湾' },
+  { name: '东京', nameEn: 'Tokyo', tz: 'Asia/Tokyo', x: 1236, y: 204, country: '日本' },
+  { name: '大阪', nameEn: 'Osaka', tz: 'Asia/Tokyo', x: 1228, y: 212, country: '日本' },
+  { name: '首尔', nameEn: 'Seoul', tz: 'Asia/Seoul', x: 1204, y: 196, country: '韩国' },
+  { name: '新加坡', nameEn: 'Singapore', tz: 'Asia/Singapore', x: 1148, y: 270, country: '新加坡' },
+  { name: '曼谷', nameEn: 'Bangkok', tz: 'Asia/Bangkok', x: 1124, y: 250, country: '泰国' },
+  { name: '河内', nameEn: 'Hanoi', tz: 'Asia/Ho_Chi_Minh', x: 1132, y: 232, country: '越南' },
+  { name: '马尼拉', nameEn: 'Manila', tz: 'Asia/Manila', x: 1184, y: 254, country: '菲律宾' },
+  { name: '雅加达', nameEn: 'Jakarta', tz: 'Asia/Jakarta', x: 1136, y: 294, country: '印尼' },
+  { name: '吉隆坡', nameEn: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur', x: 1140, y: 266, country: '马来西亚' },
+  { name: '新德里', nameEn: 'New Delhi', tz: 'Asia/Kolkata', x: 1040, y: 236, country: '印度' },
+  { name: '孟买', nameEn: 'Mumbai', tz: 'Asia/Kolkata', x: 1012, y: 254, country: '印度' },
+  { name: '卡拉奇', nameEn: 'Karachi', tz: 'Asia/Karachi', x: 996, y: 238, country: '巴基斯坦' },
+  { name: '德黑兰', nameEn: 'Tehran', tz: 'Asia/Tehran', x: 944, y: 228, country: '伊朗' },
+  { name: '迪拜', nameEn: 'Dubai', tz: 'Asia/Dubai', x: 936, y: 254, country: '阿联酋' },
+  { name: '利雅得', nameEn: 'Riyadh', tz: 'Asia/Riyadh', x: 920, y: 252, country: '沙特' },
+  { name: '科威特', nameEn: 'Kuwait City', tz: 'Asia/Kuwait', x: 916, y: 244, country: '科威特' },
+  { name: '巴格达', nameEn: 'Baghdad', tz: 'Asia/Baghdad', x: 908, y: 238, country: '伊拉克' },
+  { name: '安卡拉', nameEn: 'Ankara', tz: 'Europe/Istanbul', x: 880, y: 210, country: '土耳其' },
+  { name: '伊斯坦布尔', nameEn: 'Istanbul', tz: 'Europe/Istanbul', x: 876, y: 200, country: '土耳其' },
+  { name: '莫斯科', nameEn: 'Moscow', tz: 'Europe/Moscow', x: 848, y: 160, country: '俄罗斯' },
+  { name: '塔什干', nameEn: 'Tashkent', tz: 'Asia/Tashkent', x: 904, y: 200, country: '乌兹别克' },
+  { name: '阿拉木图', nameEn: 'Almaty', tz: 'Asia/Almaty', x: 884, y: 198, country: '哈萨克' },
+  { name: '乌鲁木齐', nameEn: 'Urumqi', tz: 'Asia/Urumqi', x: 908, y: 198, country: '中国' },
+  { name: '拉萨', nameEn: 'Lhasa', tz: 'Asia/Shanghai', x: 1060, y: 222, country: '中国' },
+  { name: '成都', nameEn: 'Chengdu', tz: 'Asia/Shanghai', x: 1096, y: 218, country: '中国' },
+  { name: '广州', nameEn: 'Guangzhou', tz: 'Asia/Shanghai', x: 1156, y: 248, country: '中国' },
+  { name: '深圳', nameEn: 'Shenzhen', tz: 'Asia/Shanghai', x: 1158, y: 250, country: '中国' },
+  { name: '武汉', nameEn: 'Wuhan', tz: 'Asia/Shanghai', x: 1128, y: 216, country: '中国' },
+  { name: '西安', nameEn: 'Xi\'an', tz: 'Asia/Shanghai', x: 1104, y: 210, country: '中国' },
+
+  // Europe
+  { name: '伦敦', nameEn: 'London', tz: 'Europe/London', x: 792, y: 158, country: '英国' },
+  { name: '巴黎', nameEn: 'Paris', tz: 'Europe/Paris', x: 804, y: 170, country: '法国' },
+  { name: '柏林', nameEn: 'Berlin', tz: 'Europe/Berlin', x: 832, y: 160, country: '德国' },
+  { name: '罗马', nameEn: 'Rome', tz: 'Europe/Rome', x: 836, y: 188, country: '意大利' },
+  { name: '马德里', nameEn: 'Madrid', tz: 'Europe/Madrid', x: 764, y: 182, country: '西班牙' },
+  { name: '巴塞罗那', nameEn: 'Barcelona', tz: 'Europe/Madrid', x: 780, y: 186, country: '西班牙' },
+  { name: '阿姆斯特丹', nameEn: 'Amsterdam', tz: 'Europe/Amsterdam', x: 820, y: 156, country: '荷兰' },
+  { name: '布鲁塞尔', nameEn: 'Brussels', tz: 'Europe/Brussels', x: 816, y: 164, country: '比利时' },
+  { name: '维也纳', nameEn: 'Vienna', tz: 'Europe/Vienna', x: 848, y: 172, country: '奥地利' },
+  { name: '华沙', nameEn: 'Warsaw', tz: 'Europe/Warsaw', x: 856, y: 158, country: '波兰' },
+  { name: '布拉格', nameEn: 'Prague', tz: 'Europe/Prague', x: 844, y: 164, country: '捷克' },
+  { name: '布达佩斯', nameEn: 'Budapest', tz: 'Europe/Budapest', x: 860, y: 174, country: '匈牙利' },
+  { name: '雅典', nameEn: 'Athens', tz: 'Europe/Athens', x: 872, y: 192, country: '希腊' },
+  { name: '斯德哥尔摩', nameEn: 'Stockholm', tz: 'Europe/Stockholm', x: 840, y: 128, country: '瑞典' },
+  { name: '哥本哈根', nameEn: 'Copenhagen', tz: 'Europe/Copenhagen', x: 828, y: 146, country: '丹麦' },
+  { name: '赫尔辛基', nameEn: 'Helsinki', tz: 'Europe/Helsinki', x: 872, y: 136, country: '芬兰' },
+  { name: '奥斯陆', nameEn: 'Oslo', tz: 'Europe/Oslo', x: 820, y: 138, country: '挪威' },
+  { name: '都柏林', nameEn: 'Dublin', tz: 'Europe/Dublin', x: 772, y: 154, country: '爱尔兰' },
+  { name: '里斯本', nameEn: 'Lisbon', tz: 'Europe/Lisbon', x: 736, y: 180, country: '葡萄牙' },
+  { name: '日内瓦', nameEn: 'Geneva', tz: 'Europe/Zurich', x: 812, y: 178, country: '瑞士' },
+  { name: '苏黎世', nameEn: 'Zurich', tz: 'Europe/Zurich', x: 816, y: 172, country: '瑞士' },
+
+  // Americas
+  { name: '纽约', nameEn: 'New York', tz: 'America/New_York', x: 560, y: 174, country: '美国' },
+  { name: '华盛顿', nameEn: 'Washington DC', tz: 'America/New_York', x: 560, y: 182, country: '美国' },
+  { name: '洛杉矶', nameEn: 'Los Angeles', tz: 'America/Los_Angeles', x: 420, y: 188, country: '美国' },
+  { name: '旧金山', nameEn: 'San Francisco', tz: 'America/Los_Angeles', x: 416, y: 184, country: '美国' },
+  { name: '芝加哥', nameEn: 'Chicago', tz: 'America/Chicago', x: 508, y: 170, country: '美国' },
+  { name: '休斯顿', nameEn: 'Houston', tz: 'America/Chicago', x: 492, y: 204, country: '美国' },
+  { name: '迈阿密', nameEn: 'Miami', tz: 'America/New_York', x: 548, y: 216, country: '美国' },
+  { name: '西雅图', nameEn: 'Seattle', tz: 'America/Los_Angeles', x: 412, y: 154, country: '美国' },
+  { name: '丹佛', nameEn: 'Denver', tz: 'America/Denver', x: 460, y: 178, country: '美国' },
+  { name: '波士顿', nameEn: 'Boston', tz: 'America/New_York', x: 576, y: 166, country: '美国' },
+  { name: '亚特兰大', nameEn: 'Atlanta', tz: 'America/New_York', x: 548, y: 196, country: '美国' },
+  { name: '多伦多', nameEn: 'Toronto', tz: 'America/Toronto', x: 560, y: 166, country: '加拿大' },
+  { name: '温哥华', nameEn: 'Vancouver', tz: 'America/Vancouver', x: 404, y: 156, country: '加拿大' },
+  { name: '蒙特利尔', nameEn: 'Montreal', tz: 'America/Toronto', x: 572, y: 164, country: '加拿大' },
+  { name: '墨西哥城', nameEn: 'Mexico City', tz: 'America/Mexico_City', x: 464, y: 216, country: '墨西哥' },
+  { name: '圣保罗', nameEn: 'Sao Paulo', tz: 'America/Sao_Paulo', x: 560, y: 316, country: '巴西' },
+  { name: '里约', nameEn: 'Rio de Janeiro', tz: 'America/Sao_Paulo', x: 560, y: 304, country: '巴西' },
+  { name: '布宜诺斯艾利斯', nameEn: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires', x: 532, y: 348, country: '阿根廷' },
+  { name: '利马', nameEn: 'Lima', tz: 'America/Lima', x: 476, y: 292, country: '秘鲁' },
+  { name: '波哥大', nameEn: 'Bogota', tz: 'America/Bogota', x: 492, y: 248, country: '哥伦比亚' },
+  { name: '圣地亚哥', nameEn: 'Santiago', tz: 'America/Santiago', x: 480, y: 332, country: '智利' },
+
+  // Africa
+  { name: '开罗', nameEn: 'Cairo', tz: 'Africa/Cairo', x: 892, y: 220, country: '埃及' },
+  { name: '拉各斯', nameEn: 'Lagos', tz: 'Africa/Lagos', x: 892, y: 274, country: '尼日利亚' },
+  { name: '约翰内斯堡', nameEn: 'Johannesburg', tz: 'Africa/Johannesburg', x: 924, y: 322, country: '南非' },
+  { name: '开普敦', nameEn: 'Cape Town', tz: 'Africa/Johannesburg', x: 908, y: 348, country: '南非' },
+  { name: '卡萨布兰卡', nameEn: 'Casablanca', tz: 'Africa/Casablanca', x: 788, y: 210, country: '摩洛哥' },
+  { name: '内罗毕', nameEn: 'Nairobi', tz: 'Africa/Nairobi', x: 928, y: 272, country: '肯尼亚' },
+  { name: '阿尔及尔', nameEn: 'Algiers', tz: 'Africa/Algiers', x: 808, y: 206, country: '阿尔及利亚' },
+  { name: '突尼斯', nameEn: 'Tunis', tz: 'Africa/Tunis', x: 816, y: 196, country: '突尼斯' },
+  { name: '亚的斯亚贝巴', nameEn: 'Addis Ababa', tz: 'Africa/Addis_Ababa', x: 928, y: 264, country: '埃塞俄比亚' },
+  { name: '达喀尔', nameEn: 'Dakar', tz: 'Africa/Dakar', x: 784, y: 236, country: '塞内加尔' },
+  { name: '阿克拉', nameEn: 'Accra', tz: 'Africa/Accra', x: 840, y: 260, country: '加纳' },
+  { name: '达尔市', nameEn: 'Dar es Salaam', tz: 'Africa/Dar_es_Salaam', x: 936, y: 282, country: '坦桑尼亚' },
+
+  // Oceania
+  { name: '悉尼', nameEn: 'Sydney', tz: 'Australia/Sydney', x: 1240, y: 318, country: '澳大利亚' },
+  { name: '墨尔本', nameEn: 'Melbourne', tz: 'Australia/Melbourne', x: 1244, y: 332, country: '澳大利亚' },
+  { name: '珀斯', nameEn: 'Perth', tz: 'Australia/Perth', x: 1128, y: 314, country: '澳大利亚' },
+  { name: '布里斯班', nameEn: 'Brisbane', tz: 'Australia/Brisbane', x: 1248, y: 304, country: '澳大利亚' },
+  { name: '奥克兰', nameEn: 'Auckland', tz: 'Pacific/Auckland', x: 1284, y: 316, country: '新西兰' },
+  { name: '檀香山', nameEn: 'Honolulu', tz: 'Pacific/Honolulu', x: 260, y: 196, country: '美国(夏威夷)' },
+  { name: '苏瓦', nameEn: 'Suva', tz: 'Pacific/Fiji', x: 1296, y: 298, country: '斐济' },
+];
+
+// ============ STATE ============
+let selectedCities = [];
+let tooltipTimeout = null;
+
+// ============ SVG MAP ============
+// Using a simplified SVG world map path
+function buildMapSVG() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 1400 650');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  // Ocean background
+  const ocean = document.createElementNS(svgNS, 'rect');
+  ocean.setAttribute('class', 'ocean');
+  ocean.setAttribute('width', '1400');
+  ocean.setAttribute('height', '650');
+  svg.appendChild(ocean);
+
+  // Grid lines (longitude every 30 deg, latitude every 30 deg)
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const x = ((lon + 180) / 360) * 1400;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('class', 'grid-line');
+    line.setAttribute('x1', x);
+    line.setAttribute('y1', 0);
+    line.setAttribute('x2', x);
+    line.setAttribute('y2', 650);
+    svg.appendChild(line);
+  }
+  for (let lat = -90; lat <= 90; lat += 30) {
+    const y = ((90 - lat) / 180) * 650;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('class', 'grid-line');
+    line.setAttribute('x1', 0);
+    line.setAttribute('y1', y);
+    line.setAttribute('x2', 1400);
+    line.setAttribute('y2', y);
+    svg.appendChild(line);
+  }
+
+  // Simplified continent paths (rough outlines)
+  const continents = [
+    // North America
+    { d: 'M140,80 L280,70 L340,90 L380,130 L370,180 L340,220 L300,240 L260,250 L220,240 L180,210 L140,180 L120,140 Z', id: 'na' },
+    // South America
+    { d: 'M300,270 L340,260 L380,290 L400,340 L390,400 L360,440 L320,450 L290,420 L280,370 L280,310 Z', id: 'sa' },
+    // Europe
+    { d: 'M740,110 L820,100 L880,120 L900,150 L890,190 L860,210 L820,210 L780,200 L750,170 L740,140 Z', id: 'eu' },
+    // Africa
+    { d: 'M780,220 L860,210 L920,240 L940,300 L920,380 L880,420 L820,420 L780,380 L760,320 L760,260 Z', id: 'af' },
+    // Asia (main)
+    { d: 'M880,80 L1040,70 L1160,90 L1240,130 L1260,180 L1240,230 L1180,270 L1100,280 L1020,270 L960,240 L920,200 L880,160 L870,120 Z', id: 'as' },
+    // SE Asia / Indonesia
+    { d: 'M1100,290 L1180,280 L1220,300 L1240,330 L1200,350 L1140,340 L1100,310 Z', id: 'sea' },
+    // Australia
+    { d: 'M1160,340 L1240,330 L1280,360 L1280,400 L1240,430 L1180,430 L1140,400 L1140,360 Z', id: 'au' },
+    // Japan
+    { d: 'M1228,180 L1250,175 L1260,195 L1250,215 L1230,210 Z', id: 'jp' },
+    // UK / Ireland
+    { d: 'M768,130 L788,125 L792,150 L780,158 L768,148 Z', id: 'uk' },
+    // Middle East (separate)
+    { d: 'M880,200 L940,190 L960,220 L940,260 L900,260 L880,230 Z', id: 'me' },
+    // India subcontinent
+    { d: 'M1020,200 L1060,200 L1080,240 L1060,290 L1020,280 L1000,240 Z', id: 'in' },
+    // Central America
+    { d: 'M240,240 L280,235 L290,260 L270,275 L240,265 Z', id: 'ca' },
+    // Greenland
+    { d: 'M560,40 L640,35 L660,70 L640,100 L580,105 L540,80 Z', id: 'gl' },
+    // New Zealand
+    { d: 'M1280,340 L1296,335 L1300,360 L1288,370 Z', id: 'nz' },
+    // Taiwan
+    { d: 'M1172,226 L1184,224 L1186,236 L1174,238 Z', id: 'tw' },
+    // Philippines
+    { d: 'M1180,244 L1196,240 L1200,260 L1184,264 Z', id: 'ph' },
+    // Madagascar
+    { d: 'M904,340 L920,335 L924,375 L908,380 Z', id: 'mg' },
+  ];
+
+  continents.forEach(c => {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', c.d);
+    path.setAttribute('class', 'country');
+    path.setAttribute('id', c.id);
+    path.addEventListener('click', () => onContinentClick(c.id));
+    svg.appendChild(path);
+  });
+
+  // Day/night overlay
+  const nightOverlay = document.createElementNS(svgNS, 'path');
+  nightOverlay.setAttribute('id', 'nightOverlay');
+  nightOverlay.setAttribute('class', 'night-overlay');
+  svg.appendChild(nightOverlay);
+
+  // City dots and labels
+  CITIES.forEach((city, idx) => {
+    const g = document.createElementNS(svgNS, 'g');
+    g.setAttribute('class', 'city-group');
+    g.setAttribute('data-index', idx);
+
+    // Dot
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', city.x);
+    dot.setAttribute('cy', city.y);
+    dot.setAttribute('r', 3.5);
+    dot.setAttribute('fill', '#ff9800');
+    dot.setAttribute('class', 'city-dot');
+    dot.setAttribute('data-index', idx);
+
+    dot.addEventListener('mouseenter', (e) => showTooltip(e, city));
+    dot.addEventListener('mouseleave', hideTooltip);
+    dot.addEventListener('click', () => toggleCity(city));
+
+    // Label
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', city.x + 5);
+    label.setAttribute('y', city.y + 3);
+    label.setAttribute('class', 'city-label');
+    label.textContent = city.name;
+
+    g.appendChild(dot);
+    g.appendChild(label);
+    svg.appendChild(g);
+  });
+
+  document.getElementById('mapContainer').appendChild(svg);
+  updateNightOverlay();
+}
+
+// ============ DAY/NIGHT OVERLAY ============
+function updateNightOverlay() {
+  const now = new Date();
+  // Calculate the solar terminator position
+  // Approximate: the sun's position based on time of day and date
+  const janFirst = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((now - janFirst) / 86400000);
+  // Sun declination (approximate)
+  const declination = 23.45 * Math.sin((2 * Math.PI / 365) * (dayOfYear - 81));
+  // Hour angle based on UTC time
+  const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const hourAngle = (utcHours - 12) * 15; // degrees from noon
+
+  // Build a path for the night side
+  const W = 1400, H = 650;
+  let pathD = '';
+
+  for (let y = 0; y <= H; y += 2) {
+    const lat = (1 - y / H) * 180 - 90;
+    // Terminator longitude for this latitude
+    const tanDec = Math.tan(declination * Math.PI / 180);
+    const tanLat = Math.tan(lat * Math.PI / 180);
+    let termLon = hourAngle - Math.atan2(tanDec, Math.cos(lat * Math.PI / 180)) * 180 / Math.PI;
+    // Wrap
+    while (termLon < -180) termLon += 360;
+    while (termLon > 180) termLon -= 360;
+
+    const termX = ((termLon + 180) / 360) * W;
+
+    if (y === 0) {
+      pathD += `M${termX},0 `;
+    } else {
+      pathD += `L${termX},${y} `;
+    }
+  }
+  // Complete the path along the edges
+  for (let y = H; y >= 0; y -= 2) {
+    const lat = (1 - y / H) * 180 - 90;
+    const tanDec = Math.tan(declination * Math.PI / 180);
+    let termLon = hourAngle - Math.atan2(tanDec, Math.cos(lat * Math.PI / 180)) * 180 / Math.PI;
+    while (termLon < -180) termLon += 360;
+    while (termLon > 180) termLon -= 360;
+    const termX = ((termLon + 180) / 360) * W;
+    pathD += `L${termX},${y} `;
+  }
+  pathD += 'Z';
+
+  const overlay = document.getElementById('nightOverlay');
+  if (overlay) overlay.setAttribute('d', pathD);
+}
+
+// ============ TOOLTIP ============
+function showTooltip(e, city) {
+  const tt = document.getElementById('tooltip');
+  const info = getTimeInfo(city.tz);
+
+  document.getElementById('ttCity').textContent = `${city.name} (${city.nameEn})`;
+  document.getElementById('ttTime').textContent = info.time;
+  document.getElementById('ttTz').textContent = `${info.tzName}  |  ${info.offsetStr}  |  ${info.date}`;
+
+  const rect = e.target.getBoundingClientRect();
+  const container = document.getElementById('mapContainer').getBoundingClientRect();
+
+  tt.style.left = (rect.left - container.left + 12) + 'px';
+  tt.style.top = (rect.top - container.top - 70) + 'px';
+  tt.classList.add('visible');
+}
+
+function hideTooltip() {
+  const tt = document.getElementById('tooltip');
+  tt.classList.remove('visible');
+}
+
+// ============ TIME FUNCTIONS ============
+function getTimeInfo(tz) {
+  const now = new Date();
+  const options = {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  };
+  const dateOptions = {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  };
+
+  const time = now.toLocaleTimeString('zh-CN', options);
+  const date = now.toLocaleDateString('zh-CN', dateOptions);
+
+  // Get timezone name and offset
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    timeZoneName: 'short',
+  });
+  const parts = fmt.formatToParts(now);
+  const tzPart = parts.find(p => p.type === 'timeZoneName');
+  const tzName = tzPart ? tzPart.value : tz;
+
+  // Calculate offset
+  const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  const offsetMs = tzDate - utcDate;
+  const offsetHours = offsetMs / (1000 * 60 * 60);
+  const sign = offsetHours >= 0 ? '+' : '';
+  const offsetStr = `UTC${sign}${offsetHours.toFixed(1).replace('.0', '')}`;
+
+  // Day of week
+  const dowOptions = { timeZone: tz, weekday: 'long' };
+  const dayOfWeek = now.toLocaleDateString('zh-CN', dowOptions);
+
+  return { time, date, tzName, offsetStr, offsetHours, dayOfWeek };
+}
+
+function getTimeDiff(tz1, tz2) {
+  const now = new Date();
+  const d1 = new Date(now.toLocaleString('en-US', { timeZone: tz1 }));
+  const d2 = new Date(now.toLocaleString('en-US', { timeZone: tz2 }));
+  return (d2 - d1) / (1000 * 60 * 60);
+}
+
+// ============ CITY SELECTION ============
+function toggleCity(city) {
+  const idx = selectedCities.findIndex(c => c.tz === city.tz && c.name === city.name);
+  if (idx >= 0) {
+    selectedCities.splice(idx, 1);
+    updateCityDot(city, false);
+  } else {
+    selectedCities.push(city);
+    updateCityDot(city, true);
+  }
+  renderSidebar();
+}
+
+function updateCityDot(city, selected) {
+  const dots = document.querySelectorAll('.city-dot');
+  dots.forEach(dot => {
+    if (parseInt(dot.dataset.index) === CITIES.findIndex(c => c.tz === city.tz && c.name === city.name)) {
+      if (selected) {
+        dot.classList.add('selected');
+      } else {
+        dot.classList.remove('selected');
+      }
+    }
+  });
+}
+
+function removeCity(city) {
+  const idx = selectedCities.findIndex(c => c.tz === city.tz && c.name === city.name);
+  if (idx >= 0) {
+    selectedCities.splice(idx, 1);
+    updateCityDot(city, false);
+    renderSidebar();
+  }
+}
+
+// ============ SIDEBAR RENDER ============
+function renderSidebar() {
+  const content = document.getElementById('sidebarContent');
+  const emptyState = document.getElementById('emptyState');
+  const cityCountEl = document.getElementById('cityCount');
+  const btnClear = document.getElementById('btnClear');
+
+  cityCountEl.textContent = selectedCities.length;
+  btnClear.style.display = selectedCities.length > 0 ? 'inline' : 'none';
+
+  if (selectedCities.length === 0) {
+    emptyState.style.display = '';
+    // Remove all cards
+    content.querySelectorAll('.city-card').forEach(el => el.remove());
+    return;
+  }
+
+  emptyState.style.display = 'none';
+
+  // Remove old cards
+  content.querySelectorAll('.city-card').forEach(el => el.remove());
+
+  // Get reference timezone (first selected or local)
+  const refTz = selectedCities.length > 0 ? selectedCities[0].tz : Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  selectedCities.forEach((city, i) => {
+    const info = getTimeInfo(city.tz);
+    const diff = getTimeDiff(refTz, city.tz);
+    const diffSign = diff >= 0 ? '+' : '';
+    const diffStr = diff === 0 ? '相同' : `${diffSign}${diff.toFixed(1)}h`;
+
+    // Color based on time
+    const hour = parseInt(info.time.split(':')[0]);
+    let timeColor = '#64b5f6'; // default blue
+    if (hour >= 6 && hour < 12) timeColor = '#ffb74d';   // morning - orange
+    else if (hour >= 12 && hour < 18) timeColor = '#fff176'; // afternoon - yellow
+    else if (hour >= 18 && hour < 22) timeColor = '#f06292'; // evening - pink
+    else timeColor = '#7986cb'; // night - soft blue
+
+    const card = document.createElement('div');
+    card.className = 'city-card';
+    card.dataset.tz = city.tz;
+    card.innerHTML = `
+      <div class="city-card-header">
+        <div>
+          <span class="city-card-name">${city.name}</span>
+          <span style="color:#6b7a8f;font-size:12px;margin-left:6px;">${city.country}</span>
+        </div>
+        <button class="city-card-remove" data-name="${city.name}" data-tz="${city.tz}">&times;</button>
+      </div>
+      <div class="city-card-time" style="color:${timeColor}">${info.time}</div>
+      <div class="city-card-date">${info.date} ${info.dayOfWeek}</div>
+      <div class="city-card-info">
+        <span class="city-card-info-item">${info.tzName}</span>
+        <span class="city-card-info-item">${info.offsetStr}</span>
+        <span class="city-card-info-item" style="color:${diff === 0 ? '#4caf50' : timeColor};">
+          <strong>${diffStr}</strong> vs 首选城市
+        </span>
+      </div>
+      <div class="diff-bar">
+        <div class="diff-bar-fill" style="width:${Math.min(Math.abs(diff) / 14 * 100, 100)}%;background:${diffColor(diff)}"></div>
+      </div>
+      <div class="diff-label">${diffStr}</div>
+    `;
+
+    content.appendChild(card);
+
+    // Remove button
+    card.querySelector('.city-card-remove').addEventListener('click', () => removeCity(city));
+  });
+}
+
+function diffColor(diff) {
+  const abs = Math.abs(diff);
+  if (abs < 2) return '#4caf50';
+  if (abs < 5) return '#ff9800';
+  if (abs < 8) return '#f44336';
+  return '#9c27b0';
+}
+
+// ============ SEARCH ============
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', () => {
+  const query = searchInput.value.trim().toLowerCase();
+  if (query.length < 1) {
+    searchResults.classList.remove('visible');
+    return;
+  }
+
+  const matches = CITIES.filter(c =>
+    c.name.toLowerCase().includes(query) ||
+    c.nameEn.toLowerCase().includes(query) ||
+    c.country.toLowerCase().includes(query)
+  ).slice(0, 12);
+
+  if (matches.length === 0) {
+    searchResults.innerHTML = '<div class="search-result-item" style="color:#6b7a8f;">无匹配结果</div>';
+  } else {
+    searchResults.innerHTML = matches.map(c => `
+      <div class="search-result-item" data-tz="${c.tz}" data-name="${c.name}">
+        <span class="search-result-name">${c.name}</span>
+        <span class="search-result-tz">${c.country} · ${c.nameEn}</span>
+      </div>
+    `).join('');
+
+    searchResults.querySelectorAll('.search-result-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const name = item.dataset.name;
+        const city = CITIES.find(c => c.name === name);
+        if (city) {
+          toggleCity(city);
+          searchInput.value = '';
+          searchResults.classList.remove('visible');
+        }
+      });
+    });
+  }
+  searchResults.classList.add('visible');
+});
+
+searchInput.addEventListener('blur', () => {
+  setTimeout(() => searchResults.classList.remove('visible'), 150);
+});
+
+searchInput.addEventListener('focus', () => {
+  if (searchInput.value.trim().length >= 1) {
+    searchInput.dispatchEvent(new Event('input'));
+  }
+});
+
+// ============ CLEAR ============
+document.getElementById('btnClear').addEventListener('click', () => {
+  selectedCities.forEach(c => updateCityDot(c, false));
+  selectedCities = [];
+  renderSidebar();
+});
+
+// ============ CONTINENT CLICK ============
+function onContinentClick(continentId) {
+  // Find cities in this region
+  const regionCities = CITIES.filter(c => {
+    switch (continentId) {
+      case 'as': case 'in': case 'sea': case 'me': case 'tw': case 'ph': return ['中国','日本','韩国','新加坡','泰国','越南','菲律宾','印尼','马来西亚','印度','巴基斯坦','伊朗','迪拜','沙特','科威特','伊拉克','土耳其','俄罗斯','乌兹别克','哈萨克','中国台湾'].includes(c.country);
+      case 'eu': case 'uk': return ['英国','法国','德国','意大利','西班牙','荷兰','比利时','奥地利','波兰','捷克','匈牙利','希腊','瑞典','丹麦','芬兰','挪威','爱尔兰','葡萄牙','瑞士'].includes(c.country);
+      case 'af': case 'mg': return ['埃及','尼日利亚','南非','摩洛哥','肯尼亚','阿尔及利亚','突尼斯','埃塞俄比亚','塞内加尔','加纳','坦桑尼亚'].includes(c.country);
+      case 'na': case 'ca': case 'gl': return ['美国','加拿大','墨西哥'].includes(c.country);
+      case 'sa': return ['巴西','阿根廷','秘鲁','哥伦比亚','智利'].includes(c.country);
+      case 'au': case 'nz': return ['澳大利亚','新西兰','斐济'].includes(c.country);
+      default: return false;
+    }
+  });
+
+  if (regionCities.length > 0) {
+    // Add first city not yet selected, or cycle
+    const unselected = regionCities.filter(c => !selectedCities.some(s => s.tz === c.tz && s.name === c.name));
+    if (unselected.length > 0) {
+      toggleCity(unselected[0]);
+    }
+  }
+}
+
+// ============ CLOCK UPDATE ============
+function updateClocks() {
+  // Update local time
+  const localEl = document.getElementById('localTime');
+  const now = new Date();
+  localEl.textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+
+  // Update sidebar cards (without re-rendering everything)
+  document.querySelectorAll('.city-card').forEach(card => {
+    const tz = card.dataset.tz;
+    const city = CITIES.find(c => c.tz === tz);
+    if (city) {
+      const info = getTimeInfo(tz);
+      const timeEl = card.querySelector('.city-card-time');
+      const dateEl = card.querySelector('.city-card-date');
+
+      if (timeEl) {
+        const hour = parseInt(info.time.split(':')[0]);
+        let color = '#64b5f6';
+        if (hour >= 6 && hour < 12) color = '#ffb74d';
+        else if (hour >= 12 && hour < 18) color = '#fff176';
+        else if (hour >= 18 && hour < 22) color = '#f06292';
+        else color = '#7986cb';
+        timeEl.textContent = info.time;
+        timeEl.style.color = color;
+      }
+      if (dateEl) {
+        dateEl.textContent = `${info.date} ${info.dayOfWeek}`;
+      }
+    }
+  });
+
+  // Update night overlay every minute
+  updateNightOverlay();
+}
+
+// ============ INIT ============
+buildMapSVG();
+renderSidebar();
+setInterval(updateClocks, 1000);
+updateClocks();
+</script>
+</body>
+</html>
