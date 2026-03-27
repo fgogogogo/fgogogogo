@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 健康管理助手</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --gradient-1: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --gradient-2: linear-gradient(135deg, #06b6d4, #10b981);
+            --gradient-3: linear-gradient(135deg, #f59e0b, #ef4444);
+            --gradient-4: linear-gradient(135deg, #ec4899, #8b5cf6);
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Layout */
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+
+        .nav-item .icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .user-profile:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--gradient-4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px 32px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .header-left h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        .header-btn.primary {
+            background: var(--gradient-1);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+
+        .header-btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(99,102,241,0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Health Score Card */
+        .health-score-section {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .score-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .score-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+        }
+
+        .score-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 20px;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring-bg {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 10;
+        }
+
+        .score-ring-fill {
+            fill: none;
+            stroke: url(#scoreGradient);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 502;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-number {
+            font-size: 48px;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .score-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .score-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .score-detail-item {
+            background: var(--bg-dark);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .score-detail-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .score-detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .score-detail-value.excellent { color: var(--success); }
+        .score-detail-value.good { color: var(--info); }
+        .score-detail-value.warning { color: var(--warning); }
+        .score-detail-value.danger { color: var(--danger); }
+
+        /* Vitals Grid */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .vital-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vital-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .vital-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .vital-card.heart::after { background: var(--danger); }
+        .vital-card.pressure::after { background: var(--warning); }
+        .vital-card.oxygen::after { background: var(--info); }
+        .vital-card.temp::after { background: var(--gradient-4); }
+
+        .vital-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .vital-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .vital-card.heart .vital-icon { background: rgba(239,68,68,0.15); }
+        .vital-card.pressure .vital-icon { background: rgba(245,158,11,0.15); }
+        .vital-card.oxygen .vital-icon { background: rgba(6,182,212,0.15); }
+        .vital-card.temp .vital-icon { background: rgba(139,92,246,0.15); }
+
+        .vital-status {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .vital-status.normal { background: rgba(16,185,129,0.15); color: var(--success); }
+        .vital-status.attention { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .vital-status.critical { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+        .vital-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .vital-unit {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .vital-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .vital-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        .trend-stable { color: var(--text-muted); }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-dark);
+            padding: 3px;
+            border-radius: 8px;
+        }
+
+        .chart-tab {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+            border: none;
+            background: none;
+        }
+
+        .chart-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .chart-tab:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+        }
+
+        /* Activity Section */
+        .activity-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .activity-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .activity-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .activity-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .activity-card.steps .activity-icon { background: rgba(16,185,129,0.15); }
+        .activity-card.sleep .activity-icon { background: rgba(99,102,241,0.15); }
+        .activity-card.weight .activity-icon { background: rgba(236,72,153,0.15); }
+
+        .activity-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .activity-goal {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .activity-bar {
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .activity-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .activity-card.steps .activity-bar-fill { background: var(--gradient-2); }
+        .activity-card.sleep .activity-bar-fill { background: var(--gradient-1); }
+        .activity-card.weight .activity-bar-fill { background: var(--gradient-4); }
+
+        /* AI Health Plan Section */
+        .ai-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .ai-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-1);
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .ai-badge {
+            background: var(--gradient-1);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ai-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .ai-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .ai-content p {
+            margin-bottom: 12px;
+        }
+
+        .ai-content strong {
+            color: var(--text-primary);
+        }
+
+        .ai-recommendations {
+            list-style: none;
+        }
+
+        .ai-recommendations li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .ai-recommendations li:last-child {
+            border-bottom: none;
+        }
+
+        .rec-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .rec-icon.diet { background: rgba(16,185,129,0.15); color: var(--success); }
+        .rec-icon.exercise { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+        .rec-icon.sleep { background: rgba(139,92,246,0.15); color: #a78bfa; }
+        .rec-icon.checkup { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .rec-icon.water { background: rgba(6,182,212,0.15); color: var(--info); }
+        .rec-icon.mind { background: rgba(236,72,153,0.15); color: #f472b6; }
+
+        /* Health Plan Generator */
+        .plan-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .plan-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .plan-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-generate-btn {
+            padding: 10px 24px;
+            background: var(--gradient-1);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plan-generate-btn:hover {
+            box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+            transform: translateY(-1px);
+        }
+
+        .plan-generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .plan-generate-btn .spinner {
+            display: none;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .plan-generate-btn.loading .spinner {
+            display: inline-block;
+        }
+
+        .plan-generate-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .plan-output {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .plan-output.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .plan-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .plan-item {
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .plan-item:hover {
+            border-color: var(--primary);
+        }
+
+        .plan-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .plan-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .plan-item-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .plan-detail {
+            margin-top: 20px;
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .plan-detail-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plan-detail-content {
+            font-size: 14px;
+            line-height: 1.9;
+            color: var(--text-secondary);
+        }
+
+        .plan-detail-content .highlight {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+
+        /* Real-time indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: livePulse 1.5s infinite;
+        }
+
+        @keyframes livePulse {
+            0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .health-score-section { grid-template-columns: 1fr; }
+            .vitals-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-section { grid-template-columns: 1fr; }
+            .activity-section { grid-template-columns: repeat(2, 1fr); }
+            .ai-section { grid-template-columns: 1fr; }
+            .plan-card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 16px; }
+            .vitals-grid { grid-template-columns: 1fr; }
+            .activity-section { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .plan-card-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Data flow animation */
+        .data-flow {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0;
+        }
+
+        /* Typing animation for AI */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: var(--primary);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Mini sparkline */
+        .sparkline {
+            width: 60px;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">&#10024;</div>
+                    <div>
+                        <div class="logo-text">HealthAI</div>
+                        <div class="logo-sub">AI 健康管理助手</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">总览</div>
+                    <div class="nav-item active" data-page="dashboard">
+                        <span class="icon">&#9632;</span> 健康仪表盘
+                    </div>
+                    <div class="nav-item" data-page="realtime">
+                        <span class="icon">&#9201;</span> 实时监测
+                        <span class="nav-badge">LIVE</span>
+                    </div>
+                    <div class="nav-item" data-page="reports">
+                        <span class="icon">&#128202;</span> 健康报告
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">数据</div>
+                    <div class="nav-item" data-page="heart">
+                        <span class="icon">&#10084;</span> 心率监测
+                    </div>
+                    <div class="nav-item" data-page="pressure">
+                        <span class="icon">&#9879;</span> 血压追踪
+                    </div>
+                    <div class="nav-item" data-page="sleep">
+                        <span class="icon">&#9790;</span> 睡眠分析
+                    </div>
+                    <div class="nav-item" data-page="activity">
+                        <span class="icon">&#9989;</span> 运动数据
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">智能服务</div>
+                    <div class="nav-item" data-page="ai-plan">
+                        <span class="icon">&#129302;</span> AI 健康方案
+                    </div>
+                    <div class="nav-item" data-page="reminders">
+                        <span class="icon">&#128276;</span> 健康提醒
+                    </div>
+                    <div class="nav-item" data-page="settings">
+                        <span class="icon">&#9881;</span> 设置
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">李</div>
+                    <div class="user-info">
+                        <div class="user-name">李明</div>
+                        <div class="user-status"><span class="status-dot"></span>设备已连接</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>健康仪表盘</h1>
+                    <p><span class="live-indicator"><span class="live-dot"></span> 实时同步中</span> &nbsp;|&nbsp; 2026年3月27日 星期五</p>
+                </div>
+                <div class="header-right">
+                    <button class="header-btn" onclick="refreshData()">&#8635; 刷新数据</button>
+                    <button class="header-btn primary" onclick="generatePlan()">&#128172; 生成健康方案</button>
+                </div>
+            </header>
+
+            <!-- Health Score + Vitals -->
+            <section class="health-score-section">
+                <div class="score-card">
+                    <div class="score-label">&#127919; 综合健康评分</div>
+                    <div class="score-ring">
+                        <svg width="180" height="180" viewBox="0 0 180 180">
+                            <defs>
+                                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#8b5cf6"/>
+                                </linearGradient>
+                            </defs>
+                            <circle class="score-ring-bg" cx="90" cy="90" r="80"/>
+                            <circle class="score-ring-fill" id="scoreRing" cx="90" cy="90" r="80"/>
+                        </svg>
+                        <div class="score-value">
+                            <div class="score-number" id="scoreNumber">0</div>
+                            <div class="score-text">健康指数</div>
+                        </div>
+                    </div>
+                    <div class="score-details">
+                        <div class="score-detail-item">
+                            <div class="score-detail-value excellent" id="scorePhysical">--</div>
+                            <div class="score-detail-label">身体机能</div>
+                        </div>
+                        <div class="score-detail-item">
+                            <div class="score-detail-value good" id="scoreMental">--</div>
+                            <div class="score-detail-label">精神状态</div>
+                        </div>
+                        <div class="score-detail-item">
+                            <div class="score-detail-value good" id="scoreLifestyle">--</div>
+                            <div class="score-detail-label">生活方式</div>
+                        </div>
+                        <div class="score-detail-item">
+                            <div class="score-detail-value excellent" id="scoreRecovery">--</div>
+                            <div class="score-detail-label">恢复能力</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vitals-grid">
+                    <div class="vital-card heart">
+                        <div class="vital-header">
+                            <div class="vital-icon">&#10084;</div>
+                            <span class="vital-status normal" id="heartStatus">正常</span>
+                        </div>
+                        <div class="vital-value" id="heartRate">--</div>
+                        <div class="vital-unit">bpm 心率</div>
+                        <div class="vital-label">静息心率</div>
+                        <div class="vital-trend trend-stable" id="heartTrend">&#8594; 较昨日持平</div>
+                    </div>
+                    <div class="vital-card pressure">
+                        <div class="vital-header">
+                            <div class="vital-icon">&#9879;</div>
+                            <span class="vital-status normal" id="bpStatus">正常</span>
+                        </div>
+                        <div class="vital-value" id="bloodPressure">--</div>
+                        <div class="vital-unit">mmHg 血压</div>
+                        <div class="vital-label">收缩压 / 舒张压</div>
+                        <div class="vital-trend trend-down" id="bpTrend">&#8595; 较昨日下降 2%</div>
+                    </div>
+                    <div class="vital-card oxygen">
+                        <div class="vital-header">
+                            <div class="vital-icon">&#9711;</div>
+                            <span class="vital-status normal" id="oxygenStatus">正常</span>
+                        </div>
+                        <div class="vital-value" id="bloodOxygen">--</div>
+                        <div class="vital-unit">% 血氧饱和度</div>
+                        <div class="vital-label">指端血氧</div>
+                        <div class="vital-trend trend-stable" id="oxygenTrend">&#8594; 较昨日持平</div>
+                    </div>
+                    <div class="vital-card temp">
+                        <div class="vital-header">
+                            <div class="vital-icon">&#127777;</div>
+                            <span class="vital-status normal" id="tempStatus">正常</span>
+                        </div>
+                        <div class="vital-value" id="bodyTemp">--</div>
+                        <div class="vital-unit">°C 体温</div>
+                        <div class="vital-label">体表温度</div>
+                        <div class="vital-trend trend-stable" id="tempTrend">&#8594; 较昨日持平</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section class="charts-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title"><span class="dot" style="background:var(--danger)"></span> 24小时心率趋势</div>
+                        <div class="chart-tabs">
+                            <button class="chart-tab active" data-range="24h">24H</button>
+                            <button class="chart-tab" data-range="7d">7天</button>
+                            <button class="chart-tab" data-range="30d">30天</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="heartChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title"><span class="dot" style="background:var(--info)"></span> 健康指标分布</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity -->
+            <section class="activity-section">
+                <div class="activity-card steps">
+                    <div class="activity-header">
+                        <div class="activity-title">今日步数</div>
+                        <div class="activity-icon">&#127939;</div>
+                    </div>
+                    <div class="activity-value" id="stepsValue">0</div>
+                    <div class="activity-goal" id="stepsGoal">目标: 10,000 步</div>
+                    <div class="activity-bar">
+                        <div class="activity-bar-fill" id="stepsBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="activity-card sleep">
+                    <div class="activity-header">
+                        <div class="activity-title">昨晚睡眠</div>
+                        <div class="activity-icon">&#9790;</div>
+                    </div>
+                    <div class="activity-value" id="sleepValue">0<span style="font-size:18px;color:var(--text-muted)">h</span></div>
+                    <div class="activity-goal" id="sleepGoal">目标: 8 小时</div>
+                    <div class="activity-bar">
+                        <div class="activity-bar-fill" id="sleepBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="activity-card weight">
+                    <div class="activity-header">
+                        <div class="activity-title">当前体重</div>
+                        <div class="activity-icon">&#9878;</div>
+                    </div>
+                    <div class="activity-value" id="weightValue">0<span style="font-size:18px;color:var(--text-muted)">kg</span></div>
+                    <div class="activity-goal" id="weightGoal">目标: 70 kg (BMI 23.5)</div>
+                    <div class="activity-bar">
+                        <div class="activity-bar-fill" id="weightBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Recommendations -->
+            <section class="ai-section">
+                <div class="ai-card">
+                    <div class="ai-header">
+                        <span class="ai-badge">AI 分析</span>
+                        <span class="ai-title">今日健康洞察</span>
+                    </div>
+                    <div class="ai-content" id="aiInsight">
+                        <p>正在分析您的健康数据...</p>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-header">
+                        <span class="ai-badge">智能建议</span>
+                        <span class="ai-title">个性化推荐</span>
+                    </div>
+                    <ul class="ai-recommendations" id="aiRecommendations">
+                        <li><span class="rec-icon diet">&#127869;</span> 正在生成建议...</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Health Plan Generator -->
+            <section class="plan-section">
+                <div class="plan-header">
+                    <div class="plan-title">&#129302; AI 个性化健康方案生成器</div>
+                    <button class="plan-generate-btn" id="generateBtn" onclick="generatePlan()">
+                        <span class="btn-text">&#10024; 生成专属方案</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+                <div class="plan-output" id="planOutput">
+                    <div class="plan-card-grid" id="planGrid"></div>
+                    <div class="plan-detail" id="planDetail"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // ==================== Data Simulation ====================
+        const healthData = {
+            heartRate: { base: 72, variance: 8, unit: 'bpm' },
+            bloodPressure: { systolic: 118, diastolic: 76, unit: 'mmHg' },
+            bloodOxygen: { base: 98, variance: 1, unit: '%' },
+            bodyTemp: { base: 36.5, variance: 0.2, unit: '°C' },
+            steps: { current: 7823, goal: 10000 },
+            sleep: { hours: 7.2, deep: 2.1, light: 4.0, rem: 1.1, goal: 8 },
+            weight: { current: 72.5, goal: 70, unit: 'kg', height: 172 }
+        };
+
+        // Generate realistic data
+        function generateHeartRateData(points = 24) {
+            const data = [];
+            let val = 70;
+            for (let i = 0; i < points; i++) {
+                val += (Math.random() - 0.5) * 10;
+                val = Math.max(55, Math.min(95, val));
+                data.push(Math.round(val));
+            }
+            return data;
+        }
+
+        function generateTimeLabels(points = 24) {
+            const labels = [];
+            for (let i = 0; i < points; i++) {
+                labels.push(`${String(i).padStart(2, '0')}:00`);
+            }
+            return labels;
+        }
+
+        // Simulate real-time data updates
+        function simulateRealTimeData() {
+            // Heart rate
+            const hr = healthData.heartRate.base + Math.round((Math.random() - 0.5) * healthData.heartRate.variance * 2);
+            document.getElementById('heartRate').textContent = hr;
+
+            // Blood pressure
+            const sys = healthData.bloodPressure.systolic + Math.round((Math.random() - 0.5) * 6);
+            const dia = healthData.bloodPressure.diastolic + Math.round((Math.random() - 0.5) * 4);
+            document.getElementById('bloodPressure').textContent = `${sys}/${dia}`;
+
+            // Blood oxygen
+            const o2 = (healthData.bloodOxygen.base + (Math.random() - 0.5) * 2).toFixed(1);
+            document.getElementById('bloodOxygen').textContent = o2;
+
+            // Body temperature
+            const temp = (healthData.bodyTemp.base + (Math.random() - 0.5) * 0.3).toFixed(1);
+            document.getElementById('bodyTemp').textContent = temp;
+        }
+
+        // ==================== Charts ====================
+        let heartChart, radarChart;
+
+        function initCharts() {
+            const hrData = generateHeartRateData(24);
+            const timeLabels = generateTimeLabels(24);
+
+            // Heart Rate Chart
+            const hrCtx = document.getElementById('heartChart').getContext('2d');
+            heartChart = new Chart(hrCtx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: '心率 (bpm)',
+                        data: hrData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#ef4444',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
+                        borderWidth: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30,41,59,0.95)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: (ctx) => `心率: ${ctx.parsed.y} bpm`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51,65,85,0.5)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 11 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(51,65,85,0.5)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 11 } },
+                            min: 50,
+                            max: 100
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+
+            // Radar Chart
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['心血管', '呼吸系统', '睡眠质量', '运动能力', '营养均衡', '精神状态'],
+                    datasets: [{
+                        label: '当前状态',
+                        data: [85, 92, 78, 72, 80, 88],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6,182,212,0.15)',
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    }, {
+                        label: '理想目标',
+                        data: [90, 95, 90, 85, 90, 92],
+                        borderColor: 'rgba(99,102,241,0.4)',
+                        backgroundColor: 'transparent',
+                        pointBackgroundColor: 'rgba(99,102,241,0.4)',
+                        pointRadius: 3,
+                        borderWidth: 1.5,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { size: 11 }, padding: 16, usePointStyle: true, pointStyle: 'circle' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30,41,59,0.95)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(51,65,85,0.5)' },
+                            angleLines: { color: 'rgba(51,65,85,0.5)' },
+                            pointLabels: { color: '#94a3b8', font: { size: 11 } },
+                            ticks: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update heart chart with animation
+        function updateHeartChart() {
+            if (!heartChart) return;
+            const newData = generateHeartRateData(24);
+            heartChart.data.datasets[0].data = newData;
+            heartChart.update('none');
+        }
+
+        // Chart tab switching
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const range = this.dataset.range;
+                let points, labels;
+                switch(range) {
+                    case '24h':
+                        points = 24; labels = generateTimeLabels(24); break;
+                    case '7d':
+                        points = 7; labels = ['周一','周二','周三','周四','周五','周六','周日']; break;
+                    case '30d':
+                        points = 30; labels = Array.from({length: 30}, (_, i) => `${i+1}日`); break;
+                }
+
+                const newData = generateHeartRateData(points);
+                heartChart.data.labels = labels;
+                heartChart.data.datasets[0].data = newData;
+                heartChart.update();
+            });
+        });
+
+        // ==================== Score Animation ====================
+        function animateScore(target) {
+            const ring = document.getElementById('scoreRing');
+            const number = document.getElementById('scoreNumber');
+            const circumference = 2 * Math.PI * 80;
+            const offset = circumference - (target / 100) * circumference;
+
+            ring.style.strokeDashoffset = offset;
+
+            let current = 0;
+            const duration = 1500;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease out cubic
+                const eased = 1 - Math.pow(1 - progress, 3);
+                current = Math.round(eased * target);
+                number.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        // ==================== Activity Bars ====================
+        function animateActivityBars() {
+            const steps = healthData.steps;
+            const sleep = healthData.sleep;
+            const weight = healthData.weight;
+
+            // Steps
+            const stepsPct = Math.min((steps.current / steps.goal) * 100, 100);
+            animateNumber('stepsValue', steps.current, 0, '', '');
+            document.getElementById('stepsBar').style.width = stepsPct + '%';
+
+            // Sleep
+            const sleepPct = Math.min((sleep.hours / sleep.goal) * 100, 100);
+            animateNumber('sleepValue', sleep.hours, 1, '', 'h');
+            document.getElementById('sleepBar').style.width = sleepPct + '%';
+
+            // Weight (show progress towards goal)
+            const startWeight = 78;
+            const weightPct = Math.min(((startWeight - weight.current) / (startWeight - weight.goal)) * 100, 100);
+            animateNumber('weightValue', weight.current, 1, '', 'kg');
+            document.getElementById('weightBar').style.width = Math.max(weightPct, 0) + '%';
+        }
+
+        function animateNumber(elementId, target, decimals, prefix, suffix) {
+            const el = document.getElementById(elementId);
+            const duration = 1500;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const val = (eased * target).toFixed(decimals);
+                el.innerHTML = prefix + val + (suffix ? `<span style="font-size:18px;color:var(--text-muted)">${suffix}</span>` : '');
+
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+
+        // ==================== AI Content ====================
+        const aiInsights = [
+            `<p>基于您过去 <strong>7天</strong> 的健康数据分析：</p>
+             <p>您的心率变异性(HRV)保持在<strong>良好范围</strong>，说明自主神经系统功能正常。血压较上周平均下降了 <strong>2.3%</strong>，这与您近期增加的有氧运动密切相关。</p>
+             <p>血氧饱和度稳定在 <strong>97-99%</strong> 之间，呼吸系统功能优秀。值得注意的是，您昨天的<strong>深睡眠比例</strong>从 22% 提升到了 29%，这是很好的改善趋势。</p>
+             <p><span class="highlight">风险提示：</span>您周三下午的心率出现了短暂升高（峰值 102bpm），建议关注该时间段的情绪状态或身体活动。`,
+
+            `<p><strong>睡眠质量分析：</strong>您昨晚睡眠总时长 <strong>7.2小时</strong>，其中深睡眠 2.1h（29%）、浅睡眠 4.0h（56%）、REM 1.1h（15%）。</p>
+             <p>深睡眠比例 <strong>已达标</strong>（推荐 20-25%），但 REM 睡眠略低于理想值（推荐 20-25%）。REM 睡眠不足可能影响记忆巩固和情绪调节。</p>
+             <p>您入睡时间平均为 <strong>23:15</strong>，觉醒次数平均 <strong>2次/晚</strong>，整体睡眠效率为 <strong>89%</strong>，属于良好水平。</p>
+             <p><span class="highlight">AI 建议：</span>尝试将入睡时间提前至 22:30-23:00，并确保睡前 1 小时避免蓝光暴露，可进一步提升 REM 睡眠比例。`
+        ];
+
+        const aiRecommendations = [
+            { icon: 'diet', text: '<strong>饮食建议：</strong>今日建议增加优质蛋白质摄入，推荐鱼类（富含Omega-3，有助于心血管健康）和深绿色蔬菜。减少精制碳水，控制在总热量的 40% 以内。' },
+            { icon: 'exercise', text: '<strong>运动方案：</strong>下午 16:00-18:00 是您的心率最佳运动窗口期。建议进行 30 分钟中等强度有氧运动（快走或慢跑），目标心率 120-140bpm。' },
+            { icon: 'sleep', text: '<strong>睡眠优化：</strong>根据您的生物钟数据，最佳入睡时间窗口为 22:30-23:00。建议睡前进行 10 分钟呼吸放松练习（4-7-8 呼吸法）。' },
+            { icon: 'checkup', text: '<strong>健康检查提醒：</strong>距离上次全面体检已过 85 天，建议安排一次年度体检。重点关注血脂指标和肝功能，您的数据模型显示轻度风险升高。' },
+            { icon: 'water', text: '<strong>水分摄入：</strong>今日目标饮水量 2500ml，当前估算摄入约 1600ml（64%）。建议每小时饮水 200ml，运动前后各补充 300ml。' },
+            { icon: 'mind', text: '<strong>心理健康：</strong>您近期的压力指数为中等水平（42/100）。建议每天进行 15 分钟正念冥想，或尝试户外散步来缓解压力。' }
+        ];
+
+        function renderAIContent() {
+            // Insight with typing effect
+            const insightEl = document.getElementById('aiInsight');
+            insightEl.innerHTML = '<p>正在分析您的健康数据...<span class="typing-cursor"></span></p>';
+
+            setTimeout(() => {
+                insightEl.innerHTML = aiInsights[0];
+            }, 1500);
+
+            // Recommendations
+            const recEl = document.getElementById('aiRecommendations');
+            recEl.innerHTML = '';
+
+            aiRecommendations.forEach((rec, i) => {
+                setTimeout(() => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="rec-icon ${rec.icon}">${getRecIcon(rec.icon)}</span>${rec.text}`;
+                    li.style.opacity = '0';
+                    li.style.transform = 'translateX(-10px)';
+                    recEl.appendChild(li);
+
+                    requestAnimationFrame(() => {
+                        li.style.transition = 'all 0.4s ease';
+                        li.style.opacity = '1';
+                        li.style.transform = 'translateX(0)';
+                    });
+                }, 300 + i * 200);
+            });
+        }
+
+        function getRecIcon(type) {
+            const icons = {
+                diet: '&#127869;', exercise: '&#9989;', sleep: '&#9790;',
+                checkup: '&#128270;', water: '&#128167;', mind: '&#127793;'
+            };
+            return icons[type] || '&#10024;';
+        }
+
+        // ==================== Health Plan Generator ====================
+        const healthPlans = {
+            diet: {
+                title: '营养膳食方案',
+                icon: '&#127869;',
+                color: 'rgba(16,185,129,0.15)',
+                iconColor: 'var(--success)',
+                items: [
+                    '早餐：全麦面包 + 鸡蛋 + 牛奶 + 蓝莓（约 450 kcal）',
+                    '午餐：糙米饭 + 清蒸鱼 + 西兰花 + 番茄蛋汤（约 650 kcal）',
+                    '晚餐：藜麦沙拉 + 鸡胸肉 + 牛油果 + 柠檬汁（约 500 kcal）',
+                    '加餐：坚果 25g + 希腊酸奶 150g（约 250 kcal）',
+                    '每日总热量目标：1850 kcal（轻减脂模式）',
+                    '宏量营养素：蛋白质 28% | 碳水 42% | 脂肪 30%'
+                ]
+            },
+            exercise: {
+                title: '运动训练方案',
+                icon: '&#9989;',
+                color: 'rgba(99,102,241,0.15)',
+                iconColor: 'var(--primary-light)',
+                items: [
+                    '周一：有氧训练 - 快走/慢跑 40分钟，目标心率 120-140bpm',
+                    '周二：力量训练 - 上肢（推举、划船、弯举），4组 x 12次',
+                    '周三：恢复日 - 瑜伽/拉伸 30分钟 + 散步 20分钟',
+                    '周四：有氧训练 - 游泳或骑行 45分钟，中等强度',
+                    '周五：力量训练 - 下肢（深蹲、硬拉、箭步蹲），4组 x 10次',
+                    '周六：HIIT训练 - 间歇训练 25分钟（30秒高强度 + 45秒休息）',
+                    '周日：完全休息日 - 主动恢复，轻度活动即可'
+                ]
+            },
+            sleep: {
+                title: '睡眠优化方案',
+                icon: '&#9790;',
+                color: 'rgba(139,92,246,0.15)',
+                iconColor: '#a78bfa',
+                items: [
+                    '目标入睡时间：22:30（固定生物钟，误差不超过 30分钟）',
+                    '睡前 1 小时：停止使用电子设备，开启夜光模式',
+                    '睡前 30 分钟：进行 4-7-8 呼吸法放松（吸气4秒-屏息7秒-呼气8秒）',
+                    '卧室环境：温度 18-22°C，湿度 50-60%，完全遮光',
+                    '早晨：7:00 起床后立即接触自然光 15 分钟',
+                    '午休：限制在 20-30 分钟内，避免下午 3 点后午睡',
+                    '咖啡因：下午 2 点后避免摄入咖啡因'
+                ]
+            },
+            checkup: {
+                title: '健康检查计划',
+                icon: '&#128270;',
+                color: 'rgba(245,158,11,0.15)',
+                iconColor: 'var(--warning)',
+                items: [
+                    '本月优先：安排年度全面体检（距上次已 85 天）',
+                    '重点检查项目：血脂四项、肝功能、甲状腺功能',
+                    '心血管评估：心电图 + 颈动脉超声',
+                    '每季度复查：血压监测（目标 &lt;120/80 mmHg）',
+                    '半年评估：骨密度检查（40岁以上建议）',
+                    '年度检查：眼底检查、口腔检查、皮肤检查'
+                ]
+            }
+        };
+
+        function generatePlan() {
+            const btn = document.getElementById('generateBtn');
+            const output = document.getElementById('planOutput');
+            const grid = document.getElementById('planGrid');
+            const detail = document.getElementById('planDetail');
+
+            btn.classList.add('loading');
+            btn.disabled = true;
+            output.classList.remove('show');
+
+            // Simulate AI processing
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                output.classList.add('show');
+
+                // Render plan cards
+                grid.innerHTML = '';
+                Object.entries(healthPlans).forEach(([key, plan], i) => {
+                    const card = document.createElement('div');
+                    card.className = 'plan-item';
+                    card.innerHTML = `
+                        <div class="plan-item-icon" style="background:${plan.color}">${plan.icon}</div>
+                        <div class="plan-item-title">${plan.title}</div>
+                        <div class="plan-item-desc">${plan.items[0].substring(0, 30)}...</div>
+                    `;
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(10px)';
+                    grid.appendChild(card);
+
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.4s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100 + i * 150);
+                });
+
+                // Render detailed plan
+                const fullPlan = healthPlans.diet;
+                detail.innerHTML = `
+                    <div class="plan-detail-title">${fullPlan.icon} ${fullPlan.title} — 详细内容</div>
+                    <div class="plan-detail-content">
+                        ${fullPlan.items.map(item => `<p>&#10003; ${item}</p>`).join('')}
+                        <p style="margin-top:12px;color:var(--text-muted);font-size:12px;">
+                            * 此方案基于您的个人健康数据（身高 ${healthData.weight.height}cm、体重 ${healthData.weight.current}kg、年龄 32岁、性别 男）AI 智能生成，仅供参考，具体方案请咨询专业医师。
+                        </p>
+                    </div>
+                `;
+
+            }, 2000);
+        }
+
+        // ==================== Initialization ====================
+        function init() {
+            // Initialize charts
+            initCharts();
+
+            // Animate score
+            setTimeout(() => animateScore(86), 500);
+
+            // Set sub-scores
+            setTimeout(() => {
+                document.getElementById('scorePhysical').textContent = '88';
+                document.getElementById('scoreMental').textContent = '82';
+                document.getElementById('scoreLifestyle').textContent = '79';
+                document.getElementById('scoreRecovery').textContent = '91';
+            }, 800);
+
+            // Initial vital signs
+            simulateRealTimeData();
+
+            // Animate activity bars
+            setTimeout(animateActivityBars, 600);
+
+            // Render AI content
+            setTimeout(renderAIContent, 1000);
+
+            // Start real-time updates
+            setInterval(simulateRealTimeData, 3000);
+            setInterval(updateHeartChart, 5000);
+
+            // Nav item click
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        function refreshData() {
+            simulateRealTimeData();
+            updateHeartChart();
+            animateActivityBars();
+            renderAIContent();
+        }
+
+        // Start
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
