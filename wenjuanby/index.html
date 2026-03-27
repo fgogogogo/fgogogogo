@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问卷构建工具</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <nav class="top-nav">
+            <div class="nav-brand" onclick="showView('builder')">
+                <span class="brand-icon">📋</span>
+                <span class="brand-text">问卷构建工具</span>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-view="builder" onclick="showView('builder')">构建问卷</button>
+                <button class="nav-tab" data-view="fill" onclick="showView('fill')">填写问卷</button>
+                <button class="nav-tab" data-view="results" onclick="showView('results')">查看结果</button>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-sm btn-outline" id="btn-share" onclick="shareSurvey()" style="display:none;">
+                    <span>🔗</span> 分享链接
+                </button>
+            </div>
+        </nav>
+
+        <!-- ==================== 构建视图 ==================== -->
+        <div id="view-builder" class="view active">
+            <div class="builder-layout">
+                <!-- 左侧：问卷设置 -->
+                <div class="builder-sidebar">
+                    <div class="panel">
+                        <h3>问卷设置</h3>
+                        <div class="form-group">
+                            <label>问卷标题</label>
+                            <input type="text" id="survey-title" placeholder="输入问卷标题" value="我的问卷">
+                        </div>
+                        <div class="form-group">
+                            <label>问卷描述</label>
+                            <textarea id="survey-desc" rows="3" placeholder="输入问卷描述">感谢您参与本次问卷调查</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="survey-timed" onchange="toggleTimedMode()">
+                                <span>启用时间限制（测验模式）</span>
+                            </label>
+                        </div>
+                        <div class="form-group timed-settings" id="timed-settings" style="display:none;">
+                            <label>时间限制（分钟）</label>
+                            <input type="number" id="survey-timelimit" value="10" min="1" max="180">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-primary btn-block" onclick="addQuestion()">
+                                <span>➕</span> 添加问题
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-success btn-block" onclick="saveSurvey()">
+                                <span>💾</span> 保存问卷
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline btn-block" onclick="previewSurvey()">
+                                <span>👁</span> 预览问卷
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline btn-block" onclick="loadFromHash()">
+                                <span>📥</span> 从链接加载
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 中间：问题编辑区 -->
+                <div class="builder-main">
+                    <div id="questions-container" class="questions-container">
+                        <!-- 动态渲染问题 -->
+                    </div>
+                    <div class="empty-state" id="builder-empty">
+                        <div class="empty-icon">📝</div>
+                        <p>点击"添加问题"开始创建您的问卷</p>
+                    </div>
+                </div>
+
+                <!-- 右侧：分支逻辑配置 -->
+                <div class="builder-branch-panel" id="branch-panel" style="display:none;">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>分支逻辑配置</h3>
+                            <button class="btn btn-sm btn-ghost" onclick="closeBranchPanel()">✕</button>
+                        </div>
+                        <div id="branch-config-content">
+                            <!-- 动态渲染分支配置 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 填写视图 ==================== -->
+        <div id="view-fill" class="view">
+            <div class="fill-layout">
+                <div class="fill-container">
+                    <!-- 问卷头部 -->
+                    <div class="fill-header" id="fill-header">
+                        <h1 id="fill-title">问卷标题</h1>
+                        <p id="fill-desc">问卷描述</p>
+                        <!-- 计时器 -->
+                        <div class="timer-bar" id="timer-bar" style="display:none;">
+                            <div class="timer-info">
+                                <span class="timer-icon">⏱</span>
+                                <span id="timer-display">10:00</span>
+                            </div>
+                            <div class="timer-progress">
+                                <div class="timer-progress-fill" id="timer-progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 进度条 -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+                        </div>
+                        <span class="progress-text" id="progress-text">0 / 0</span>
+                    </div>
+
+                    <!-- 问题区域 -->
+                    <div id="fill-questions" class="fill-questions">
+                        <!-- 动态渲染 -->
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="fill-actions">
+                        <button class="btn btn-outline" id="btn-prev" onclick="prevQuestion()" disabled>上一题</button>
+                        <button class="btn btn-outline" id="btn-save-draft" onclick="saveDraft()">保存草稿</button>
+                        <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">下一题</button>
+                        <button class="btn btn-success" id="btn-submit" onclick="submitSurvey()" style="display:none;">提交问卷</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 结果视图 ==================== -->
+        <div id="view-results" class="view">
+            <div class="results-layout">
+                <div class="results-header">
+                    <h1>📊 问卷结果统计</h1>
+                    <div class="results-summary" id="results-summary">
+                        <!-- 统计摘要 -->
+                    </div>
+                </div>
+                <div class="results-charts" id="results-charts">
+                    <!-- 图表区域 -->
+                </div>
+                <div class="results-raw" id="results-raw" style="display:none;">
+                    <h3>原始数据</h3>
+                    <pre id="raw-data"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast-container"></div>
+
+    <!-- 问题模板（隐藏） -->
+    <template id="tpl-question-editor">
+        <div class="question-card" data-qid="{{qid}}">
+            <div class="question-card-header">
+                <span class="question-number">Q{{num}}</span>
+                <div class="question-type-badge" data-type="{{type}}">{{typeLabel}}</div>
+                <div class="question-actions">
+                    <button class="btn btn-sm btn-ghost" onclick="duplicateQuestion({{qid}})" title="复制">📋</button>
+                    <button class="btn btn-sm btn-ghost" onclick="toggleBranchConfig({{qid}})" title="分支逻辑">🔀</button>
+                    <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteQuestion({{qid}})" title="删除">🗑</button>
+                </div>
+            </div>
+            <div class="question-card-body">
+                <div class="form-group">
+                    <label>问题标题</label>
+                    <input type="text" class="q-title" placeholder="输入问题" value="{{title}}" onchange="updateQuestionData({{qid}})">
+                </div>
+                <div class="form-group">
+                    <label>问题类型</label>
+                    <select class="q-type" onchange="changeQuestionType({{qid}})">
+                        <option value="radio" {{selectedRadio}}>单选题</option>
+                        <option value="checkbox" {{selectedCheckbox}}>多选题</option>
+                        <option value="text" {{selectedText}}>文本输入</option>
+                        <option value="slider" {{selectedSlider}}>滑块</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="q-required" {{requiredChecked}} onchange="updateQuestionData({{qid}})">
+                        <span>必填</span>
+                    </label>
+                </div>
+                <!-- 选项编辑区（单选/多选/滑块） -->
+                <div class="options-editor q-options-area" data-area="{{type}}">
+                    <!-- 选项内容 -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 选项模板 -->
+    <template id="tpl-option-editor">
+        <div class="option-row" data-oid="{{oid}}">
+            <span class="option-drag">☰</span>
+            <input type="text" class="option-text" placeholder="选项内容" value="{{text}}" onchange="updateOptionData({{qid}}, {{oid}})">
+            <button class="btn btn-sm btn-ghost btn-danger" onclick="removeOption({{qid}}, {{oid}})">✕</button>
+        </div>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>
