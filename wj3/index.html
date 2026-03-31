@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问卷构建工具</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <h1 class="app-title">问卷构建工具</h1>
+        <nav class="header-nav">
+          <button class="nav-btn active" data-view="builder">创建问卷</button>
+          <button class="nav-btn" data-view="filler">填写问卷</button>
+          <button class="nav-btn" data-view="preview">结果预览</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Builder View -->
+    <main class="view builder-view" id="builder-view">
+      <div class="builder-container">
+        <div class="builder-sidebar">
+          <div class="sidebar-section">
+            <h3>问卷设置</h3>
+            <div class="setting-group">
+              <label for="quiz-title">问卷标题</label>
+              <input type="text" id="quiz-title" placeholder="输入问卷标题..." class="input-field">
+            </div>
+            <div class="setting-group">
+              <label for="quiz-description">问卷描述</label>
+              <textarea id="quiz-description" placeholder="输入问卷描述..." class="input-field textarea"></textarea>
+            </div>
+            <div class="setting-group toggle-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="quiz-timer-toggle">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">启用时间限制</span>
+              </label>
+            </div>
+            <div class="setting-group" id="timer-setting" style="display: none;">
+              <label for="quiz-timer">时间限制（分钟）</label>
+              <input type="number" id="quiz-timer" min="1" max="180" value="30" class="input-field">
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <h3>添加问题</h3>
+            <div class="question-types">
+              <button class="q-type-btn" data-type="single">
+                <span class="q-type-icon">○</span>
+                <span>单选题</span>
+              </button>
+              <button class="q-type-btn" data-type="multiple">
+                <span class="q-type-icon">☑</span>
+                <span>多选题</span>
+              </button>
+              <button class="q-type-btn" data-type="text">
+                <span class="q-type-icon">T</span>
+                <span>文本题</span>
+              </button>
+              <button class="q-type-btn" data-type="slider">
+                <span class="q-type-icon">⟷</span>
+                <span>滑块题</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="builder-main">
+          <div class="questions-list" id="questions-list">
+            <!-- Questions will be rendered here -->
+          </div>
+          <div class="builder-actions">
+            <button class="btn btn-primary" id="save-quiz-btn">保存问卷</button>
+            <button class="btn btn-secondary" id="share-quiz-btn">生成分享链接</button>
+            <button class="btn btn-danger" id="clear-quiz-btn">清空问卷</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Filler View -->
+    <main class="view filler-view" id="filler-view" style="display: none;">
+      <div class="filler-container">
+        <div class="filler-header" id="filler-header">
+          <h2 id="filler-title"></h2>
+          <p id="filler-description"></p>
+          <div class="filler-timer" id="filler-timer" style="display: none;">
+            <span class="timer-icon">⏱</span>
+            <span id="timer-display">30:00</span>
+          </div>
+        </div>
+        <div class="filler-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="progress-text" id="progress-text">0/0</span>
+        </div>
+        <form id="filler-form" class="filler-form">
+          <!-- Questions will be rendered here -->
+        </form>
+        <div class="filler-actions">
+          <button class="btn btn-secondary" id="prev-btn" style="display: none;">上一题</button>
+          <button class="btn btn-primary" id="next-btn">下一题</button>
+          <button class="btn btn-success" id="submit-btn" style="display: none;">提交问卷</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Preview View -->
+    <main class="view preview-view" id="preview-view" style="display: none;">
+      <div class="preview-container">
+        <h2>问卷结果预览</h2>
+        <div class="preview-controls">
+          <button class="btn btn-primary" id="generate-demo-btn">生成模拟数据</button>
+          <button class="btn btn-secondary" id="export-btn">导出数据</button>
+        </div>
+        <div class="charts-grid" id="charts-grid">
+          <!-- Charts will be rendered here -->
+        </div>
+        <div class="results-table-container" id="results-table-container">
+          <h3>详细结果</h3>
+          <div class="table-wrapper">
+            <table class="results-table" id="results-table">
+              <!-- Table will be rendered here -->
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Share Modal -->
+    <div class="modal" id="share-modal" style="display: none;">
+      <div class="modal-content">
+        <h3>分享问卷</h3>
+        <div class="share-link-container">
+          <input type="text" id="share-link" class="input-field" readonly>
+          <button class="btn btn-primary" id="copy-link-btn">复制链接</button>
+        </div>
+        <p class="share-hint">将此链接分享给他人即可填写问卷</p>
+        <button class="btn btn-secondary modal-close">关闭</button>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
