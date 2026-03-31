@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>限时大促 · 狂欢秒杀</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #1a0000;
+  color: #fff;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+  50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 100, 0, 0.8); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes countdown-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fire {
+  0%, 100% { text-shadow: 0 0 10px #ff6600, 0 0 20px #ff3300; }
+  50% { text-shadow: 0 0 20px #ff9900, 0 0 40px #ff6600, 0 0 60px #ff3300; }
+}
+
+/* ===== UTILITY ===== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.section { padding: 60px 0; }
+.section-title {
+  text-align: center;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
+  margin-bottom: 40px;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.section-title span {
+  background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+.section-title::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #ff6600, #ffd700);
+  margin: 12px auto 0;
+  border-radius: 2px;
+}
+
+/* ===== HERO SECTION ===== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(ellipse at center, #8b0000 0%, #4a0000 40%, #1a0000 100%);
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(255, 215, 0, 0.03) 10deg 20deg);
+  animation: spin 60s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hero-content { position: relative; z-index: 2; padding: 20px; }
+.hero-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #8b0000;
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 8px 24px;
+  border-radius: 30px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  animation: fire 2s ease-in-out infinite;
+  color: #ffd700;
+}
+.hero h1 .accent {
+  display: block;
+  font-size: clamp(3rem, 10vw, 6rem);
+  background: linear-gradient(180deg, #fff 0%, #ffd700 50%, #ff6600 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  color: #ffcc99;
+  margin-bottom: 30px;
+  font-weight: 300;
+}
+.hero-discount {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: #fff;
+  margin-bottom: 40px;
+}
+.hero-discount strong {
+  color: #ffd700;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+/* ===== COUNTDOWN ===== */
+.countdown-wrapper {
+  margin: 30px auto;
+  max-width: 600px;
+}
+.countdown-label {
+  font-size: 1rem;
+  color: #ffcc99;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.countdown-item {
+  background: linear-gradient(180deg, #2a0000, #1a0000);
+  border: 2px solid #ffd700;
+  border-radius: 12px;
+  padding: 15px 10px;
+  min-width: 80px;
+  animation: glow 2s ease-in-out infinite;
+}
+.countdown-item .num {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-item .unit {
+  font-size: 0.8rem;
+  color: #ff9966;
+  margin-top: 5px;
+}
+.cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6600, #ff3300);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: 16px 50px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  margin-top: 30px;
+  animation: pulse 1.5s ease-in-out infinite;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.cta-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 30px rgba(255, 102, 0, 0.8);
+}
+
+/* ===== FLASH SALE PRODUCTS ===== */
+.flash-sale {
+  background: linear-gradient(180deg, #1a0000 0%, #2a0000 50%, #1a0000 100%);
+  position: relative;
+}
+.flash-sale::before {
+  content: '⚡';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3rem;
+  animation: float 2s ease-in-out infinite;
+}
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+.product-card {
+  background: linear-gradient(145deg, #3a0000, #200000);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s;
+  position: relative;
+  animation: slideUp 0.6s ease-out both;
+}
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: #ffd700;
+  box-shadow: 0 20px 40px rgba(255, 102, 0, 0.3);
+}
+.product-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #ff3300, #ff6600);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  z-index: 2;
+}
+.product-img {
+  height: 200px;
+  background: linear-gradient(135deg, #4a0000, #2a0000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  position: relative;
+}
+.product-info {
+  padding: 20px;
+}
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #fff;
+  line-height: 1.4;
+}
+.product-desc {
+  font-size: 0.85rem;
+  color: #cc9966;
+  margin-bottom: 12px;
+}
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.price-sale {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ff3300;
+}
+.price-sale::before { content: '¥'; font-size: 1rem; }
+.price-original {
+  font-size: 0.9rem;
+  color: #888;
+  text-decoration: line-through;
+}
+.progress-bar {
+  height: 8px;
+  background: #3a0000;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6600, #ffd700);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.progress-text {
+  font-size: 0.75rem;
+  color: #ff9966;
+}
+.product-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #ff6600, #ff3300);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.3s;
+}
+.product-btn:hover {
+  background: linear-gradient(135deg, #ff8800, #ff5500);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.5);
+}
+
+/* ===== ZONE SECTION ===== */
+.zones {
+  background: radial-gradient(ellipse at center, #2a0000 0%, #1a0000 100%);
+}
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+.zone-card {
+  background: linear-gradient(145deg, #3a0000, #250000);
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.zone-card:hover {
+  border-color: #ffd700;
+  transform: scale(1.02);
+}
+.zone-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+.zone-card h3 {
+  font-size: 1.3rem;
+  color: #ffd700;
+  margin-bottom: 10px;
+}
+.zone-card p {
+  font-size: 0.95rem;
+  color: #cc9966;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+.zone-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6600, #ff3300);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.zone-tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.5);
+}
+
+/* ===== COUPON SECTION ===== */
+.coupons {
+  background: linear-gradient(180deg, #1a0000, #2a0000, #1a0000);
+}
+.coupons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.coupon-card {
+  position: relative;
+  background: linear-gradient(135deg, #4a0000, #2a0000);
+  border: 2px dashed #ffd700;
+  border-radius: 16px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s;
+  overflow: hidden;
+}
+.coupon-card:hover {
+  border-style: solid;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+.coupon-card::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: #1a0000;
+  border-radius: 50%;
+}
+.coupon-card::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: #1a0000;
+  border-radius: 50%;
+}
+.coupon-value {
+  text-align: center;
+  flex-shrink: 0;
+}
+.coupon-value .amount {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1;
+}
+.coupon-value .amount::before { content: '¥'; font-size: 1.2rem; }
+.coupon-value .condition {
+  font-size: 0.8rem;
+  color: #cc9966;
+  margin-top: 5px;
+}
+.coupon-info {
+  flex: 1;
+}
+.coupon-info h4 {
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 5px;
+}
+.coupon-info p {
+  font-size: 0.8rem;
+  color: #996633;
+}
+.coupon-btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #8b0000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.coupon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+}
+.coupon-btn.claimed {
+  background: #555;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* ===== RULES SECTION ===== */
+.rules {
+  background: radial-gradient(ellipse at center, #2a0000 0%, #1a0000 100%);
+}
+.rules-box {
+  max-width: 800px;
+  margin: 0 auto;
+  background: linear-gradient(145deg, #3a0000, #200000);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 20px;
+  padding: 40px;
+}
+.rules-box h3 {
+  color: #ffd700;
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.rules-list {
+  list-style: none;
+  counter-reset: rule;
+}
+.rules-list li {
+  counter-increment: rule;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  font-size: 0.95rem;
+  color: #cc9966;
+  line-height: 1.6;
+  display: flex;
+  gap: 12px;
+}
+.rules-list li::before {
+  content: counter(rule);
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #ff6600, #ff3300);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ===== AFTER-SALE SECTION ===== */
+.aftersale {
+  background: linear-gradient(180deg, #1a0000, #250000);
+}
+.aftersale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.aftersale-item {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(145deg, #3a0000, #200000);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  transition: all 0.3s;
+}
+.aftersale-item:hover {
+  border-color: #ffd700;
+  transform: translateY(-5px);
+}
+.aftersale-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+.aftersale-item h4 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+.aftersale-item p {
+  color: #cc9966;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ===== FLOATING CTA ===== */
+.floating-cta {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: linear-gradient(135deg, #ff3300, #ff6600);
+  color: #fff;
+  padding: 14px 40px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(255, 51, 0, 0.5);
+  animation: pulse 1.5s ease-in-out infinite;
+  display: none;
+}
+.floating-cta.show { display: block; }
+
+/* ===== FOOTER ===== */
+.footer {
+  background: #0a0000;
+  padding: 30px 20px;
+  text-align: center;
+  color: #664422;
+  font-size: 0.85rem;
+}
+.footer a { color: #ff9966; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .section { padding: 40px 0; }
+  .countdown-item { min-width: 65px; padding: 12px 8px; }
+  .countdown-item .num { font-size: 1.8rem; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .product-img { height: 150px; font-size: 3rem; }
+  .product-info { padding: 12px; }
+  .price-sale { font-size: 1.2rem; }
+  .zones-grid { grid-template-columns: 1fr; }
+  .coupons-grid { grid-template-columns: 1fr; }
+  .coupon-card { flex-direction: column; text-align: center; padding: 20px; }
+  .rules-box { padding: 25px; }
+  .aftersale-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .cta-btn { padding: 14px 35px; font-size: 1rem; }
+}
+@media (max-width: 480px) {
+  .products-grid { grid-template-columns: 1fr; }
+  .aftersale-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2rem; }
+  .hero h1 .accent { font-size: 2.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🔥 年度盛典 🔥</div>
+    <h1>限时大促<span class="accent">狂欢秒杀</span></h1>
+    <p class="hero-sub">全年最低价 · 错过再等一年</p>
+    <p class="hero-discount">全场低至 <strong>1折</strong> 起</p>
+
+    <div class="countdown-wrapper">
+      <p class="countdown-label">⏰ 距离活动结束仅剩</p>
+      <div class="countdown">
+        <div class="countdown-item">
+          <div class="num" id="hours">00</div>
+          <div class="unit">时</div>
+        </div>
+        <div class="countdown-item">
+          <div class="num" id="minutes">00</div>
+          <div class="unit">分</div>
+        </div>
+        <div class="countdown-item">
+          <div class="num" id="seconds">00</div>
+          <div class="unit">秒</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta-btn" onclick="document.getElementById('flash-sale').scrollIntoView({behavior:'smooth'})">立即抢购 →</button>
+  </div>
+</section>
+
+<!-- ===== FLASH SALE PRODUCTS ===== -->
+<section class="flash-sale section" id="flash-sale">
+  <div class="container">
+    <h2 class="section-title"><span>⚡ 限时秒杀 ⚡</span></h2>
+    <div class="products-grid">
+
+      <div class="product-card" style="animation-delay: 0.1s">
+        <span class="product-badge">直降800</span>
+        <div class="product-img">📱</div>
+        <div class="product-info">
+          <h3 class="product-name">旗舰智能手机 12+256G</h3>
+          <p class="product-desc">骁龙8Gen3 · 120Hz高刷屏 · 5000mAh</p>
+          <div class="price-row">
+            <span class="price-sale">1999</span>
+            <span class="price-original">¥2799</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 78%"></div></div>
+          <p class="progress-text">已抢 78% · 仅剩 44 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.2s">
+        <span class="product-badge">5折抢</span>
+        <div class="product-img">💻</div>
+        <div class="product-info">
+          <h3 class="product-name">轻薄笔记本电脑 16G+512G</h3>
+          <p class="product-desc">i7处理器 · 2.8K OLED屏 · 金属机身</p>
+          <div class="price-row">
+            <span class="price-sale">3499</span>
+            <span class="price-original">¥6999</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 65%"></div></div>
+          <p class="progress-text">已抢 65% · 仅剩 70 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.3s">
+        <span class="product-badge">爆款</span>
+        <div class="product-img">🎧</div>
+        <div class="product-info">
+          <h3 class="product-name">降噪蓝牙耳机 Pro</h3>
+          <p class="product-desc">主动降噪 · 40h续航 · Hi-Res认证</p>
+          <div class="price-row">
+            <span class="price-sale">199</span>
+            <span class="price-original">¥599</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 92%"></div></div>
+          <p class="progress-text">已抢 92% · 仅剩 16 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.4s">
+        <span class="product-badge">限量</span>
+        <div class="product-img">⌚</div>
+        <div class="product-info">
+          <h3 class="product-name">智能运动手表 GT</h3>
+          <p class="product-desc">血氧监测 · 100+运动模式 · 14天续航</p>
+          <div class="price-row">
+            <span class="price-sale">399</span>
+            <span class="price-original">¥999</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 55%"></div></div>
+          <p class="progress-text">已抢 55% · 仅剩 90 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.5s">
+        <span class="product-badge">直降300</span>
+        <div class="product-img">📷</div>
+        <div class="product-info">
+          <h3 class="product-name">微单相机 套机</h3>
+          <p class="product-desc">2420万像素 · 4K视频 · 五轴防抖</p>
+          <div class="price-row">
+            <span class="price-sale">3699</span>
+            <span class="price-original">¥4999</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 42%"></div></div>
+          <p class="progress-text">已抢 42% · 仅剩 116 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.6s">
+        <span class="product-badge">3折</span>
+        <div class="product-img">🔌</div>
+        <div class="product-info">
+          <h3 class="product-name">氮化镓快充充电器 65W</h3>
+          <p class="product-desc">三口输出 · 折叠插脚 · 兼容全协议</p>
+          <div class="price-row">
+            <span class="price-sale">79</span>
+            <span class="price-original">¥259</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 88%"></div></div>
+          <p class="progress-text">已抢 88% · 仅剩 24 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.7s">
+        <span class="product-badge">新品</span>
+        <div class="product-img">🖥️</div>
+        <div class="product-info">
+          <h3 class="product-name">27英寸 4K 显示器</h3>
+          <p class="product-desc">IPS面板 · HDR400 · Type-C 65W</p>
+          <div class="price-row">
+            <span class="price-sale">1299</span>
+            <span class="price-original">¥2199</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 35%"></div></div>
+          <p class="progress-text">已抢 35% · 仅剩 130 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+      <div class="product-card" style="animation-delay: 0.8s">
+        <span class="product-badge">疯抢中</span>
+        <div class="product-img">🎮</div>
+        <div class="product-info">
+          <h3 class="product-name">无线游戏手柄</h3>
+          <p class="product-desc">霍尔摇杆 · 多平台兼容 · 20h续航</p>
+          <div class="price-row">
+            <span class="price-sale">149</span>
+            <span class="price-original">¥349</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 71%"></div></div>
+          <p class="progress-text">已抢 71% · 仅剩 58 件</p>
+          <button class="product-btn">立即秒杀</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== ZONE SECTION ===== -->
+<section class="zones section" id="zones">
+  <div class="container">
+    <h2 class="section-title"><span>🎯 分区狂欢 🎯</span></h2>
+    <div class="zones-grid">
+
+      <div class="zone-card">
+        <div class="zone-icon">📱</div>
+        <h3>数码家电专区</h3>
+        <p>手机、电脑、智能家居全线降价<br>爆款直降，至高省2000元</p>
+        <span class="zone-tag">进入专区 →</span>
+      </div>
+
+      <div class="zone-card">
+        <div class="zone-icon">👗</div>
+        <h3>服饰美妆专区</h3>
+        <p>大牌服饰3折起 · 美妆满300减150<br>秋冬新品抢先购</p>
+        <span class="zone-tag">进入专区 →</span>
+      </div>
+
+      <div class="zone-card">
+        <div class="zone-icon">🏠</div>
+        <h3>居家生活专区</h3>
+        <p>家具家纺 · 厨房电器 · 日用好物<br>满199减100 叠加优惠券更划算</p>
+        <span class="zone-tag">进入专区 →</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== COUPON SECTION ===== -->
+<section class="coupons section" id="coupons">
+  <div class="container">
+    <h2 class="section-title"><span>🎫 领券中心 🎫</span></h2>
+    <div class="coupons-grid">
+
+      <div class="coupon-card">
+        <div class="coupon-value">
+          <div class="amount">50</div>
+          <div class="condition">满299可用</div>
+        </div>
+        <div class="coupon-info">
+          <h4>全品类通用券</h4>
+          <p>有效期至活动结束 · 每人限领1张</p>
+        </div>
+        <button class="coupon-btn" onclick="claimCoupon(this)">立即领取</button>
+      </div>
+
+      <div class="coupon-card">
+        <div class="coupon-value">
+          <div class="amount">100</div>
+          <div class="condition">满599可用</div>
+        </div>
+        <div class="coupon-info">
+          <h4>数码家电专属券</h4>
+          <p>限数码家电专区使用 · 限量5000张</p>
+        </div>
+        <button class="coupon-btn" onclick="claimCoupon(this)">立即领取</button>
+      </div>
+
+      <div class="coupon-card">
+        <div class="coupon-value">
+          <div class="amount">200</div>
+          <div class="condition">满1299可用</div>
+        </div>
+        <div class="coupon-info">
+          <h4>超级大额券</h4>
+          <p>全品类可用 · 限量2000张 先到先得</p>
+        </div>
+        <button class="coupon-btn" onclick="claimCoupon(this)">立即领取</button>
+      </div>
+
+      <div class="coupon-card">
+        <div class="coupon-value">
+          <div class="amount">30</div>
+          <div class="condition">无门槛</div>
+        </div>
+        <div class="coupon-info">
+          <h4>新人专享券</h4>
+          <p>新用户注册即领 · 全场通用</p>
+        </div>
+        <button class="coupon-btn" onclick="claimCoupon(this)">立即领取</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== RULES SECTION ===== -->
+<section class="rules section" id="rules">
+  <div class="container">
+    <h2 class="section-title"><span>📋 活动规则 📋</span></h2>
+    <div class="rules-box">
+      <h3>请仔细阅读以下规则</h3>
+      <ol class="rules-list">
+        <li>活动时间：2026年3月31日 00:00 至 2026年4月2日 23:59，逾期恢复原价。</li>
+        <li>秒杀商品数量有限，抢完即止，每个ID每款限购1件，不支持代拍。</li>
+        <li>优惠券领取后7天内有效，不可提现、不可转赠，每笔订单仅限使用1张优惠券。</li>
+        <li>部分秒杀商品不支持7天无理由退货，具体以商品详情页说明为准。</li>
+        <li>活动期间如遇系统故障或不可抗力因素，平台有权调整活动规则或暂停活动。</li>
+        <li>严禁使用任何作弊手段参与活动，一经发现将取消资格并追究责任。</li>
+        <li>本活动最终解释权归平台所有，如有疑问请联系客服。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===== AFTER-SALE SECTION ===== -->
+<section class="aftersale section" id="aftersale">
+  <div class="container">
+    <h2 class="section-title"><span>💝 售后保障 💝</span></h2>
+    <div class="aftersale-grid">
+
+      <div class="aftersale-item">
+        <div class="aftersale-icon">🔄</div>
+        <h4>7天无理由退换</h4>
+        <p>签收后7天内，不满意随时退换（特殊商品除外）</p>
+      </div>
+
+      <div class="aftersale-item">
+        <div class="aftersale-icon">🛡️</div>
+        <h4>正品保证</h4>
+        <p>所有商品均为正品行货，假一赔十</p>
+      </div>
+
+      <div class="aftersale-item">
+        <div class="aftersale-icon">🚚</div>
+        <h4>极速发货</h4>
+        <p>下单后24小时内发货，部分地区次日达</p>
+      </div>
+
+      <div class="aftersale-item">
+        <div class="aftersale-icon">📞</div>
+        <h4>专属客服</h4>
+        <p>活动期间7×24小时在线客服，随时为您解答</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <p>© 2026 限时大促专题页 · 活动最终解释权归平台所有</p>
+  <p style="margin-top: 8px;">客服热线：400-XXX-XXXX | 工作时间：9:00-21:00</p>
+</footer>
+
+<!-- ===== FLOATING CTA ===== -->
+<button class="floating-cta" id="floatingCta" onclick="document.getElementById('flash-sale').scrollIntoView({behavior:'smooth'})">🔥 立即抢购 🔥</button>
+
+<script>
+// ===== COUNTDOWN TIMER =====
+(function() {
+  // Set countdown to 23:59:59 of the current day + 2 days for demo
+  const now = new Date();
+  const endTime = new Date(now);
+  endTime.setDate(endTime.getDate() + 2);
+  endTime.setHours(23, 59, 59, 0);
+
+  function updateCountdown() {
+    const now = new Date();
+    const diff = endTime - now;
+
+    if (diff <= 0) {
+      document.getElementById('hours').textContent = '00';
+      document.getElementById('minutes').textContent = '00';
+      document.getElementById('seconds').textContent = '00';
+      return;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+    document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+    document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+})();
+
+// ===== FLOATING CTA VISIBILITY =====
+(function() {
+  const floatingCta = document.getElementById('floatingCta');
+  const heroSection = document.querySelector('.hero');
+
+  window.addEventListener('scroll', function() {
+    const heroBottom = heroSection.getBoundingClientRect().bottom;
+    if (heroBottom < 0) {
+      floatingCta.classList.add('show');
+    } else {
+      floatingCta.classList.remove('show');
+    }
+  });
+})();
+
+// ===== COUPON CLAIM =====
+function claimCoupon(btn) {
+  if (btn.classList.contains('claimed')) return;
+
+  btn.classList.add('claimed');
+  btn.textContent = '已领取';
+
+  // Visual feedback
+  const card = btn.closest('.coupon-card');
+  card.style.borderColor = '#00ff88';
+  card.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
+
+  setTimeout(() => {
+    card.style.borderColor = '';
+    card.style.boxShadow = '';
+  }, 2000);
+}
+
+// ===== PRODUCT BUTTON CLICK =====
+document.querySelectorAll('.product-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    this.textContent = '已加入购物车 ✓';
+    this.style.background = 'linear-gradient(135deg, #00aa55, #00cc66)';
+    setTimeout(() => {
+      this.textContent = '立即秒杀';
+      this.style.background = '';
+    }, 2000);
+  });
+});
+
+// ===== INTERSECTION OBSERVER FOR ANIMATIONS =====
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.animationPlayState = 'running';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.product-card, .zone-card, .coupon-card, .aftersale-item').forEach(el => {
+    observer.observe(el);
+  });
+})();
+</script>
+
+</body>
+</html>
