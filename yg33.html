@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子鱼缸</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    font-family: Arial, sans-serif;
+  }
+  .tank-container {
+    position: relative;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+  }
+  svg {
+    cursor: pointer;
+    border-radius: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="tank-container">
+  <svg id="tank" width="900" height="600" viewBox="0 0 900 600">
+    <defs>
+      <!-- 水渐变 -->
+      <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#1a5276;stop-opacity:0.6"/>
+        <stop offset="50%" style="stop-color:#1f6f8b;stop-opacity:0.7"/>
+        <stop offset="100%" style="stop-color:#154360;stop-opacity:0.8"/>
+      </linearGradient>
+      
+      <!-- 玻璃反光渐变 -->
+      <linearGradient id="glassReflect" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.25"/>
+        <stop offset="20%" style="stop-color:#ffffff;stop-opacity:0.08"/>
+        <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0"/>
+        <stop offset="80%" style="stop-color:#ffffff;stop-opacity:0.05"/>
+        <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.15"/>
+      </linearGradient>
+      
+      <!-- 鱼身体渐变 - 大鲤鱼 -->
+      <radialGradient id="fishBody1" cx="40%" cy="40%">
+        <stop offset="0%" style="stop-color:#f39c12"/>
+        <stop offset="50%" style="stop-color:#e67e22"/>
+        <stop offset="100%" style="stop-color:#d35400"/>
+      </radialGradient>
+      
+      <!-- 鱼身体渐变 - 小鲤鱼 -->
+      <radialGradient id="fishBody2" cx="40%" cy="40%">
+        <stop offset="0%" style="stop-color:#f1c40f"/>
+        <stop offset="50%" style="stop-color:#f39c12"/>
+        <stop offset="100%" style="stop-color:#e67e22"/>
+      </radialGradient>
+      
+      <!-- 尾鳍渐变 -->
+      <linearGradient id="tailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#e67e22"/>
+        <stop offset="100%" style="stop-color:#d35400;stop-opacity:0.7"/>
+      </linearGradient>
+      
+      <!-- 水草渐变 -->
+      <linearGradient id="plantGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+        <stop offset="0%" style="stop-color:#1e8449"/>
+        <stop offset="100%" style="stop-color:#27ae60"/>
+      </linearGradient>
+      
+      <!-- 石头渐变 -->
+      <radialGradient id="stoneGrad" cx="40%" cy="30%">
+        <stop offset="0%" style="stop-color:#7f6c5d"/>
+        <stop offset="100%" style="stop-color:#4a3b2c"/>
+      </radialGradient>
+      
+      <!-- 饲料渐变 -->
+      <radialGradient id="foodGrad" cx="40%" cy="30%">
+        <stop offset="0%" style="stop-color:#8b4513"/>
+        <stop offset="100%" style="stop-color:#5d3a1a"/>
+      </radialGradient>
+      
+      <!-- 气泡渐变 -->
+      <radialGradient id="bubbleGrad" cx="30%" cy="30%">
+        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8"/>
+        <stop offset="100%" style="stop-color:#a8d8ea;stop-opacity:0.3"/>
+      </radialGradient>
+      
+      <!-- 裁剪区域 -->
+      <clipPath id="tankClip">
+        <rect x="30" y="30" width="840" height="540" rx="8"/>
+      </clipPath>
+      
+      <!-- 鱼鳍动画 -->
+      <animate id="tailAnim1" attributeName="d" dur="0.6s" repeatCount="indefinite"/>
+    </defs>
+    
+    <!-- 鱼缸背景 -->
+    <rect x="30" y="30" width="840" height="540" rx="8" fill="url(#waterGrad)"/>
+    
+    <!-- 鱼缸内部元素 (裁剪) -->
+    <g clip-path="url(#tankClip)">
+      <!-- 底部沙子 -->
+      <rect x="30" y="520" width="840" height="50" fill="#d4a574" opacity="0.6"/>
+      
+      <!-- 石头 -->
+      <g id="stones">
+        <ellipse cx="150" cy="545" rx="35" ry="20" fill="url(#stoneGrad)"/>
+        <ellipse cx="220" cy="550" rx="25" ry="15" fill="url(#stoneGrad)"/>
+        <ellipse cx="680" cy="548" rx="30" ry="18" fill="url(#stoneGrad)"/>
+        <ellipse cx="750" cy="542" rx="28" ry="16" fill="url(#stoneGrad)"/>
+        <ellipse cx="450" cy="552" rx="22" ry="14" fill="url(#stoneGrad)"/>
+      </g>
+      
+      <!-- 水草 -->
+      <g id="plants">
+        <path d="M120,540 Q110,480 130,420 Q140,380 125,340" stroke="url(#plantGrad)" stroke-width="8" fill="none" stroke-linecap="round">
+          <animate attributeName="d" values="M120,540 Q110,480 130,420 Q140,380 125,340;M120,540 Q125,480 115,420 Q105,380 120,340;M120,540 Q110,480 130,420 Q140,380 125,340" dur="4s" repeatCount="indefinite"/>
+        </path>
+        <path d="M140,540 Q150,490 135,440 Q125,400 145,360" stroke="url(#plantGrad)" stroke-width="6" fill="none" stroke-linecap="round">
+          <animate attributeName="d" values="M140,540 Q150,490 135,440 Q125,400 145,360;M140,540 Q130,490 145,440 Q155,400 135,360;M140,540 Q150,490 135,440 Q125,400 145,360" dur="3.5s" repeatCount="indefinite"/>
+        </path>
+        <path d="M700,540 Q690,470 710,410 Q720,370 705,330" stroke="url(#plantGrad)" stroke-width="9" fill="none" stroke-linecap="round">
+          <animate attributeName="d" values="M700,540 Q690,470 710,410 Q720,370 705,330;M700,540 Q710,470 695,410 Q685,370 700,330;M700,540 Q690,470 710,410 Q720,370 705,330" dur="4.5s" repeatCount="indefinite"/>
+        </path>
+        <path d="M730,540 Q740,500 720,450 Q710,410 730,370" stroke="url(#plantGrad)" stroke-width="7" fill="none" stroke-linecap="round">
+          <animate attributeName="d" values="M730,540 Q740,500 720,450 Q710,410 730,370;M730,540 Q720,500 735,450 Q745,410 720,370;M730,540 Q740,500 720,450 Q710,410 730,370" dur="3.8s" repeatCount="indefinite"/>
+        </path>
+        <path d="M400,540 Q390,500 410,460 Q420,430 405,400" stroke="url(#plantGrad)" stroke-width="6" fill="none" stroke-linecap="round">
+          <animate attributeName="d" values="M400,540 Q390,500 410,460 Q420,430 405,400;M400,540 Q410,500 395,460 Q385,430 400,400;M400,540 Q390,500 410,460 Q420,430 405,400" dur="4.2s" repeatCount="indefinite"/>
+        </path>
+      </g>
+      
+      <!-- 气泡 -->
+      <g id="bubbles">
+        <circle cx="130" cy="340" r="4" fill="url(#bubbleGrad)">
+          <animate attributeName="cy" values="340;100" dur="8s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.8;0" dur="8s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="710" cy="330" r="5" fill="url(#bubbleGrad)">
+          <animate attributeName="cy" values="330;80" dur="10s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;0" dur="10s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="410" cy="400" r="3" fill="url(#bubbleGrad)">
+          <animate attributeName="cy" values="400;150" dur="7s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.6;0" dur="7s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      
+      <!-- 大鲤鱼 -->
+      <g id="fish1">
+        <!-- 尾鳍 -->
+        <path id="fish1Tail" d="M0,0 Q-25,-20 -35,-30 Q-20,-10 -25,0 Q-20,10 -35,30 Q-25,20 0,0" fill="url(#tailGrad)">
+          <animateTransform attributeName="transform" type="rotate" values="0;8;0;-8;0" dur="0.5s" repeatCount="indefinite"/>
+        </path>
+        <!-- 背鳍 -->
+        <path d="M-10,-25 Q0,-45 15,-30 Q5,-25 -10,-25" fill="#d35400" opacity="0.8">
+          <animateTransform attributeName="transform" type="rotate" values="0;-5;0;5;0" dur="0.7s" repeatCount="indefinite"/>
+        </path>
+        <!-- 身体 -->
+        <ellipse cx="0" cy="0" rx="55" ry="28" fill="url(#fishBody1)"/>
+        <!-- 鳞片纹理 -->
+        <ellipse cx="10" cy="-5" rx="15" ry="10" fill="#f5b041" opacity="0.3"/>
+        <ellipse cx="25" cy="5" rx="12" ry="8" fill="#f5b041" opacity="0.25"/>
+        <ellipse cx="-5" cy="8" rx="10" ry="7" fill="#f5b041" opacity="0.2"/>
+        <!-- 胸鳍 -->
+        <path d="M15,15 Q25,35 10,40 Q5,30 15,15" fill="#d35400" opacity="0.7">
+          <animateTransform attributeName="transform" type="rotate" values="0;10;0;-10;0" dur="0.8s" repeatCount="indefinite"/>
+        </path>
+        <!-- 眼睛 -->
+        <circle cx="35" cy="-8" r="8" fill="white"/>
+        <circle cx="37" cy="-8" r="4" fill="#1a1a2e"/>
+        <circle cx="38" cy="-9" r="1.5" fill="white"/>
+        <!-- 嘴 -->
+        <path d="M50,2 Q55,5 50,8" stroke="#a04000" stroke-width="2" fill="none"/>
+      </g>
+      
+      <!-- 小鲤鱼 -->
+      <g id="fish2">
+        <!-- 尾鳍 -->
+        <path id="fish2Tail" d="M0,0 Q-18,-15 -25,-22 Q-15,-8 -18,0 Q-15,8 -25,22 Q-18,15 0,0" fill="url(#tailGrad)">
+          <animateTransform attributeName="transform" type="rotate" values="0;10;0;-10;0" dur="0.4s" repeatCount="indefinite"/>
+        </path>
+        <!-- 背鳍 -->
+        <path d="M-8,-18 Q0,-35 12,-25 Q4,-20 -8,-18" fill="#d35400" opacity="0.8">
+          <animateTransform attributeName="transform" type="rotate" values="0;-8;0;8;0" dur="0.6s" repeatCount="indefinite"/>
+        </path>
+        <!-- 身体 -->
+        <ellipse cx="0" cy="0" rx="38" ry="19" fill="url(#fishBody2)"/>
+        <!-- 鳞片纹理 -->
+        <ellipse cx="8" cy="-3" rx="10" ry="7" fill="#f9e79f" opacity="0.3"/>
+        <ellipse cx="18" cy="3" rx="8" ry="5" fill="#f9e79f" opacity="0.25"/>
+        <!-- 胸鳍 -->
+        <path d="M10,10 Q18,25 8,28 Q4,20 10,10" fill="#d35400" opacity="0.7">
+          <animateTransform attributeName="transform" type="rotate" values="0;12;0;-12;0" dur="0.7s" repeatCount="indefinite"/>
+        </path>
+        <!-- 眼睛 -->
+        <circle cx="24" cy="-5" r="6" fill="white"/>
+        <circle cx="26" cy="-5" r="3" fill="#1a1a2e"/>
+        <circle cx="27" cy="-6" r="1" fill="white"/>
+        <!-- 嘴 -->
+        <path d="M35,1 Q38,3 35,5" stroke="#a04000" stroke-width="1.5" fill="none"/>
+      </g>
+      
+      <!-- 饲料组 -->
+      <g id="foods"></g>
+    </g>
+    
+    <!-- 鱼缸边框 -->
+    <rect x="30" y="30" width="840" height="540" rx="8" fill="none" stroke="#34495e" stroke-width="6"/>
+    
+    <!-- 玻璃反光效果 -->
+    <rect x="30" y="30" width="840" height="540" rx="8" fill="url(#glassReflect)" pointer-events="none"/>
+    
+    <!-- 高光条纹 -->
+    <path d="M60,40 Q200,35 350,50 Q500,65 650,45 Q750,35 840,40" stroke="white" stroke-width="3" fill="none" opacity="0.15" pointer-events="none"/>
+    <path d="M80,50 Q250,45 400,60 Q550,75 700,55 Q780,48 820,50" stroke="white" stroke-width="1.5" fill="none" opacity="0.1" pointer-events="none"/>
+    
+    <!-- 水面波纹 -->
+    <path d="M30,30 Q200,25 400,32 Q600,38 870,30" stroke="#85c1e9" stroke-width="2" fill="none" opacity="0.4">
+      <animate attributeName="d" values="M30,30 Q200,25 400,32 Q600,38 870,30;M30,30 Q200,35 400,28 Q600,22 870,30;M30,30 Q200,25 400,32 Q600,38 870,30" dur="3s" repeatCount="indefinite"/>
+    </path>
+  </svg>
+</div>
+
+<script>
+const svg = document.getElementById('tank');
+const foodsGroup = document.getElementById('foods');
+const fish1El = document.getElementById('fish1');
+const fish2El = document.getElementById('fish2');
+
+// 鱼的配置
+const fish1 = {
+  el: fish1El,
+  x: 300, y: 200,
+  vx: 1.2, vy: 0.5,
+  scale: 1,
+  speed: 2,
+  targetFood: null,
+  eating: false,
+  wanderTimer: 0,
+  wanderDir: { x: 1, y: 0.3 }
+};
+
+const fish2 = {
+  el: fish2El,
+  x: 600, y: 350,
+  vx: -0.8, vy: -0.4,
+  scale: 0.7,
+  speed: 2.5,
+  targetFood: null,
+  eating: false,
+  wanderTimer: 0,
+  wanderDir: { x: -0.7, y: -0.5 }
+};
+
+let foods = [];
+let foodId = 0;
+
+// 边界
+const bounds = { x1: 60, y1: 50, x2: 840, y2: 510 };
+
+// 点击掉落饲料
+svg.addEventListener('click', (e) => {
+  const rect = svg.getBoundingClientRect();
+  const scaleX = 900 / rect.width;
+  const scaleY = 600 / rect.height;
+  let x = (e.clientX - rect.left) * scaleX;
+  let y = (e.clientY - rect.top) * scaleY;
+  
+  // 限制在鱼缸内
+  x = Math.max(bounds.x1, Math.min(bounds.x2, x));
+  y = Math.max(bounds.y1, Math.min(bounds.y2, y));
+  
+  // 掉落3-5颗饲料
+  const count = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      createFood(x + (Math.random() - 0.5) * 30, 35);
+    }, i * 150);
+  }
+});
+
+function createFood(x, y) {
+  const id = ++foodId;
+  const food = {
+    id, x, y,
+    vy: 0.3 + Math.random() * 0.3,
+    eaten: false
+  };
+  foods.push(food);
+  
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', x);
+  circle.setAttribute('cy', y);
+  circle.setAttribute('r', 5);
+  circle.setAttribute('fill', 'url(#foodGrad)');
+  circle.setAttribute('id', 'food-' + id);
+  foodsGroup.appendChild(circle);
+  food.el = circle;
+}
+
+function updateFish(fish, otherFish) {
+  // 寻找最近的饲料
+  let nearestFood = null;
+  let nearestDist = Infinity;
+  
+  for (const food of foods) {
+    if (food.eaten) continue;
+    const dx = food.x - fish.x;
+    const dy = food.y - fish.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearestFood = food;
+    }
+  }
+  
+  if (nearestFood && nearestDist < 400) {
+    fish.targetFood = nearestFood;
+    fish.eating = true;
+  } else {
+    fish.targetFood = null;
+    fish.eating = false;
+  }
+  
+  if (fish.eating && fish.targetFood && !fish.targetFood.eaten) {
+    // 朝饲料游去
+    const dx = fish.targetFood.x - fish.x;
+    const dy = fish.targetFood.y - fish.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < 15) {
+      // 吃到饲料
+      fish.targetFood.eaten = true;
+      fish.targetFood.el.remove();
+      foods = foods.filter(f => f.id !== fish.targetFood.id);
+      fish.targetFood = null;
+      fish.eating = false;
+    } else {
+      fish.vx = (dx / dist) * fish.speed;
+      fish.vy = (dy / dist) * fish.speed;
+    }
+  } else {
+    // 随机游动
+    fish.wanderTimer--;
+    if (fish.wanderTimer <= 0) {
+      fish.wanderTimer = 60 + Math.random() * 120;
+      fish.wanderDir.x = (Math.random() - 0.5) * 2;
+      fish.wanderDir.y = (Math.random() - 0.5) * 1.5;
+    }
+    
+    fish.vx += (fish.wanderDir.x * 0.3 - fish.vx * 0.02) * 0.1;
+    fish.vy += (fish.wanderDir.y * 0.3 - fish.vy * 0.02) * 0.1;
+    
+    // 限制速度
+    const speed = Math.sqrt(fish.vx * fish.vx + fish.vy * fish.vy);
+    const maxSpeed = fish.speed * 0.6;
+    if (speed > maxSpeed) {
+      fish.vx = (fish.vx / speed) * maxSpeed;
+      fish.vy = (fish.vy / speed) * maxSpeed;
+    }
+  }
+  
+  // 更新位置
+  fish.x += fish.vx;
+  fish.y += fish.vy;
+  
+  // 边界反弹
+  const margin = 40 * fish.scale;
+  if (fish.x < bounds.x1 + margin) {
+    fish.x = bounds.x1 + margin;
+    fish.vx = Math.abs(fish.vx) * 0.8;
+  }
+  if (fish.x > bounds.x2 - margin) {
+    fish.x = bounds.x2 - margin;
+    fish.vx = -Math.abs(fish.vx) * 0.8;
+  }
+  if (fish.y < bounds.y1 + margin) {
+    fish.y = bounds.y1 + margin;
+    fish.vy = Math.abs(fish.vy) * 0.8;
+  }
+  if (fish.y > bounds.y2 - margin) {
+    fish.y = bounds.y2 - margin;
+    fish.vy = -Math.abs(fish.vy) * 0.8;
+  }
+  
+  // 根据游动方向翻转
+  const facing = fish.vx >= 0 ? 1 : -1;
+  
+  // 更新DOM
+  fish.el.setAttribute('transform', `translate(${fish.x}, ${fish.y}) scale(${fish.scale * facing}, ${fish.scale})`);
+}
+
+function updateFoods() {
+  for (const food of foods) {
+    if (food.eaten) continue;
+    food.y += food.vy;
+    
+    // 沉到底部
+    if (food.y > bounds.y2 - 10) {
+      food.y = bounds.y2 - 10;
+      food.vy = 0;
+    }
+    
+    food.el.setAttribute('cy', food.y);
+  }
+  
+  // 清理已吃的饲料
+  foods = foods.filter(f => !f.eaten);
+}
+
+// 动画循环
+function animate() {
+  updateFish(fish1, fish2);
+  updateFish(fish2, fish1);
+  updateFoods();
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
