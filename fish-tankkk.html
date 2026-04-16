@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子鱼缸</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #tank {
+            width: 900px;
+            height: 600px;
+            cursor: crosshair;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <svg id="tank" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- 玻璃反光渐变 -->
+            <linearGradient id="glassReflect" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.15)" />
+                <stop offset="40%" stop-color="rgba(255,255,255,0.03)" />
+                <stop offset="60%" stop-color="rgba(255,255,255,0.01)" />
+                <stop offset="100%" stop-color="rgba(255,255,255,0.08)" />
+            </linearGradient>
+            <!-- 水体渐变 -->
+            <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="rgba(100,180,220,0.2)" />
+                <stop offset="100%" stop-color="rgba(50,120,160,0.35)" />
+            </linearGradient>
+            <!-- 鱼鳞渐变 -->
+            <radialGradient id="fishBodyGrad" cx="40%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#ffd700" />
+                <stop offset="50%" stop-color="#ffb347" />
+                <stop offset="100%" stop-color="#ff8c00" />
+            </radialGradient>
+            <!-- 石头渐变 -->
+            <radialGradient id="stoneGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#8b7355" />
+                <stop offset="100%" stop-color="#4a3f35" />
+            </radialGradient>
+            <!-- 尾巴动画 -->
+            <style>
+                .tail-fin {
+                    transform-origin: 0% 50%;
+                    animation: tailWag 0.6s ease-in-out infinite alternate;
+                }
+                @keyframes tailWag {
+                    from { transform: rotateY(-25deg) rotateZ(-5deg); }
+                    to { transform: rotateY(25deg) rotateZ(5deg); }
+                }
+                .tail-fin-slow {
+                    transform-origin: 0% 50%;
+                    animation: tailWagSlow 0.9s ease-in-out infinite alternate;
+                }
+                @keyframes tailWagSlow {
+                    from { transform: rotateY(-20deg) rotateZ(-3deg); }
+                    to { transform: rotateY(20deg) rotateZ(3deg); }
+                }
+                .side-fin {
+                    transform-origin: 0% 0%;
+                    animation: sideFinWave 0.8s ease-in-out infinite alternate;
+                }
+                @keyframes sideFinWave {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(15deg); }
+                }
+            </style>
+        </defs>
+
+        <!-- 鱼缸边框 -->
+        <rect x="20" y="20" width="860" height="560" rx="25" ry="25" fill="none" stroke="#aaddff" stroke-width="4" stroke-opacity="0.6"/>
+
+        <!-- 水体背景 -->
+        <rect x="24" y="24" width="852" height="552" rx="21" ry="21" fill="url(#waterGrad)"/>
+
+        <!-- 底部沙层 -->
+        <ellipse cx="450" cy="560" rx="420" ry="40" fill="#c4a35a" opacity="0.5"/>
+
+        <!-- 装饰层组 -->
+        <g id="decorations"></g>
+
+        <!-- 饲料层 -->
+        <g id="foods"></g>
+
+        <!-- 鱼层 -->
+        <g id="fishes"></g>
+
+        <!-- 玻璃反光 -->
+        <path d="M 30 30 Q 150 30 250 80 Q 180 120 80 100 Q 40 80 30 30" fill="rgba(255,255,255,0.12)"/>
+        <path d="M 750 50 Q 820 60 860 120 Q 820 140 760 100 Q 720 70 750 50" fill="rgba(255,255,255,0.08)"/>
+        <rect x="24" y="24" width="852" height="552" rx="21" ry="21" fill="url(#glassReflect)" pointer-events="none"/>
+    </svg>
+
+    <script>
+        const svg = document.getElementById('tank');
+        const foodGroup = document.getElementById('foods');
+        const fishGroup = document.getElementById('fishes');
+        const decorGroup = document.getElementById('decorations');
+        const TANK_BOUNDS = { x: 24, y: 24, width: 852, height: 552, rx: 21 };
+
+        // 生成石头
+        function createStone(cx, cy, rx, ry) {
+            const stone = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            stone.setAttribute('cx', cx);
+            stone.setAttribute('cy', cy);
+            stone.setAttribute('rx', rx);
+            stone.setAttribute('ry', ry);
+            stone.setAttribute('fill', 'url(#stoneGrad)');
+            stone.setAttribute('stroke', '#3e3228');
+            stone.setAttribute('stroke-width', '1');
+            return stone;
+        }
+
+        // 生成水草
+        function createPlant(x, y, height) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            let d = `M ${x} ${y}`;
+            for (let i = 1; i <= 5; i++) {
+                const px = x + Math.sin(i * 1.2) * 15 * (i / 5);
+                const py = y - height * (i / 5);
+                d += ` Q ${x + (px - x) * 0.5 + 5} ${py + height / 10} ${px} ${py}`;
+            }
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#228b22');
+            path.setAttribute('stroke-width', '8');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('opacity', '0.9');
+
+            const path2 = path.cloneNode();
+            path2.setAttribute('stroke', '#32cd32');
+            path2.setAttribute('stroke-width', '4');
+            path2.setAttribute('opacity', '0.7');
+
+            g.appendChild(path);
+            g.appendChild(path2);
+            return g;
+        }
+
+        // 初始化装饰
+        function initDecorations() {
+            // 石头
+            decorGroup.appendChild(createStone(150, 555, 35, 18));
+            decorGroup.appendChild(createStone(200, 565, 25, 14));
+            decorGroup.appendChild(createStone(650, 558, 40, 20));
+            decorGroup.appendChild(createStone(720, 568, 22, 12));
+            decorGroup.appendChild(createStone(420, 562, 30, 16));
+
+            // 水草
+            decorGroup.appendChild(createPlant(120, 570, 100));
+            decorGroup.appendChild(createPlant(160, 575, 130));
+            decorGroup.appendChild(createPlant(680, 570, 110));
+            decorGroup.appendChild(createPlant(730, 575, 90));
+            decorGroup.appendChild(createPlant(400, 570, 120));
+            decorGroup.appendChild(createPlant(450, 575, 95));
+        }
+
+        const foods = [];
+
+        function spawnFood(x, y) {
+            for (let i = 0; i < 4; i++) {
+                const food = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                const fx = x + (Math.random() - 0.5) * 20;
+                const fy = y + (Math.random() - 0.5) * 10;
+                food.setAttribute('cx', fx);
+                food.setAttribute('cy', fy);
+                food.setAttribute('r', 3 + Math.random() * 2);
+                food.setAttribute('fill', '#8b4513');
+                foodGroup.appendChild(food);
+                foods.push({ el: food, x: fx, y: fy, vy: 0, eaten: false });
+            }
+        }
+
+        svg.addEventListener('click', (e) => {
+            const rect = svg.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (900 / rect.width);
+            const y = (e.clientY - rect.top) * (600 / rect.height);
+            spawnFood(x, y);
+        });
+
+        class Fish {
+            constructor(x, y, scale, id) {
+                this.x = x;
+                this.y = y;
+                this.scale = scale;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.angle = 0;
+                this.targetFood = null;
+                this.id = id;
+                this.element = this.createSVG();
+                fishGroup.appendChild(this.element);
+            }
+
+            createSVG() {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('id', this.id);
+
+                // 尾鳍
+                const tail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                tail.setAttribute('d', 'M -55 0 Q -80 -25 -95 -18 Q -85 0 -95 18 Q -80 25 -55 0');
+                tail.setAttribute('fill', '#ff8c00');
+                tail.setAttribute('stroke', '#e67e00');
+                tail.setAttribute('stroke-width', '1');
+                tail.setAttribute('class', this.scale > 1 ? 'tail-fin' : 'tail-fin-slow');
+                tail.setAttribute('opacity', '0.95');
+                g.appendChild(tail);
+
+                // 背鳍
+                const dorsal = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                dorsal.setAttribute('d', 'M -15 -22 Q 10 -45 30 -20 Q 10 -18 -15 -22');
+                dorsal.setAttribute('fill', '#ffb347');
+                dorsal.setAttribute('opacity', '0.9');
+                g.appendChild(dorsal);
+
+                // 腹鳍
+                const ventral = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                ventral.setAttribute('d', 'M 5 20 Q 15 38 25 22 Q 15 20 5 20');
+                ventral.setAttribute('fill', '#ffb347');
+                ventral.setAttribute('class', 'side-fin');
+                ventral.setAttribute('opacity', '0.9');
+                g.appendChild(ventral);
+
+                // 身体
+                const body = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                body.setAttribute('cx', '0');
+                body.setAttribute('cy', '0');
+                body.setAttribute('rx', '50');
+                body.setAttribute('ry', '28');
+                body.setAttribute('fill', 'url(#fishBodyGrad)');
+                body.setAttribute('stroke', '#e6ac00');
+                body.setAttribute('stroke-width', '1');
+                g.appendChild(body);
+
+                // 鳞片纹理
+                for (let i = -30; i < 30; i += 12) {
+                    for (let j = -15; j < 15; j += 10) {
+                        if ((i * i) / 900 + (j * j) / 784 <= 0.6) {
+                            const scaleCircle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            scaleCircle.setAttribute('d', `M ${i} ${j} Q ${i + 5} ${j - 4} ${i + 10} ${j}`);
+                            scaleCircle.setAttribute('fill', 'none');
+                            scaleCircle.setAttribute('stroke', 'rgba(200,100,0,0.25)');
+                            scaleCircle.setAttribute('stroke-width', '1');
+                            g.appendChild(scaleCircle);
+                        }
+                    }
+                }
+
+                // 眼睛
+                const eyeWhite = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eyeWhite.setAttribute('cx', '32');
+                eyeWhite.setAttribute('cy', '-8');
+                eyeWhite.setAttribute('r', '7');
+                eyeWhite.setAttribute('fill', '#fff');
+                g.appendChild(eyeWhite);
+
+                const eyeBlack = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                eyeBlack.setAttribute('cx', '34');
+                eyeBlack.setAttribute('cy', '-8');
+                eyeBlack.setAttribute('r', '3.5');
+                eyeBlack.setAttribute('fill', '#000');
+                g.appendChild(eyeBlack);
+
+                // 鱼嘴
+                const mouth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                mouth.setAttribute('d', 'M 46 5 Q 52 8 46 11');
+                mouth.setAttribute('fill', 'none');
+                mouth.setAttribute('stroke', '#cc7000');
+                mouth.setAttribute('stroke-width', '1.5');
+                mouth.setAttribute('stroke-linecap', 'round');
+                g.appendChild(mouth);
+
+                // 鱼须
+                const whisker1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                whisker1.setAttribute('d', 'M 48 8 Q 58 15 62 25');
+                whisker1.setAttribute('fill', 'none');
+                whisker1.setAttribute('stroke', '#cc7000');
+                whisker1.setAttribute('stroke-width', '0.8');
+                whisker1.setAttribute('opacity', '0.7');
+                g.appendChild(whisker1);
+
+                const whisker2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                whisker2.setAttribute('d', 'M 48 6 Q 56 2 60 -5');
+                whisker2.setAttribute('fill', 'none');
+                whisker2.setAttribute('stroke', '#cc7000');
+                whisker2.setAttribute('stroke-width', '0.8');
+                whisker2.setAttribute('opacity', '0.7');
+                g.appendChild(whisker2);
+
+                return g;
+            }
+
+            update() {
+                // 寻找最近饲料
+                let nearest = null;
+                let minDist = Infinity;
+                for (const f of foods) {
+                    if (f.eaten) continue;
+                    const dx = f.x - this.x;
+                    const dy = f.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = f;
+                    }
+                }
+
+                const speed = this.scale > 1 ? 2.2 : 1.6;
+                const accel = 0.08;
+
+                if (nearest) {
+                    const dx = nearest.x - this.x;
+                    const dy = nearest.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 15) {
+                        nearest.eaten = true;
+                        nearest.el.remove();
+                    } else {
+                        this.vx += (dx / dist) * accel;
+                        this.vy += (dy / dist) * accel;
+                    }
+                } else {
+                    // 随机游动
+                    this.vx += (Math.random() - 0.5) * 0.05;
+                    this.vy += (Math.random() - 0.5) * 0.05;
+                }
+
+                // 限制速度
+                const v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (v > speed) {
+                    this.vx = (this.vx / v) * speed;
+                    this.vy = (this.vy / v) * speed;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界碰撞
+                const margin = 60 * this.scale;
+                const left = TANK_BOUNDS.x + margin;
+                const right = TANK_BOUNDS.x + TANK_BOUNDS.width - margin;
+                const top = TANK_BOUNDS.y + margin;
+                const bottom = TANK_BOUNDS.y + TANK_BOUNDS.height - margin;
+
+                if (this.x < left) { this.x = left; this.vx *= -0.8; }
+                if (this.x > right) { this.x = right; this.vx *= -0.8; }
+                if (this.y < top) { this.y = top; this.vy *= -0.8; }
+                if (this.y > bottom) { this.y = bottom; this.vy *= -0.8; }
+
+                // 计算朝向角度
+                this.angle = Math.atan2(this.vy, this.vx) * 180 / Math.PI;
+
+                // 应用变换
+                const flip = Math.abs(this.angle) > 90 ? 'scale(1,-1)' : '';
+                this.element.setAttribute('transform', `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle}) ${flip}`);
+            }
+        }
+
+        const fishes = [
+            new Fish(300, 300, 1.3, 'fish1'),
+            new Fish(600, 400, 0.9, 'fish2')
+        ];
+
+        // 饲料物理
+        function updateFoods() {
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const f = foods[i];
+                if (f.eaten) {
+                    foods.splice(i, 1);
+                    continue;
+                }
+                f.vy += 0.03; // 重力
+                f.vy *= 0.98; // 阻尼
+                f.y += f.vy;
+                if (f.y > 560) {
+                    f.y = 560;
+                    f.vy = 0;
+                }
+                f.el.setAttribute('cy', f.y);
+                f.el.setAttribute('cx', f.x);
+            }
+        }
+
+        function loop() {
+            updateFoods();
+            fishes.forEach(fish => fish.update());
+            requestAnimationFrame(loop);
+        }
+
+        initDecorations();
+        loop();
+    </script>
+</body>
+</html>
