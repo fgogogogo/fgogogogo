@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>智慧停车场查询</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --text: #111827;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* 顶部筛选 */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      padding: 10px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 8px 14px;
+    }
+
+    .search-box svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-secondary);
+      margin-right: 8px;
+    }
+
+    .search-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* 地图 */
+    .map-wrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #dbeafe;
+      z-index: 1;
+    }
+
+    #mapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .locate-btn {
+      position: absolute;
+      right: 16px;
+      bottom: 45%;
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      border: none;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    /* 底部列表 */
+    .sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+      transition: transform .3s ease;
+    }
+
+    .sheet.collapsed {
+      transform: translateY(calc(100% - 110px));
+    }
+
+    .sheet-handle {
+      width: 100%;
+      padding: 10px 0 6px;
+      display: flex;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .sheet-handle-bar {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .sheet-header {
+      padding: 0 16px 10px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sheet-header span {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .sheet-body {
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 0 16px 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .parking-card {
+      display: flex;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .parking-card:last-child { border-bottom: none; }
+
+    .parking-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      background: #e5e7eb;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      overflow: hidden;
+    }
+
+    .parking-info { flex: 1; min-width: 0; }
+
+    .parking-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .tag-low  { background: #fee2e2; color: #b91c1c; }
+    .tag-mid  { background: #fef3c7; color: #b45309; }
+    .tag-high { background: #d1fae5; color: #047857; }
+
+    .parking-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .parking-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .parking-price {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .parking-price strong {
+      font-size: 18px;
+      color: var(--danger);
+    }
+
+    .parking-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      outline: none;
+      padding: 7px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+
+    .btn-nav {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .btn-reserve {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn:active { opacity: .85; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(.9);
+      background: rgba(0,0,0,.78);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all .2s ease;
+      z-index: 200;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    /* 预约弹窗 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(.95);
+      background: #fff;
+      width: 86%;
+      max-width: 340px;
+      border-radius: 16px;
+      padding: 20px;
+      z-index: 160;
+      opacity: 0;
+      pointer-events: none;
+      transition: all .2s;
+    }
+
+    .modal.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+
+    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 14px; text-align: center; }
+
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+    }
+
+    .modal-row strong { color: var(--text); font-weight: 500; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-actions .btn { flex: 1; padding: 10px 0; border-radius: 8px; }
+
+    .btn-cancel { background: var(--bg); color: var(--text); }
+
+    @media (min-width: 768px) {
+      .sheet { max-width: 420px; left: 50%; transform: translateX(-50%); }
+      .sheet.collapsed { transform: translateX(-50%) translateY(calc(100% - 110px)); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部 -->
+  <div class="header">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <input type="text" placeholder="搜索停车场名称 / 地址" id="searchInput" />
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" data-type="distance">
+        距离近
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <button class="filter-btn" data-type="price">
+        价格低
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 地图 -->
+  <div class="map-wrap">
+    <canvas id="mapCanvas"></canvas>
+    <button class="locate-btn" id="locateBtn" aria-label="定位">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+    </button>
+  </div>
+
+  <!-- 底部列表 -->
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle" id="sheetHandle">
+      <div class="sheet-handle-bar"></div>
+    </div>
+    <div class="sheet-header">
+      附近停车场 <span id="resultCount">共 6 个</span>
+    </div>
+    <div class="sheet-body" id="listBody">
+      <!-- 动态填充 -->
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 预约弹窗 -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  <div class="modal" id="reserveModal">
+    <div class="modal-title">确认预约车位？</div>
+    <div class="modal-row"><span>停车场</span><strong id="modalName">--</strong></div>
+    <div class="modal-row"><span>剩余车位</span><strong id="modalSpots">--</strong></div>
+    <div class="modal-row"><span>预约费用</span><strong id="modalFee">免费</strong></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="cancelReserve">取消</button>
+      <button class="btn btn-reserve" id="confirmReserve">立即预约</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('mapCanvas');
+    const ctx = canvas.getContext('2d');
+    const listBody = document.getElementById('listBody');
+    const resultCount = document.getElementById('resultCount');
+    const sheet = document.getElementById('sheet');
+    const sheetHandle = document.getElementById('sheetHandle');
+    const toastEl = document.getElementById('toast');
+    const searchInput = document.getElementById('searchInput');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    let width, height, dpr;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false, lastX, lastY;
+    let sortBy = 'distance';
+    let searchKey = '';
+    let selectedId = null;
+
+    // 模拟数据
+    const parkings = [
+      { id: 1, name: '中央广场地下停车场', address: '建设大道88号', distance: 0.3, price: 5, spots: 12, total: 200, x: 0, y: 0 },
+      { id: 2, name: '时代中心停车场', address: '解放大道102号', distance: 0.6, price: 4, spots: 45, total: 300, x: 0, y: 0 },
+      { id: 3, name: '万象城P2停车场', address: '青年路56号', distance: 0.9, price: 6, spots: 8, total: 150, x: 0, y: 0 },
+      { id: 4, name: '国贸大厦停车场', address: '中山大道12号', distance: 1.2, price: 3, spots: 89, total: 400, x: 0, y: 0 },
+      { id: 5, name: '滨江公园停车场', address: '沿江大道199号', distance: 1.5, price: 2, spots: 120, total: 500, x: 0, y: 0 },
+      { id: 6, name: '银泰创意城停车场', address: '珞喻路33号', distance: 2.1, price: 7, spots: 3, total: 120, x: 0, y: 0 },
+    ];
+
+    // 初始化画布尺寸
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+    window.addEventListener('resize', resize);
+
+    // 初始化停车场在地图上的位置（围绕中心随机分布）
+    function initMapPositions() {
+      const cx = width / 2;
+      const cy = height / 2;
+      parkings.forEach((p, i) => {
+        const angle = (i / parkings.length) * Math.PI * 2;
+        const r = 60 + Math.random() * 100;
+        p.x = cx + Math.cos(angle) * r;
+        p.y = cy + Math.sin(angle) * r;
+      });
+      offsetX = 0;
+      offsetY = 0;
+    }
+
+    function drawRoads() {
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.strokeStyle = '#bfdbfe';
+      ctx.lineWidth = 18;
+      ctx.lineCap = 'round';
+      const cx = width / 2;
+      const cy = height / 2;
+      // 横纵主路
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(width, cy);
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, height);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#93c5fd';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const y = cy - 120 + i * 60;
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+      for (let i = 0; i < 5; i++) {
+        const x = cx - 120 + i * 60;
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawUser() {
+      const cx = width / 2;
+      const cy = height / 2;
+      ctx.save();
+      ctx.fillStyle = '#2563eb';
+      ctx.shadowColor = 'rgba(37,99,235,0.4)';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function getTag(p) {
+      const ratio = p.spots / p.total;
+      if (p.spots <= 5 || ratio < 0.05) return { cls: 'tag-low', text: '紧张' };
+      if (ratio < 0.3) return { cls: 'tag-mid', text: '适中' };
+      return { cls: 'tag-high', text: '充裕' };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      drawRoads();
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      parkings.forEach(p => {
+        const isSel = selectedId === p.id;
+        // 标记点背景
+        ctx.fillStyle = isSel ? '#1d4ed8' : '#fff';
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = isSel ? 12 : 6;
+        ctx.beginPath();
+        ctx.roundRect(p.x - 28, p.y - 38, 56, 36, 8);
+        ctx.fill();
+        // 标记点三角
+        ctx.beginPath();
+        ctx.moveTo(p.x - 8, p.y - 2);
+        ctx.lineTo(p.x + 8, p.y - 2);
+        ctx.lineTo(p.x, p.y + 8);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // 文字
+        ctx.fillStyle = isSel ? '#fff' : '#111827';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.spots + '位', p.x, p.y - 20);
+      });
+      ctx.restore();
+      drawUser();
+    }
+
+    function renderList() {
+      let data = parkings.slice();
+      if (searchKey.trim()) {
+        const k = searchKey.trim().toLowerCase();
+        data = data.filter(p => p.name.toLowerCase().includes(k) || p.address.toLowerCase().includes(k));
+      }
+      data.sort((a, b) => a[sortBy] - b[sortBy]);
+      resultCount.textContent = `共 ${data.length} 个`;
+      listBody.innerHTML = '';
+      data.forEach(p => {
+        const tag = getTag(p);
+        const el = document.createElement('div');
+        el.className = 'parking-card';
+        el.innerHTML = `
+          <div class="parking-img">停车场</div>
+          <div class="parking-info">
+            <div class="parking-title">
+              ${p.name}
+              <span class="tag ${tag.cls}">${tag.text}</span>
+            </div>
+            <div class="parking-meta">
+              <span>${p.address}</span>
+            </div>
+            <div class="parking-meta">
+              <span>距您 ${p.distance} km</span>
+              <span>空余 ${p.spots}/${p.total} 位</span>
+            </div>
+            <div class="parking-bottom">
+              <div class="parking-price"><strong>¥${p.price}</strong> /小时</div>
+              <div class="parking-actions">
+                <button class="btn btn-nav" data-id="${p.id}">导航</button>
+                <button class="btn btn-reserve" data-id="${p.id}">预约</button>
+              </div>
+            </div>
+          </div>
+        `;
+        el.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON') return;
+          selectedId = p.id;
+          draw();
+          // 轻微移动地图使标记居中
+          const tx = width / 2 - p.x;
+          const ty = height / 2 - p.y;
+          animateOffset(tx, ty);
+        });
+        listBody.appendChild(el);
+      });
+    }
+
+    function animateOffset(tx, ty) {
+      const startX = offsetX, startY = offsetY;
+      const t0 = performance.now();
+      function step(t) {
+        const r = Math.min(1, (t - t0) / 250);
+        offsetX = startX + (tx - startX) * r;
+        offsetY = startY + (ty - startY) * r;
+        draw();
+        if (r < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    // 交互事件
+    canvas.addEventListener('pointerdown', e => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    window.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      offsetX += dx;
+      offsetY += dy;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      draw();
+    });
+    window.addEventListener('pointerup', () => isDragging = false);
+
+    document.getElementById('locateBtn').addEventListener('click', () => {
+      animateOffset(0, 0);
+      showToast('已定位到当前位置');
+    });
+
+    // 底部拖拽
+    let sheetExpanded = true;
+    sheetHandle.addEventListener('click', () => {
+      sheetExpanded = !sheetExpanded;
+      sheet.classList.toggle('collapsed', !sheetExpanded);
+    });
+
+    let touchStartY = 0;
+    sheet.addEventListener('touchstart', e => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    sheet.addEventListener('touchend', e => {
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (dy > 40) {
+        sheetExpanded = false;
+        sheet.classList.add('collapsed');
+      } else if (dy < -40) {
+        sheetExpanded = true;
+        sheet.classList.remove('collapsed');
+      }
+    }, { passive: true });
+
+    // 筛选
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        sortBy = btn.dataset.type;
+        renderList();
+      });
+    });
+
+    // 搜索
+    searchInput.addEventListener('input', e => {
+      searchKey = e.target.value;
+      renderList();
+    });
+
+    // 导航 / 预约
+    listBody.addEventListener('click', e => {
+      if (!e.target.classList.contains('btn')) return;
+      const id = +e.target.dataset.id;
+      const p = parkings.find(x => x.id === id);
+      if (e.target.classList.contains('btn-nav')) {
+        const url = `https://uri.amap.com/navigation?to=${p.x},${p.y},${encodeURIComponent(p.name)}&mode=car&policy=1`;
+        window.open(url, '_blank');
+      } else if (e.target.classList.contains('btn-reserve')) {
+        openReserve(p);
+      }
+    });
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 1800);
+    }
+
+    // 预约弹窗
+    const modalOverlay = document.getElementById('modalOverlay');
+    const reserveModal = document.getElementById('reserveModal');
+    const cancelReserve = document.getElementById('cancelReserve');
+    const confirmReserve = document.getElementById('confirmReserve');
+
+    function openReserve(p) {
+      document.getElementById('modalName').textContent = p.name;
+      document.getElementById('modalSpots').textContent = p.spots + ' 位';
+      modalOverlay.classList.add('show');
+      reserveModal.classList.add('show');
+      confirmReserve.onclick = () => {
+        closeReserve();
+        showToast('预约成功，请在30分钟内入场');
+      };
+    }
+    function closeReserve() {
+      modalOverlay.classList.remove('show');
+      reserveModal.classList.remove('show');
+    }
+    cancelReserve.addEventListener('click', closeReserve);
+    modalOverlay.addEventListener('click', closeReserve);
+
+    // 初始化
+    resize();
+    initMapPositions();
+    renderList();
+    draw();
+  </script>
+</body>
+</html>
