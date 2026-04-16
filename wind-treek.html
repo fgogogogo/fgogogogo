@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风动树摇 - Wind Tree Animation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(180deg, #e0f7fa 0%, #b2ebf2 100%);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  /* 树干固定不动 */
+  .trunk {
+    fill: #5d4037;
+  }
+
+  /* 树枝基础样式 */
+  .branch {
+    fill: none;
+    stroke: #6d4c41;
+    stroke-linecap: round;
+    transform-box: fill-box;
+    transform-origin: 0% 50%; /* 以连接端为旋转中心 */
+    will-change: transform;
+  }
+
+  /* 树叶基础样式 */
+  .leaf {
+    fill: #66bb6a;
+    opacity: 0.95;
+    transform-box: fill-box;
+    transform-origin: 50% 100%; /* 以叶柄为旋转中心 */
+    will-change: transform;
+  }
+
+  .leaf.light { fill: #81c784; }
+  .leaf.dark  { fill: #4caf50; }
+
+  /* 控制面板 */
+  .controls {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(255,255,255,0.85);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .controls label {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+  }
+  .controls input[type=range] {
+    width: 160px;
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <label>风力强度 (Wind)<br><input type="range" id="windRange" min="0" max="100" value="35"></label>
+  <label>阵风频率 (Gust)<br><input type="range" id="gustRange" min="0" max="100" value="50"></label>
+</div>
+
+<svg id="treeSvg" width="100%" height="100%" viewBox="0 0 800 600" preserveAspectRatio="xMidYMax slice">
+  <!-- 树干 -->
+  <path class="trunk" d="M390,600 Q400,500 395,400 Q400,300 380,200 L420,200 Q400,300 405,400 Q400,500 410,600 Z" />
+
+  <!-- 主枝 1 (左) -->
+  <g transform="translate(390,380)">
+    <path class="branch" d="M0,0 Q-80,-40 -150,-20" stroke-width="10" />
+    <!-- 子枝 -->
+    <g transform="translate(-150,-20) rotate(-10)">
+      <path class="branch" d="M0,0 Q-60,-50 -100,-80" stroke-width="6" />
+      <g class="leaves-group" data-depth="2" data-phase="0.2"></g>
+    </g>
+    <g transform="translate(-90,-32) rotate(5)">
+      <path class="branch" d="M0,0 Q-30,-40 -60,-70" stroke-width="5" />
+      <g class="leaves-group" data-depth="2" data-phase="0.7"></g>
+    </g>
+    <g class="leaves-group" data-depth="1" data-phase="0"></g>
+  </g>
+
+  <!-- 主枝 2 (右) -->
+  <g transform="translate(410,340)">
+    <path class="branch" d="M0,0 Q90,-30 160,-10" stroke-width="10" />
+    <g transform="translate(160,-10) rotate(10)">
+      <path class="branch" d="M0,0 Q50,-60 90,-100" stroke-width="6" />
+      <g class="leaves-group" data-depth="2" data-phase="1.2"></g>
+    </g>
+    <g transform="translate(100,-22) rotate(-5)">
+      <path class="branch" d="M0,0 Q30,-40 70,-80" stroke-width="5" />
+      <g class="leaves-group" data-depth="2" data-phase="1.8"></g>
+    </g>
+    <g class="leaves-group" data-depth="1" data-phase="0.5"></g>
+  </g>
+
+  <!-- 主枝 3 (顶) -->
+  <g transform="translate(400,220)">
+    <path class="branch" d="M0,0 Q-40,-80 -20,-140" stroke-width="8" />
+    <g transform="translate(-20,-140) rotate(-5)">
+      <path class="branch" d="M0,0 Q-20,-50 -40,-90" stroke-width="5" />
+      <g class="leaves-group" data-depth="2" data-phase="2.5"></g>
+    </g>
+    <g transform="translate(-10,-100) rotate(10)">
+      <path class="branch" d="M0,0 Q20,-40 30,-80" stroke-width="4" />
+      <g class="leaves-group" data-depth="2" data-phase="3.0"></g>
+    </g>
+    <g class="leaves-group" data-depth="1" data-phase="1.0"></g>
+  </g>
+</svg>
+
+<script>
+(function(){
+  const svg = document.getElementById('treeSvg');
+  const windInput = document.getElementById('windRange');
+  const gustInput = document.getElementById('gustRange');
+
+  // 在每个 leaves-group 里生成叶子
+  const groups = document.querySelectorAll('.leaves-group');
+  groups.forEach(g => {
+    const count = 12 + Math.floor(Math.random() * 10);
+    for (let i = 0; i < count; i++) {
+      const leaf = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      // 随机分布在枝条末端附近
+      const cx = (Math.random() - 0.5) * 140;
+      const cy = (Math.random() - 0.5) * 80 - 20;
+      const rx = 6 + Math.random() * 5;
+      const ry = 10 + Math.random() * 8;
+      const rot = (Math.random() - 0.5) * 60;
+      leaf.setAttribute('cx', cx);
+      leaf.setAttribute('cy', cy);
+      leaf.setAttribute('rx', rx);
+      leaf.setAttribute('ry', ry);
+      leaf.setAttribute('transform', `rotate(${rot}, ${cx}, ${cy})`);
+      leaf.classList.add('leaf');
+      leaf.classList.add(Math.random() > 0.5 ? 'light' : 'dark');
+      g.appendChild(leaf);
+    }
+  });
+
+  // 动画状态
+  let time = 0;
+  let windBase = 0.35;      // 0-1
+  let gustFreq = 0.5;       // 0-1
+  let currentGust = 0;
+  let targetGust = 0;
+
+  // 获取所有需要摆动的元素
+  const branches = Array.from(document.querySelectorAll('.branch')).slice(1); // 跳过树干(虽然没有branch类，但保险)
+  const leaves = Array.from(document.querySelectorAll('.leaf'));
+
+  // 为每个元素分配独立的随机相位和频率系数
+  branches.forEach((b, i) => {
+    b._phase = Math.random() * Math.PI * 2;
+    b._freq = 0.8 + Math.random() * 0.4;
+    b._ampBase = 1 + Math.random() * 1.5; // 基础振幅(度)
+    b._depth = parseFloat(b.parentElement.dataset.depth) || 1;
+  });
+
+  leaves.forEach((l, i) => {
+    l._phase = Math.random() * Math.PI * 2;
+    l._freq = 1.2 + Math.random() * 1.5;
+    l._ampBase = 3 + Math.random() * 4; // 叶子摆动更大
+    l._depth = parseFloat(l.parentElement.dataset.depth) || 1;
+  });
+
+  function updateParams() {
+    windBase = parseInt(windInput.value, 10) / 100;
+    gustFreq = parseInt(gustInput.value, 10) / 100;
+  }
+  windInput.addEventListener('input', updateParams);
+  gustInput.addEventListener('input', updateParams);
+  updateParams();
+
+  // 噪声/阵风: 低频 Perlin-like 用叠加正弦近似
+  function noise(t) {
+    return Math.sin(t * 0.5) * 0.5 + Math.sin(t * 0.23) * 0.25 + Math.sin(t * 1.3) * 0.125;
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function easeInOut(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  let last = performance.now();
+
+  function frame(now) {
+    const dt = (now - last) / 1000;
+    last = now;
+    time += dt;
+
+    // 阵风强度动态变化
+    const gustSignal = noise(time * (0.2 + gustFreq * 0.8));
+    const mappedGust = (gustSignal + 0.8) * 0.5; // 0..1 偏正
+    targetGust = mappedGust;
+    currentGust = lerp(currentGust, targetGust, 0.03); // 缓动跟随
+
+    const totalWind = windBase * (0.5 + currentGust * 0.8);
+
+    // 枝条晃动
+    branches.forEach(b => {
+      const depthFactor = 1 + b._depth * 0.5;
+      const amp = b._ampBase * depthFactor * (0.3 + totalWind * 2.5);
+      const freq = b._freq * (0.5 + totalWind * 0.8);
+      const angle = Math.sin(time * freq + b._phase + currentGust * Math.PI) * amp;
+      // 加入一点阵风偏移(整体偏向一侧)
+      const gustBias = currentGust * 3 * depthFactor * (windBase + 0.1);
+      const finalAngle = angle + gustBias;
+      b.style.transform = `rotate(${finalAngle.toFixed(2)}deg)`;
+    });
+
+    // 树叶摇摆
+    leaves.forEach(l => {
+      const depthFactor = 1 + l._depth * 0.6;
+      const amp = l._ampBase * depthFactor * (0.4 + totalWind * 3);
+      const freq = l._freq * (0.6 + totalWind * 1.2);
+      // 叶子有更高频的颤动
+      const flutter = Math.sin(time * (freq * 3) + l._phase * 2) * (amp * 0.25);
+      const sway = Math.sin(time * freq + l._phase) * amp;
+      const gustBias = currentGust * 6 * depthFactor * (windBase + 0.1);
+      const finalAngle = sway + flutter + gustBias;
+      l.style.transform = `rotate(${finalAngle.toFixed(2)}deg) ${l.getAttribute('transform') || ''}`;
+    });
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
