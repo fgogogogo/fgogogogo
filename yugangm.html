@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子鱼缸</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .tank-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+        }
+
+        .tank {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* 水的渐变效果 */
+        .water {
+            fill: url(#waterGradient);
+        }
+
+        /* 玻璃反光效果 */
+        .glass-reflection {
+            fill: url(#glassGradient);
+            opacity: 0.3;
+        }
+
+        /* 鱼缸边框 */
+        .tank-border {
+            fill: none;
+            stroke: #4a5568;
+            stroke-width: 12;
+            rx: 20;
+        }
+
+        /* 鱼的样式 */
+        .fish {
+            position: absolute;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* 鱼身 */
+        .fish-body {
+            fill: url(#goldFishGradient);
+            transition: d 0.3s ease;
+        }
+
+        /* 鱼眼 */
+        .fish-eye {
+            fill: #1a1a1a;
+        }
+
+        .fish-eye-highlight {
+            fill: #ffffff;
+        }
+
+        /* 鱼尾鳍动画 */
+        .fish-tail {
+            fill: url(#goldFishGradient);
+            transform-origin: center right;
+            animation: tailWag 0.5s ease-in-out infinite;
+        }
+
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+        }
+
+        /* 鱼背鳍 */
+        .fish-dorsal {
+            fill: url(#goldFishGradient);
+        }
+
+        /* 鱼腹鳍 */
+        .fish-pectoral {
+            fill: url(#goldFishGradient);
+            animation: pectoralWag 0.3s ease-in-out infinite;
+        }
+
+        @keyframes pectoralWag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        /* 饲料样式 */
+        .food {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #8B4513 0%, #5D3A1A 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 4px rgba(139, 69, 19, 0.5);
+            transition: top 0.1s linear, opacity 0.3s ease;
+        }
+
+        /* 水草摇摆动画 */
+        .seaweed {
+            transform-origin: bottom center;
+            animation: seaweedSway 3s ease-in-out infinite;
+        }
+
+        .seaweed:nth-child(2) { animation-delay: 0.5s; }
+        .seaweed:nth-child(3) { animation-delay: 1s; }
+        .seaweed:nth-child(4) { animation-delay: 1.5s; }
+        .seaweed:nth-child(5) { animation-delay: 2s; }
+
+        @keyframes seaweedSway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        /* 气泡效果 */
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.2));
+            border-radius: 50%;
+            animation: bubbleRise 4s ease-in infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bubbleRise {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5);
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-400px) scale(1);
+            }
+        }
+
+        /* 鱼吃东西动画 */
+        .fish.eating {
+            animation: eatBounce 0.3s ease;
+        }
+
+        @keyframes eatBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* 提示文字 */
+        .hint {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #a0aec0;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="tank-container">
+        <svg class="tank" id="tank" viewBox="0 0 800 600">
+            <defs>
+                <!-- 水的渐变 -->
+                <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#4a90d9;stop-opacity:0.6" />
+                    <stop offset="50%" style="stop-color:#357abd;stop-opacity:0.7" />
+                    <stop offset="100%" style="stop-color:#1e5a8a;stop-opacity:0.8" />
+                </linearGradient>
+
+                <!-- 金色鱼的渐变 -->
+                <linearGradient id="goldFishGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffd700" />
+                    <stop offset="30%" style="stop-color:#ffb700" />
+                    <stop offset="70%" style="stop-color:#ff9500" />
+                    <stop offset="100%" style="stop-color:#e68600" />
+                </linearGradient>
+
+                <!-- 玻璃反光渐变 -->
+                <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.4" />
+                    <stop offset="30%" style="stop-color:#ffffff;stop-opacity:0.1" />
+                    <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0.05" />
+                    <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+                </linearGradient>
+
+                <!-- 石头渐变 -->
+                <radialGradient id="stoneGradient" cx="30%" cy="30%">
+                    <stop offset="0%" style="stop-color:#8b7355" />
+                    <stop offset="100%" style="stop-color:#5d4e37" />
+                </radialGradient>
+
+                <!-- 水草渐变 -->
+                <linearGradient id="seaweedGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" style="stop-color:#228B22" />
+                    <stop offset="50%" style="stop-color:#32CD32" />
+                    <stop offset="100%" style="stop-color:#90EE90" />
+                </linearGradient>
+
+                <!-- 大鱼模板 -->
+                <g id="bigFishTemplate">
+                    <!-- 背鳍 -->
+                    <path class="fish-dorsal" d="M -30,-20 Q -50,-40 -10,-35 Q 0,-30 10,-25 Z" />
+                    <!-- 身体 -->
+                    <ellipse class="fish-body" cx="0" cy="0" rx="50" ry="30" />
+                    <!-- 尾鳍 -->
+                    <g class="fish-tail" transform="translate(45, 0)">
+                        <path d="M 0,0 Q 25,-20 40,-25 Q 35,0 40,25 Q 25,20 0,0 Z" />
+                        <path d="M 5,-5 Q 20,-15 30,-18 Q 28,0 30,18 Q 20,15 5,5 Z" fill="#ffb700" />
+                    </g>
+                    <!-- 腹鳍 -->
+                    <g class="fish-pectoral" transform="translate(-10, 15)">
+                        <ellipse cx="0" cy="10" rx="12" ry="8" />
+                    </g>
+                    <g class="fish-pectoral" style="animation-delay: 0.15s;" transform="translate(-5, 15)">
+                        <ellipse cx="0" cy="10" rx="10" ry="6" />
+                    </g>
+                    <!-- 眼睛 -->
+                    <circle class="fish-eye" cx="-35" cy="-8" r="6" />
+                    <circle class="fish-eye-highlight" cx="-33" cy="-10" r="2" />
+                    <!-- 鳃 -->
+                    <path d="M -15,-20 Q -5,-15 -5,0 Q -5,15 -15,20" fill="none" stroke="#e68600" stroke-width="2" opacity="0.5" />
+                    <path d="M -8,-20 Q 2,-15 2,0 Q 2,15 -8,20" fill="none" stroke="#e68600" stroke-width="2" opacity="0.5" />
+                </g>
+
+                <!-- 小鱼模板 -->
+                <g id="smallFishTemplate">
+                    <!-- 背鳍 -->
+                    <path class="fish-dorsal" d="M -20,-12 Q -35,-25 -8,-22 Q 0,-18 6,-15 Z" />
+                    <!-- 身体 -->
+                    <ellipse class="fish-body" cx="0" cy="0" rx="35" ry="20" />
+                    <!-- 尾鳍 -->
+                    <g class="fish-tail" style="animation-duration: 0.4s;" transform="translate(32, 0)">
+                        <path d="M 0,0 Q 15,-12 28,-15 Q 25,0 28,15 Q 15,12 0,0 Z" />
+                        <path d="M 4,-4 Q 12,-10 20,-12 Q 18,0 20,12 Q 12,10 4,4 Z" fill="#ffb700" />
+                    </g>
+                    <!-- 腹鳍 -->
+                    <g class="fish-pectoral" style="animation-duration: 0.25s;" transform="translate(-8, 10)">
+                        <ellipse cx="0" cy="6" rx="8" ry="5" />
+                    </g>
+                    <!-- 眼睛 -->
+                    <circle class="fish-eye" cx="-25" cy="-5" r="4" />
+                    <circle class="fish-eye-highlight" cx="-23" cy="-7" r="1.5" />
+                    <!-- 鳃 -->
+                    <path d="M -10,-12 Q -3,-10 -3,0 Q -3,10 -10,12" fill="none" stroke="#e68600" stroke-width="1.5" opacity="0.5" />
+                </g>
+            </defs>
+
+            <!-- 鱼缸背景（水） -->
+            <rect class="water" x="6" y="6" width="788" height="588" rx="15" />
+
+            <!-- 水草 -->
+            <g class="seaweed" transform="translate(100, 580)">
+                <path d="M 0,0 Q 10,-50 -5,-100 Q -15,-150 0,-200 Q 5,-250 -10,-280" fill="url(#seaweedGradient)" stroke="#1a6b1a" stroke-width="2" stroke-linecap="round" />
+            </g>
+            <g class="seaweed" transform="translate(130, 590)">
+                <path d="M 0,0 Q -8,-40 5,-80 Q 12,-120 -5,-160 Q -10,-190 3,-220" fill="url(#seaweedGradient)" stroke="#1a6b1a" stroke-width="2" stroke-linecap="round" />
+            </g>
+            <g class="seaweed" transform="translate(660, 580)">
+                <path d="M 0,0 Q -10,-45 8,-90 Q 18,-135 -8,-175 Q -12,-210 5,-250" fill="url(#seaweedGradient)" stroke="#1a6b1a" stroke-width="2" stroke-linecap="round" />
+            </g>
+            <g class="seaweed" transform="translate(700, 590)">
+                <path d="M 0,0 Q 8,-35 -5,-70 Q -12,-105 5,-140 Q 10,-170 -5,-200" fill="url(#seaweedGradient)" stroke="#1a6b1a" stroke-width="2" stroke-linecap="round" />
+            </g>
+            <g class="seaweed" transform="translate(180, 585)">
+                <path d="M 0,0 Q 6,-30 -4,-60 Q -8,-90 4,-120 Q 6,-140 -2,-160" fill="url(#seaweedGradient)" stroke="#1a6b1a" stroke-width="2" stroke-linecap="round" />
+            </g>
+
+            <!-- 石头 -->
+            <g id="stones">
+                <ellipse cx="250" cy="570" rx="45" ry="25" fill="url(#stoneGradient)" />
+                <ellipse cx="280" cy="580" rx="35" ry="20" fill="url(#stoneGradient)" />
+                <ellipse cx="500" cy="575" rx="50" ry="28" fill="url(#stoneGradient)" />
+                <ellipse cx="460" cy="585" rx="40" ry="22" fill="url(#stoneGradient)" />
+                <ellipse cx="540" cy="585" rx="30" ry="18" fill="url(#stoneGradient)" />
+            </g>
+
+            <!-- 玻璃反光效果 -->
+            <path class="glass-reflection" d="M 20,20 Q 200,20 200,200 Q 200,50 50,50 Q 50,20 20,20 Z" />
+            <path class="glass-reflection" d="M 680,30 Q 780,30 780,150 Q 750,50 680,50 Z" style="opacity:0.15;" />
+
+            <!-- 鱼缸边框 -->
+            <rect class="tank-border" x="0" y="0" width="800" height="600" rx="20" />
+
+            <!-- 鱼的容器 -->
+            <g id="fishContainer">
+                <!-- 大鱼 -->
+                <g id="bigFish" class="fish" transform="translate(400, 300)">
+                    <use href="#bigFishTemplate" />
+                </g>
+                <!-- 小鱼 -->
+                <g id="smallFish" class="fish" transform="translate(200, 200)">
+                    <use href="#smallFishTemplate" />
+                </g>
+            </g>
+
+            <!-- 饲料容器 -->
+            <g id="foodContainer"></g>
+
+            <!-- 气泡容器 -->
+            <g id="bubbleContainer"></g>
+        </svg>
+        <p class="hint">🐟 点击鱼缸投放饲料</p>
+    </div>
+
+    <script>
+        const tank = document.getElementById('tank');
+        const fishContainer = document.getElementById('fishContainer');
+        const foodContainer = document.getElementById('foodContainer');
+        const bubbleContainer = document.getElementById('bubbleContainer');
+        const bigFish = document.getElementById('bigFish');
+        const smallFish = document.getElementById('smallFish');
+
+        const tankWidth = 800;
+        const tankHeight = 600;
+        const tankPadding = 50;
+
+        // 鱼的状态
+        const fishes = [
+            {
+                element: bigFish,
+                x: 400,
+                y: 300,
+                speed: 2,
+                size: 'big',
+                targetX: 400,
+                targetY: 300,
+                hasTarget: false,
+                direction: 1
+            },
+            {
+                element: smallFish,
+                x: 200,
+                y: 200,
+                speed: 2.5,
+                size: 'small',
+                targetX: 200,
+                targetY: 200,
+                hasTarget: false,
+                direction: 1
+            }
+        ];
+
+        // 饲料数组
+        let foods = [];
+
+        // 点击投放饲料
+        tank.addEventListener('click', (e) => {
+            const rect = tank.getBoundingClientRect();
+            const scaleX = tankWidth / rect.width;
+            const scaleY = tankHeight / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            // 在点击位置投放3-5颗饲料
+            const foodCount = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < foodCount; i++) {
+                const offsetX = (Math.random() - 0.5) * 40;
+                const offsetY = (Math.random() - 0.5) * 20;
+                createFood(x + offsetX, y + offsetY);
+            }
+        });
+
+        // 创建饲料
+        function createFood(x, y) {
+            const food = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                vy: 0.5 + Math.random() * 0.5, // 下沉速度
+                element: document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+            };
+
+            food.element.setAttribute('cx', food.x);
+            food.element.setAttribute('cy', food.y);
+            food.element.setAttribute('r', 5);
+            food.element.setAttribute('fill', 'url(#stoneGradient)');
+            food.element.style.filter = 'drop-shadow(0 0 3px rgba(139, 69, 19, 0.6))';
+
+            foodContainer.appendChild(food.element);
+            foods.push(food);
+        }
+
+        // 更新饲料位置
+        function updateFoods() {
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const food = foods[i];
+                food.y += food.vy;
+
+                // 检查是否到达底部
+                if (food.y > tankHeight - 50) {
+                    removeFood(i);
+                    continue;
+                }
+
+                food.element.setAttribute('cy', food.y);
+            }
+        }
+
+        // 移除饲料
+        function removeFood(index) {
+            const food = foods[index];
+            if (food && food.element) {
+                food.element.remove();
+            }
+            foods.splice(index, 1);
+        }
+
+        // 更新鱼的位置
+        function updateFish() {
+            fishes.forEach(fish => {
+                let targetX, targetY;
+
+                // 检查是否有饲料
+                if (foods.length > 0 && !fish.hasTarget) {
+                    // 找到最近的饲料
+                    let closestFood = null;
+                    let closestDist = Infinity;
+
+                    foods.forEach(food => {
+                        const dist = Math.hypot(food.x - fish.x, food.y - fish.y);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closestFood = food;
+                        }
+                    });
+
+                    if (closestFood) {
+                        fish.targetFood = closestFood;
+                        fish.hasTarget = true;
+                    }
+                }
+
+                if (fish.hasTarget && fish.targetFood) {
+                    // 追逐饲料
+                    const foodIndex = foods.indexOf(fish.targetFood);
+                    if (foodIndex === -1) {
+                        // 饲料已被吃掉
+                        fish.hasTarget = false;
+                        fish.targetFood = null;
+                        return;
+                    }
+
+                    targetX = fish.targetFood.x;
+                    targetY = fish.targetFood.y;
+
+                    // 检查是否吃到饲料
+                    const dist = Math.hypot(targetX - fish.x, targetY - fish.y);
+                    if (dist < 20) {
+                        // 吃到饲料
+                        eatFood(foodIndex, fish);
+                        fish.hasTarget = false;
+                        fish.targetFood = null;
+                        return;
+                    }
+                } else {
+                    // 随机游动
+                    if (Math.random() < 0.02) {
+                        fish.targetX = tankPadding + Math.random() * (tankWidth - tankPadding * 2);
+                        fish.targetY = tankPadding + Math.random() * (tankHeight - tankPadding * 2);
+                    }
+                    targetX = fish.targetX;
+                    targetY = fish.targetY;
+                }
+
+                // 移动鱼
+                const dx = targetX - fish.x;
+                const dy = targetY - fish.y;
+                const distance = Math.hypot(dx, dy);
+
+                if (distance > 1) {
+                    const moveX = (dx / distance) * fish.speed;
+                    const moveY = (dy / distance) * fish.speed;
+
+                    fish.x += moveX;
+                    fish.y += moveY;
+
+                    // 确定方向
+                    if (dx > 0) {
+                        fish.direction = 1; // 向右
+                    } else if (dx < 0) {
+                        fish.direction = -1; // 向左
+                    }
+
+                    // 更新鱼的变换
+                    const scaleX = fish.direction;
+                    fish.element.setAttribute('transform', `translate(${fish.x}, ${fish.y}) scale(${scaleX}, 1)`);
+                }
+            });
+        }
+
+        // 鱼吃饲料
+        function eatFood(foodIndex, fish) {
+            removeFood(foodIndex);
+            fish.element.classList.add('eating');
+            setTimeout(() => {
+                fish.element.classList.remove('eating');
+            }, 300);
+
+            // 检查是否所有饲料都被吃完了
+            if (foods.length === 0) {
+                // 所有鱼都没有目标了
+                fishes.forEach(f => {
+                    f.hasTarget = false;
+                    f.targetFood = null;
+                });
+            }
+        }
+
+        // 创建气泡
+        function createBubble() {
+            const bubble = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const x = 50 + Math.random() * (tankWidth - 100);
+            const y = tankHeight - 30;
+            const size = 3 + Math.random() * 8;
+
+            bubble.setAttribute('cx', x);
+            bubble.setAttribute('cy', y);
+            bubble.setAttribute('r', size);
+            bubble.setAttribute('fill', 'rgba(255, 255, 255, 0.4)');
+            bubble.setAttribute('stroke', 'rgba(255, 255, 255, 0.6)');
+            bubble.setAttribute('stroke-width', '1');
+
+            bubbleContainer.appendChild(bubble);
+
+            // 动画
+            let currentY = y;
+            let opacity = 0.6;
+            let speed = 1 + Math.random() * 2;
+            let wobble = Math.random() * Math.PI * 2;
+
+            const animateBubble = () => {
+                currentY -= speed;
+                wobble += 0.1;
+                opacity -= 0.002;
+
+                const wobbleX = Math.sin(wobble) * 10;
+
+                bubble.setAttribute('cy', currentY);
+                bubble.setAttribute('cx', x + wobbleX);
+                bubble.setAttribute('opacity', opacity);
+
+                if (currentY < 50 || opacity <= 0) {
+                    bubble.remove();
+                } else {
+                    requestAnimationFrame(animateBubble);
+                }
+            };
+
+            requestAnimationFrame(animateBubble);
+        }
+
+        // 随机创建气泡
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                createBubble();
+            }
+        }, 500);
+
+        // 主游戏循环
+        function gameLoop() {
+            updateFoods();
+            updateFish();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 开始游戏
+        gameLoop();
+    </script>
+</body>
+</html>
