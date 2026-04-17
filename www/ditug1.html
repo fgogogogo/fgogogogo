@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时区地图工具</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-overlay">
+                <h1>世界时区地图</h1>
+                <p>点击地图上的任意位置查看当地时区信息</p>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <h2>当前位置</h2>
+                <div id="current-info" class="info-card">
+                    <p class="placeholder">点击地图查看信息</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>已选城市</h2>
+                    <button id="clear-all" class="btn-small">清空全部</button>
+                </div>
+                <div id="selected-cities" class="city-list">
+                    <p class="placeholder">添加城市进行对比</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>搜索城市</h2>
+                <input type="text" id="city-search" placeholder="输入城市名称..." />
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
