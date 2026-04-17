@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 绿植助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-leaf"></i>
+                <h1>AI 绿植助手</h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-section="home">
+                    <i class="fas fa-home"></i> 首页
+                </button>
+                <button class="nav-btn" data-section="plants">
+                    <i class="fas fa-seedling"></i> 植物库
+                </button>
+                <button class="nav-btn" data-section="chat">
+                    <i class="fas fa-comments"></i> 智能问答
+                </button>
+                <button class="nav-btn" data-section="guide">
+                    <i class="fas fa-book"></i> 养护指南
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main">
+        <!-- 首页 -->
+        <section id="home" class="section active">
+            <div class="hero">
+                <div class="hero-content">
+                    <h2>让每一株植物都能茁壮成长</h2>
+                    <p>AI 智能助手，为您提供专业的植物养护建议和实时问答服务</p>
+                    <button class="cta-btn" onclick="switchSection('chat')">
+                        <i class="fas fa-robot"></i> 开始咨询
+                    </button>
+                </div>
+                <div class="hero-image">
+                    <div class="plant-card hero-plant">
+                        <i class="fas fa-tree"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快捷功能 -->
+            <div class="quick-actions">
+                <div class="action-card" onclick="switchSection('plants')">
+                    <i class="fas fa-search"></i>
+                    <h3>植物识别</h3>
+                    <p>上传照片识别植物种类</p>
+                </div>
+                <div class="action-card" onclick="switchSection('chat')">
+                    <i class="fas fa-question-circle"></i>
+                    <h3>养护咨询</h3>
+                    <p>获取浇水施肥建议</p>
+                </div>
+                <div class="action-card" onclick="switchSection('guide')">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>养护提醒</h3>
+                    <p>设置浇水施肥提醒</p>
+                </div>
+                <div class="action-card" onclick="switchSection('plants')">
+                    <i class="fas fa-heart"></i>
+                    <h3>我的植物</h3>
+                    <p>管理您收藏的植物</p>
+                </div>
+            </div>
+
+            <!-- 今日推荐 -->
+            <div class="recommendation">
+                <h3><i class="fas fa-star"></i> 今日推荐</h3>
+                <div class="plant-grid">
+                    <div class="plant-card" onclick="showPlantDetail('monstera')">
+                        <div class="plant-icon" style="background: linear-gradient(135deg, #4CAF50, #8BC34A);">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <div class="plant-info">
+                            <h4>龟背竹</h4>
+                            <p>适合室内养护，净化空气</p>
+                            <span class="difficulty easy">容易养护</span>
+                        </div>
+                    </div>
+                    <div class="plant-card" onclick="showPlantDetail('peace-lily')">
+                        <div class="plant-icon" style="background: linear-gradient(135deg, #E91E63, #9C27B0);">
+                            <i class="fas fa-spa"></i>
+                        </div>
+                        <div class="plant-info">
+                            <h4>白鹤芋</h4>
+                            <p>耐阴植物，开白色花朵</p>
+                            <span class="difficulty easy">容易养护</span>
+                        </div>
+                    </div>
+                    <div class="plant-card" onclick="showPlantDetail('pothos')">
+                        <div class="plant-icon" style="background: linear-gradient(135deg, #00BCD4, #009688);">
+                            <i class="fas fa-vine"></i>
+                        </div>
+                        <div class="plant-info">
+                            <h4>绿萝</h4>
+                            <p>生命力强，可水培土培</p>
+                            <span class="difficulty easy">容易养护</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 植物库 -->
+        <section id="plants" class="section">
+            <div class="section-header">
+                <h2>植物库</h2>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="plantSearch" placeholder="搜索植物名称..." oninput="filterPlants()">
+                    <select id="categoryFilter" onchange="filterPlants()">
+                        <option value="all">全部分类</option>
+                        <option value="indoor">室内植物</option>
+                        <option value="succulent">多肉植物</option>
+                        <option value="flowering">开花植物</option>
+                        <option value="foliage">观叶植物</option>
+                    </select>
+                </div>
+            </div>
+            <div class="plant-grid" id="plantGrid">
+                <!-- 动态生成 -->
+            </div>
+        </section>
+
+        <!-- 智能问答 -->
+        <section id="chat" class="section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-bot-info">
+                        <div class="chat-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <h3>绿植小助手</h3>
+                            <span class="online-status">在线</span>
+                        </div>
+                    </div>
+                    <button class="clear-chat" onclick="clearChat()">
+                        <i class="fas fa-trash"></i> 清空对话
+                    </button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <p>你好！我是你的 AI 绿植助手。我可以帮助你解决以下问题：</p>
+                            <ul class="quick-questions">
+                                <li onclick="sendQuickQuestion('多久浇一次水？')">多久浇一次水？</li>
+                                <li onclick="sendQuickQuestion('如何判断植物需要浇水？')">如何判断植物需要浇水？</li>
+                                <li onclick="sendQuickQuestion('施肥频率是多少？')">施肥频率是多少？</li>
+                                <li onclick="sendQuickQuestion('叶子发黄怎么办？')">叶子发黄怎么办？</li>
+                                <li onclick="sendQuickQuestion('龟背竹怎么养护？')">龟背竹怎么养护？</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <textarea id="messageInput" placeholder="请输入您的问题，如：绿萝多久浇一次水？" rows="1" onkeydown="handleKeyPress(event)"></textarea>
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 养护指南 -->
+        <section id="guide" class="section">
+            <div class="section-header">
+                <h2>养护指南</h2>
+            </div>
+            <div class="guide-content">
+                <div class="guide-category" id="watering">
+                    <div class="category-header">
+                        <i class="fas fa-tint"></i>
+                        <h3>浇水指南</h3>
+                    </div>
+                    <div class="guide-tips">
+                        <div class="tip-card">
+                            <h4>判断浇水时机</h4>
+                            <ul>
+                                <li>用手指插入土壤 2-3 厘米，感觉干燥时浇水</li>
+                                <li>观察盆土颜色变浅、重量变轻</li>
+                                <li>叶片轻微下垂、失去光泽</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>浇水方法</h4>
+                            <ul>
+                                <li>选择清晨或傍晚浇水，避免正午</li>
+                                <li>浇透水，直到水从盆底流出</li>
+                                <li>避免积水，及时清理托盘积水</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>不同季节频率</h4>
+                            <ul>
+                                <li>春季：3-5 天一次</li>
+                                <li>夏季：1-2 天一次</li>
+                                <li>秋季：3-5 天一次</li>
+                                <li>冬季：7-10 天一次</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-category" id="fertilizing">
+                    <div class="category-header">
+                        <i class="fas fa-flask"></i>
+                        <h3>施肥指南</h3>
+                    </div>
+                    <div class="guide-tips">
+                        <div class="tip-card">
+                            <h4>肥料类型</h4>
+                            <ul>
+                                <li>氮肥（N）：促进叶片生长</li>
+                                <li>磷肥（P）：促进开花结果</li>
+                                <li>钾肥（K）：增强抗病能力</li>
+                                <li>复合肥：均衡营养</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>施肥原则</h4>
+                            <ul>
+                                <li>薄肥勤施，宁少勿多</li>
+                                <li>生长季（春夏）多施，休眠期少施或不施</li>
+                                <li>新上盆植物暂不施肥</li>
+                                <li>高温、低温时停止施肥</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>施肥频率</h4>
+                            <ul>
+                                <li>生长期植物：每 2-3 周一次</li>
+                                <li>观叶植物：每月一次氮肥为主</li>
+                                <li>开花植物：花期前增施磷钾肥</li>
+                                <li>多肉植物：每月一次稀薄液肥</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-category" id="lighting">
+                    <div class="category-header">
+                        <i class="fas fa-sun"></i>
+                        <h3>光照指南</h3>
+                    </div>
+                    <div class="guide-tips">
+                        <div class="tip-card">
+                            <h4>光照类型</h4>
+                            <ul>
+                                <li>全日照：每日 6 小时以上直射光</li>
+                                <li>半日照：每日 3-6 小时直射光</li>
+                                <li>散射光：明亮的间接光照</li>
+                                <li>耐阴：可适应低光照环境</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>光照调节</h4>
+                            <ul>
+                                <li>夏季中午适当遮阴</li>
+                                <li>冬季增加光照时间</li>
+                                <li>定期转动花盆方向</li>
+                                <li>光线不足时使用植物补光灯</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-category" id="troubleshooting">
+                    <div class="category-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>常见问题解决</h3>
+                    </div>
+                    <div class="troubleshooting-grid">
+                        <div class="problem-card">
+                            <div class="problem-icon"><i class="fas fa-sad-tear"></i></div>
+                            <h4>叶子发黄</h4>
+                            <p>原因：浇水过多/过少、光照不足、营养缺乏</p>
+                            <button class="solution-btn" onclick="showSolution('yellow')">查看解决方案</button>
+                        </div>
+                        <div class="problem-card">
+                            <div class="problem-icon"><i class="fas fa-wind"></i></div>
+                            <h4>叶子卷曲</h4>
+                            <p>原因：缺水、光照过强、温度不适</p>
+                            <button class="solution-btn" onclick="showSolution('curled')">查看解决方案</button>
+                        </div>
+                        <div class="problem-card">
+                            <div class="problem-icon"><i class="fas fa-bug"></i></div>
+                            <h4>叶片有斑点</h4>
+                            <p>原因：病害、虫害、日灼、叶面喷水</p>
+                            <button class="solution-btn" onclick="showSolution('spots')">查看解决方案</button>
+                        </div>
+                        <div class="problem-card">
+                            <div class="problem-icon"><i class="fas fa-skull"></i></div>
+                            <h4>茎干腐烂</h4>
+                            <p>原因：积水、通风不良、病菌感染</p>
+                            <button class="solution-btn" onclick="showSolution('rot')">查看解决方案</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 植物详情弹窗 -->
+    <div class="modal" id="plantModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="plant-detail" id="plantDetail">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 解决方案弹窗 -->
+    <div class="modal" id="solutionModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeSolutionModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="solution-content" id="solutionContent">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
